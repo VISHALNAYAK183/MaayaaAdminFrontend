@@ -19,19 +19,22 @@ import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import Products from "./pages/product";
-
+import OrdersList from "./pages/orders/OrdersList";
+import OrderDetails from "./pages/orders/OrderDetails";
 export default function App() {
   return (
     <>
       <Router>
         <ScrollToTop />
         <Routes>
-          {/* Dashboard Layout */}
+         
           <Route element={<AppLayout />}>
             <Route index path="/" element={<Home />} />
 
-            {/* Products Page - Added here inside AppLayout */}
             <Route path="/products" element={<Products />} />
+
+            <Route path="/orders" element={<OrdersList />} />
+          <Route path="/orders/:orderId" element={<OrderDetails />} />
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
