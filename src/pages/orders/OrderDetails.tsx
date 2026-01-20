@@ -9,9 +9,8 @@ export default function OrderDetails() {
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
-    getOrderDetails(Number(orderId))
-      .then(res => setData(res.data));
-  }, []);
+    getOrderDetails(Number(orderId)).then(res => setData(res.data));
+  }, [orderId]);
 
   if (!data) return <p>Loading...</p>;
 
@@ -29,12 +28,20 @@ export default function OrderDetails() {
         </div>
       ))}
 
+    
       {status === "PLACED" && (
-        <ShipOrderModal orderId={Number(orderId)} />
+        <>
+          <h3>Actions</h3>
+          <ShipOrderModal orderId={data.order.order_id} />
+        </>
       )}
 
-      {status === "SHIPPED" && (
-        <UpdateStatusModal orderId={Number(orderId)} />
+      
+      {["SHIPPED", "OUT_FOR_DELIVERY"].includes(status) && (
+        <UpdateStatusModal
+          orderId={data.order.order_id}
+          currentStatus={status}
+        />
       )}
     </div>
   );
