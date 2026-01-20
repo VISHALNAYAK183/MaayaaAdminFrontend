@@ -21,6 +21,10 @@ import Home from "./pages/Dashboard/Home";
 import Products from "./pages/product";
 import OrdersList from "./pages/orders/OrdersList";
 import OrderDetails from "./pages/orders/OrderDetails";
+import AddCoupon from "./pages/coupons/AddCoupon";
+
+<Route path="/coupons/add" element={<AddCoupon />} />
+
 export default function App() {
   return (
     <>
@@ -66,6 +70,7 @@ export default function App() {
 
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />
+          <Route path="/coupons/add" element={<AddCoupon />} />
         </Routes>
       </Router>
     </>
