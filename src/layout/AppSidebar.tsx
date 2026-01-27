@@ -36,6 +36,13 @@ const navItems: NavItem[] = [
     
   },
   {
+  icon: <BoxCubeIcon />,
+  name: "Home CMS",
+  subItems: [
+    { name: "Sections", path: "/home-cms/sections" },
+  ],
+},
+  {
     icon: <CalenderIcon />,
     name: "Calendar",
     path: "/calendar",
