@@ -3,12 +3,13 @@ import { getOrders } from "../../api/adminApi";
 import { useNavigate } from "react-router-dom";
 
 const STATUSES = [
+  "REQUESTED",
   "PLACED",
   "SHIPPED",
   "OUT_FOR_DELIVERY",
-  "DELIVERED"
+  "DELIVERED",
+  "REJECTED"
 ];
-
 export default function OrdersList() {
   const [orders, setOrders] = useState<any[]>([]);
   const [status, setStatus] = useState<string>("PLACED");
@@ -73,13 +74,13 @@ export default function OrdersList() {
               <td className="border p-2">₹{o.amount}</td>
               <td className="border p-2">{o.status}</td>
               <td className="border p-2">
-                <button
-                  className="text-blue-600 underline"
-                  onClick={() => navigate(`/orders/${o.order_id}`)}
-                >
-                  View
-                </button>
-              </td>
+  <button
+    className="text-blue-600 underline mr-3"
+    onClick={() => navigate(`/orders/${o.order_id}`)}
+  >
+    View
+  </button>
+</td>
             </tr>
           ))}
         </tbody>

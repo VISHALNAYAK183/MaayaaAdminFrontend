@@ -3,11 +3,24 @@ import { useEffect, useState } from "react";
 import { getOrderDetails } from "../../api/adminApi";
 import ShipOrderModal from "../../components/ShipOrderModal";
 import UpdateStatusModal from "../../components/UpdateStatusModal";
+import {
+  approveOrder,
+  rejectOrder
+} from "../../api/adminApi";
 
 export default function OrderDetails() {
   const { orderId } = useParams();
   const [data, setData] = useState<any>(null);
+const handleApprove = async () => {
+  await approveOrder(data.order.order_id);
+  window.location.reload();
+};
 
+const handleReject = async () => {
+  if (!confirm("Reject this order?")) return;
+  await rejectOrder(data.order.order_id);
+  window.location.reload();
+};
   useEffect(() => {
     getOrderDetails(Number(orderId)).then(res => setData(res.data));
   }, [orderId]);
@@ -29,13 +42,39 @@ export default function OrderDetails() {
       ))}
 
     
-      {status === "PLACED" && (
-        <>
-          <h3>Actions</h3>
-          <ShipOrderModal orderId={data.order.order_id} />
-        </>
-      )}
+     <h3 className="mt-6 font-semibold">Actions</h3>
 
+{/* REQUESTED */}
+{status === "REQUESTED" && (
+  <div className="flex gap-3">
+    <button
+      onClick={handleApprove}
+      className="bg-green-600 text-white px-4 py-2 rounded"
+    >
+      Approve
+    </button>
+
+    <button
+      onClick={handleReject}
+      className="bg-red-600 text-white px-4 py-2 rounded"
+    >
+      Reject
+    </button>
+  </div>
+)}
+
+{/* PLACED */}
+{status === "PLACED" && (
+  <ShipOrderModal orderId={data.order.order_id} />
+)}
+
+{/* SHIPPED / OUT_FOR_DELIVERY */}
+{["SHIPPED", "OUT_FOR_DELIVERY"].includes(status) && (
+  <UpdateStatusModal
+    orderId={data.order.order_id}
+    currentStatus={status}
+  />
+)}
       
       {["SHIPPED", "OUT_FOR_DELIVERY"].includes(status) && (
         <UpdateStatusModal

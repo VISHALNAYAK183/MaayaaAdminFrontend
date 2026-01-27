@@ -40,3 +40,11 @@ export const updateOrderStatus = (
 ) => {
   return axios.put(`${ADMIN_BASE}/orders/${orderId}/status`, data);
 };
+
+export const approveOrder = (orderId: number) => {
+  return axios.put(`${ADMIN_BASE}/orders/${orderId}/approve`);
+};
+
+export const rejectOrder = (orderId: number) => {
+  return axios.put(`${ADMIN_BASE}/orders/${orderId}/reject`);
+};
