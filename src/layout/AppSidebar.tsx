@@ -32,16 +32,16 @@ const navItems: NavItem[] = [
     subItems: [{ name: "Products", path: "/products", pro: false },
       { name: "Shipment", path: "/orders", pro: false }, 
       { name: "Coupons", path: "/coupons", pro: false },  
-    { name: "Add Coupon", path: "/coupons/add", pro: false } ],
+    { name: "Add Coupon", path: "/coupons/add", pro: false },
+  {
+name: "Home CMS",
+path: "/home-cms/add-section",
+pro: false,
+} ],
     
   },
-  {
-  icon: <BoxCubeIcon />,
-  name: "Home CMS",
-  subItems: [
-    { name: "Sections", path: "/home-cms/sections" },
-  ],
-},
+  
+  
   {
     icon: <CalenderIcon />,
     name: "Calendar",
