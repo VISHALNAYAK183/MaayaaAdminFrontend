@@ -71,3 +71,9 @@ export const updateHomeSection = (
     data
   );
 };
+
+export const deleteHomeSection = (id: number) => {
+  return axios.delete(
+    `${ADMIN_BASE}/home-cms/section/${id}`
+  );
+};
