@@ -22,7 +22,11 @@ import Products from "./pages/product";
 import OrdersList from "./pages/orders/OrdersList";
 import OrderDetails from "./pages/orders/OrderDetails";
 import AddCoupon from "./pages/coupons/AddCoupon";
+import HomeCMS from "./pages/homeCMS/HomeCMS";
 import AddSection from "./pages/homeCMS/AddSection";
+import EditSection from "./pages/homeCMS/EditSection";
+
+
 
 <Route path="/coupons/add" element={<AddCoupon />} />
 
@@ -73,7 +77,10 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
           <Route path="/coupons/add" element={<AddCoupon />} />
 
-          <Route path="/home-cms/add-section" element={<AddSection />} />
+          <Route path="/home-cms" element={<HomeCMS />} />
+<Route path="/home-cms/add-section" element={<AddSection />} />
+
+<Route path="/home-cms/edit/:id" element={<EditSection />} />
           
         </Routes>
       </Router>

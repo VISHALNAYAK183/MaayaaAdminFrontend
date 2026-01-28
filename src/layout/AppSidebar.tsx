@@ -35,9 +35,9 @@ const navItems: NavItem[] = [
     { name: "Add Coupon", path: "/coupons/add", pro: false },
   {
 name: "Home CMS",
-path: "/home-cms/add-section",
+path: "/home-cms",
 pro: false,
-} ],
+}, ],
     
   },
   
