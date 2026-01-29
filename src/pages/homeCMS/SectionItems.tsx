@@ -18,6 +18,10 @@ const SectionItems = () => {
         Number(sectionId)
       );
       setItems(res.data);
+       localStorage.setItem(
+        "sectionItems",
+        JSON.stringify(res.data)
+      );
     } catch (err) {
       console.error(err);
       alert("Failed to load section items");
@@ -115,10 +119,23 @@ const SectionItems = () => {
         <b>Deleted:</b>{" "}
         {item.isDeleted ? "Yes" : "No"}
       </div>
-
+ <div className="flex gap-3">
+                {/* ✅ EDIT BUTTON */}
+                <button
+                  className="border px-3 py-1 rounded"
+                  onClick={() =>
+                    navigate(
+                      `/home-cms/section/${sectionId}/items/edit/${item.itemId}`
+                    )
+                  }
+                >
+                  Edit
+                </button>
+              </div>
     </div>
   </div>
 ))}
+
         </div>
       )}
     </div>

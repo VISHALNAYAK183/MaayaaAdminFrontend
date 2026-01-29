@@ -118,3 +118,13 @@ export const addSectionItem = (
     data
   );
 };
+
+export const updateSectionItem = (
+  itemId: number,
+  data: AddItemPayload
+) => {
+  return axios.put(
+    `${ADMIN_BASE}/home-cms/item/${itemId}`,
+    data
+  );
+};
