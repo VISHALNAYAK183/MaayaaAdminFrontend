@@ -27,7 +27,7 @@ import AddSection from "./pages/homeCMS/AddSection";
 import EditSection from "./pages/homeCMS/EditSection";
 
 import SectionItems from "./pages/homeCMS/SectionItems";
-
+import AddSectionItem from "./pages/homeCMS/AddSectionItem";
 <Route path="/coupons/add" element={<AddCoupon />} />
 
 export default function App() {
@@ -85,6 +85,11 @@ export default function App() {
 <Route
   path="/home-cms/section/:sectionId/items"
   element={<SectionItems />}
+/>
+
+<Route
+  path="/home-cms/section/:sectionId/items/add"
+  element={<AddSectionItem />}
 />
           
         </Routes>

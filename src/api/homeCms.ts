@@ -97,3 +97,24 @@ export const getSectionItems = (sectionId: number) => {
     `${ADMIN_BASE}/home-cms/section/${sectionId}/item`
   );
 };
+
+export interface AddItemPayload {
+  image: string | null;
+  heading: string | null;
+  subheading: string | null;
+  ctaText: string | null;
+  link: string | null;
+  productId: string | number | null;
+  categoryId: string | number | null;
+  reviewId: string | number | null;
+  position: string | number;
+}
+export const addSectionItem = (
+  sectionId: number,
+  data: AddItemPayload
+) => {
+  return axios.post(
+    `${ADMIN_BASE}/home-cms/section/${sectionId}/item`,
+    data
+  );
+};

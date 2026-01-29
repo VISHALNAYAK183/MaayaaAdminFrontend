@@ -38,16 +38,15 @@ const SectionItems = () => {
           Section Items
         </h1>
 
-        <button
-          onClick={() =>
-            navigate(
-              `/home-cms/section/${sectionId}/items/add`
-            )
-          }
-          className="bg-black text-white px-5 py-2 rounded"
-        >
-          + Add Item
-        </button>
+       <button
+  onClick={() =>
+    navigate(
+      `/home-cms/section/${sectionId}/items/add`
+    )
+  }
+>
+  + Add Item
+</button>
       </div>
 
       {loading ? (
