@@ -77,3 +77,23 @@ export const deleteHomeSection = (id: number) => {
     `${ADMIN_BASE}/home-cms/section/${id}`
   );
 };
+
+export interface SectionItem {
+  itemId: number;
+  image: string;
+  heading: string;
+  subheading: string | null;
+  ctaText: string | null;
+  link: string;
+  productId: number | null;
+  categoryId: number | null;
+  reviewId: number | null;
+  position: number;
+  isDeleted: boolean;
+}
+
+export const getSectionItems = (sectionId: number) => {
+  return axios.get<SectionItem[]>(
+    `${ADMIN_BASE}/home-cms/section/${sectionId}/item`
+  );
+};

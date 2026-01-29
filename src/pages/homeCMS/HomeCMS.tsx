@@ -65,13 +65,10 @@ const HomeCMS = () => {
       );
     } catch (error) {
       console.error(error);
-      alert("Failed to delete section ❌");
+      alert("Failed to delete section ");
     }
   };
 
-  /* ================================
-     UI
-  ================================ */
   return (
     <div className="p-6">
       {/* HEADER */}
@@ -98,10 +95,13 @@ const HomeCMS = () => {
       ) : (
         <div className="grid gap-4">
           {sections.map((section) => (
-            <div
-              key={section.sectionId}
-              className="border rounded-lg p-5 bg-white"
-            >
+           <div
+  key={section.sectionId}
+  className="border rounded-lg p-5 bg-white cursor-pointer hover:bg-gray-50"
+  onClick={() =>
+    navigate(`/home-cms/section/${section.sectionId}/items`)
+  }
+>
               <div className="flex justify-between items-center">
                 {/* LEFT */}
                 <div>
@@ -138,24 +138,24 @@ const HomeCMS = () => {
 
                   <div className="mt-2 flex gap-2 justify-end">
                     <button
-                      className="border px-3 py-1 rounded text-sm"
-                      onClick={() =>
-                        navigate(
-                          `/home-cms/edit/${section.sectionId}`
-                        )
-                      }
-                    >
-                      Edit
-                    </button>
+  className="border px-3 py-1 rounded text-sm"
+  onClick={(e) => {
+    e.stopPropagation();
+    navigate(`/home-cms/edit/${section.sectionId}`);
+  }}
+>
+  Edit
+</button>
 
-                    <button
-                      className="border px-3 py-1 rounded text-sm text-red-600"
-                      onClick={() =>
-                        handleDelete(section.sectionId)
-                      }
-                    >
-                      Delete
-                    </button>
+<button
+  className="border px-3 py-1 rounded text-sm text-red-600"
+  onClick={(e) => {
+    e.stopPropagation();
+    handleDelete(section.sectionId);
+  }}
+>
+  Delete
+</button>
                   </div>
                 </div>
               </div>
