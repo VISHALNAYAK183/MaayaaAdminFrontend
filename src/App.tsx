@@ -25,12 +25,9 @@ import AddCoupon from "./pages/coupons/AddCoupon";
 import HomeCMS from "./pages/homeCMS/HomeCMS";
 import AddSection from "./pages/homeCMS/AddSection";
 import EditSection from "./pages/homeCMS/EditSection";
-
 import SectionItems from "./pages/homeCMS/SectionItems";
 import AddSectionItem from "./pages/homeCMS/AddSectionItem";
 import EditSectionItem from "./pages/homeCMS/EditSectionItem";
-
-<Route path="/coupons/add" element={<AddCoupon />} />
 
 export default function App() {
   return (
@@ -38,16 +35,30 @@ export default function App() {
       <Router>
         <ScrollToTop />
         <Routes>
-         
+
+          {/* All pages inside AppLayout (with sidebar + header) */}
           <Route element={<AppLayout />}>
             <Route index path="/" element={<Home />} />
 
+            {/* Products */}
             <Route path="/products" element={<Products />} />
 
+            {/* Orders */}
             <Route path="/orders" element={<OrdersList />} />
-          <Route path="/orders/:orderId" element={<OrderDetails />} />
+            <Route path="/orders/:orderId" element={<OrderDetails />} />
 
-            {/* Others Page */}
+            {/* Coupons */}
+            <Route path="/coupons/add" element={<AddCoupon />} />
+
+            {/* Home CMS */}
+            <Route path="/home-cms" element={<HomeCMS />} />
+            <Route path="/home-cms/add-section" element={<AddSection />} />
+            <Route path="/home-cms/edit/:id" element={<EditSection />} />
+            <Route path="/home-cms/section/:sectionId/items" element={<SectionItems />} />
+            <Route path="/home-cms/section/:sectionId/items/add" element={<AddSectionItem />} />
+            <Route path="/home-cms/section/:sectionId/items/edit/:itemId" element={<EditSectionItem />} />
+
+            {/* Other Pages */}
             <Route path="/profile" element={<UserProfiles />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/blank" element={<Blank />} />
@@ -58,7 +69,7 @@ export default function App() {
             {/* Tables */}
             <Route path="/basic-tables" element={<BasicTables />} />
 
-            {/* Ui Elements */}
+            {/* UI Elements */}
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/avatars" element={<Avatars />} />
             <Route path="/badge" element={<Badges />} />
@@ -71,32 +82,12 @@ export default function App() {
             <Route path="/bar-chart" element={<BarChart />} />
           </Route>
 
-          {/* Auth Layout */}
+          {/* Auth — no layout */}
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
 
-          {/* Fallback Route */}
+          {/* 404 */}
           <Route path="*" element={<NotFound />} />
-          <Route path="/coupons/add" element={<AddCoupon />} />
-
-          <Route path="/home-cms" element={<HomeCMS />} />
-<Route path="/home-cms/add-section" element={<AddSection />} />
-
-<Route path="/home-cms/edit/:id" element={<EditSection />} />
-
-<Route
-  path="/home-cms/section/:sectionId/items"
-  element={<SectionItems />}
-/>
-
-<Route
-  path="/home-cms/section/:sectionId/items/add"
-  element={<AddSectionItem />}
-/>
-           <Route
-          path="/home-cms/section/:sectionId/items/edit/:itemId"
-          element={<EditSectionItem />}
-        />
 
         </Routes>
       </Router>
