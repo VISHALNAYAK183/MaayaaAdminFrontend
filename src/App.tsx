@@ -28,6 +28,9 @@ import EditSection from "./pages/homeCMS/EditSection";
 import SectionItems from "./pages/homeCMS/SectionItems";
 import AddSectionItem from "./pages/homeCMS/AddSectionItem";
 import EditSectionItem from "./pages/homeCMS/EditSectionItem";
+import Category from "./pages/Category"; 
+import Size from "./pages/Size";
+import Color from "./pages/Color";
 
 export default function App() {
   return (
@@ -50,6 +53,10 @@ export default function App() {
             {/* Coupons */}
             <Route path="/coupons/add" element={<AddCoupon />} />
 
+            {/* Categories */}
+            <Route path="/categories" element={<Category />} /> {/* ← ADD THIS */}
+            <Route path="/sizes" element={<Size />} />
+            <Route path="/colors" element={<Color />} />
             {/* Home CMS */}
             <Route path="/home-cms" element={<HomeCMS />} />
             <Route path="/home-cms/add-section" element={<AddSection />} />
@@ -88,7 +95,7 @@ export default function App() {
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
-
+          
         </Routes>
       </Router>
     </>
