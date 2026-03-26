@@ -18,7 +18,6 @@ import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
-import Products from "./pages/product";
 import OrdersList from "./pages/orders/OrdersList";
 import OrderDetails from "./pages/orders/OrderDetails";
 import AddCoupon from "./pages/coupons/AddCoupon";
@@ -31,6 +30,8 @@ import EditSectionItem from "./pages/homeCMS/EditSectionItem";
 import Category from "./pages/Category"; 
 import Size from "./pages/Size";
 import Color from "./pages/Color";
+import Collection from "./pages/Collection";
+import ProductManagement from "./pages/Productmanagement";
 
 export default function App() {
   return (
@@ -44,7 +45,6 @@ export default function App() {
             <Route index path="/" element={<Home />} />
 
             {/* Products */}
-            <Route path="/products" element={<Products />} />
 
             {/* Orders */}
             <Route path="/orders" element={<OrdersList />} />
@@ -57,6 +57,8 @@ export default function App() {
             <Route path="/categories" element={<Category />} /> {/* ← ADD THIS */}
             <Route path="/sizes" element={<Size />} />
             <Route path="/colors" element={<Color />} />
+            <Route path="/collections" element={<Collection />} />
+            <Route path="/products" element={<ProductManagement />} />
             {/* Home CMS */}
             <Route path="/home-cms" element={<HomeCMS />} />
             <Route path="/home-cms/add-section" element={<AddSection />} />
