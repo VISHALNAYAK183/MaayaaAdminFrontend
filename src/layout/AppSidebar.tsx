@@ -37,6 +37,7 @@ const navItems: NavItem[] = [
 { name: "Colors", path: "/colors", pro: false },
 { name: "Collections", path: "/collections", pro: false },
 { name: "Products", path: "/products", pro: false },
+{ name: "Reviews", path: "/reviews", pro: false }, 
   {
 name: "Home CMS",
 path: "/home-cms",

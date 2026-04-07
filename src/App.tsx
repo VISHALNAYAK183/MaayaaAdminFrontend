@@ -32,7 +32,7 @@ import Size from "./pages/Size";
 import Color from "./pages/Color";
 import Collection from "./pages/Collection";
 import ProductManagement from "./pages/Productmanagement";
-
+import ReviewDashboard from "./pages/ReviewDashboard";
 export default function App() {
   return (
     <>
@@ -59,6 +59,7 @@ export default function App() {
             <Route path="/colors" element={<Color />} />
             <Route path="/collections" element={<Collection />} />
             <Route path="/products" element={<ProductManagement />} />
+            <Route path="/reviews" element={<ReviewDashboard />} />
             {/* Home CMS */}
             <Route path="/home-cms" element={<HomeCMS />} />
             <Route path="/home-cms/add-section" element={<AddSection />} />
