@@ -1,6 +1,7 @@
 const BASE_URL = "http://localhost:8081/api/admin/products";
 
 export interface ProductImage {
+  variantId?: number; 
   url: string;
   postOrder: number;
 }
@@ -21,7 +22,7 @@ export interface Variant {
   colorId: number;
   quantity: number;
   barcode: string;
-  images: VariantImage[]; // ← per-variant images (max 5)
+  images: VariantImage[];
 }
 
 // Shape returned by GET /products

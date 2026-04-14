@@ -749,7 +749,9 @@ const ProductManagement: React.FC = () => {
             barcode: v.barcode ?? "",
             images: (v.images ?? [])
               .filter((img) => img.url.trim())
-              .map((img, idx) => ({ url: img.url.trim(), postOrder: idx + 1 })),
+              .map((img, idx) => ({ 
+                ...(v.variantId ? { variantId: v.variantId } : {}),
+                url: img.url.trim(), postOrder: idx + 1 })),
           })),
       };
 
@@ -1189,8 +1191,10 @@ const ProductManagement: React.FC = () => {
                 filtered.map((product) => {
                   // Use first image of first variant that has images
                   const firstVariantWithImage = product.variants?.find((v) => (v.images ?? []).some((img) => img.url));
-                  const firstImage = firstVariantWithImage?.images?.find((img) => img.postOrder === 1) ?? firstVariantWithImage?.images?.[0];
-                  const imageUrl = resolveImageUrl(firstImage?.url ?? product.images?.[0]?.url);
+const firstImage = firstVariantWithImage?.images
+  ?.slice()
+  .sort((a, b) => a.postOrder - b.postOrder)[0];
+const imageUrl = resolveImageUrl(firstImage?.url ?? null);
 
                   const catName = categories.find((c) => c.categoryId === product.categoryId)?.name || "—";
                   const colName = collections.find((c) => c.collectionId === product.collectionId)?.name || "—";
