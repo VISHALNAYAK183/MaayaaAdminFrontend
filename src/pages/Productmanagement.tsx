@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import JsBarcode from "jsbarcode";
 import {
   getProducts,
@@ -66,6 +66,16 @@ const ImageIcon = () => (
     <polyline points="21 15 16 10 5 21" />
   </svg>
 );
+const UploadIcon = () => (
+  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+  </svg>
+);
+const ReplaceIcon = () => (
+  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+  </svg>
+);
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 const Fld = ({
@@ -113,7 +123,13 @@ const inputCls =
   "w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white placeholder:text-slate-300";
 const selectCls = `${inputCls} cursor-pointer`;
 
-// ─── Blank variant (with images array) ────────────────────────────────────────
+// ─── Extended VariantImage with local upload fields ───────────────────────────
+interface VariantImageLocal extends VariantImage {
+  _file?: File;
+  _preview?: string;
+}
+
+// ─── Blank variant ────────────────────────────────────────────────────────────
 const blankVariant = (): Variant => ({
   sizeId: 0,
   colorId: 0,
@@ -135,13 +151,13 @@ const blankForm = (): Omit<Product, "productId"> => ({
   fabricDetails: "",
   questionsAnswers: [{ question: "", answer: "" }],
   variants: [blankVariant()],
-  images: [], // no longer used for main images
+  images: [],
 });
 
 // ─── Resolve image URL ────────────────────────────────────────────────────────
 const resolveImageUrl = (url: string | undefined | null): string | null => {
   if (!url) return null;
-  if (url.startsWith("http")) return url;
+  if (url.startsWith("http") || url.startsWith("blob:")) return url;
   return `https://res.cloudinary.com/maayaa/image/upload/${url}`;
 };
 
@@ -176,45 +192,113 @@ const BarcodePreview: React.FC<{ value: string; id: string }> = ({ value, id }) 
   );
 };
 
-// ─── Variant Image Sub-section ────────────────────────────────────────────────
+// ─── Variant Image Sub-section (with file upload) ─────────────────────────────
 const VariantImages: React.FC<{
   variantIndex: number;
-  images: VariantImage[];
-  onChange: (variantIndex: number, images: VariantImage[]) => void;
+  images: VariantImageLocal[];
+  onChange: (variantIndex: number, images: VariantImageLocal[]) => void;
 }> = ({ variantIndex, images, onChange }) => {
-  const updateImage = (imgIdx: number, url: string) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [draggingOver, setDraggingOver] = useState(false);
+
+  // Strip file extension to get a clean filename
+  const extractFileName = (file: File): string =>
+    file.name.replace(/\.[^/.]+$/, "");
+
+  // Process dropped / selected files into image slots
+  const handleFiles = (files: FileList | null) => {
+    if (!files) return;
+    const filledCount = images.filter((img) => img.url).length;
+    const remaining = 5 - filledCount;
+    if (remaining <= 0) return;
+
+    const toAdd = Array.from(files).slice(0, remaining);
+    const updated: VariantImageLocal[] = [...images];
+
+    toAdd.forEach((file) => {
+      const fileName = extractFileName(file);
+      const preview = URL.createObjectURL(file);
+      const emptyIdx = updated.findIndex((img) => !img.url);
+      if (emptyIdx !== -1) {
+        updated[emptyIdx] = { ...updated[emptyIdx], url: fileName, _file: file, _preview: preview };
+      } else if (updated.length < 5) {
+        updated.push({ url: fileName, postOrder: updated.length + 1, _file: file, _preview: preview });
+      }
+    });
+
+    onChange(variantIndex, updated.map((img, i) => ({ ...img, postOrder: i + 1 })));
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDraggingOver(false);
+    handleFiles(e.dataTransfer.files);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDraggingOver(true);
+  };
+
+  const handleDragLeave = () => setDraggingOver(false);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleFiles(e.target.files);
+    e.target.value = ""; // reset so same file can be re-selected
+  };
+
+  // Allow manual URL/filename edit (for existing products loaded from API)
+  const updateImageUrl = (imgIdx: number, url: string) => {
     const updated = images.map((img, i) =>
-      i === imgIdx ? { ...img, url } : img
+      i === imgIdx ? { ...img, url, _file: undefined, _preview: undefined } : img
     );
     onChange(variantIndex, updated);
   };
 
-  const addImage = () => {
-    if (images.length >= 5) return;
-    onChange(variantIndex, [
-      ...images,
-      { url: "", postOrder: images.length + 1 },
-    ]);
+  // Replace a single slot with a new file
+  const replaceImage = (imgIdx: number) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const prev = images[imgIdx];
+      if (prev._preview) URL.revokeObjectURL(prev._preview);
+      const updated = images.map((img, i) =>
+        i === imgIdx
+          ? { ...img, url: extractFileName(file), _file: file, _preview: URL.createObjectURL(file) }
+          : img
+      );
+      onChange(variantIndex, updated);
+    };
+    input.click();
   };
 
   const removeImage = (imgIdx: number) => {
+    const target = images[imgIdx];
+    if (target._preview) URL.revokeObjectURL(target._preview);
     const updated = images
       .filter((_, i) => i !== imgIdx)
       .map((img, i) => ({ ...img, postOrder: i + 1 }));
     onChange(variantIndex, updated.length > 0 ? updated : [{ url: "", postOrder: 1 }]);
   };
 
+  const filledCount = images.filter((img) => img.url).length;
+  const canAdd = filledCount < 5;
+
   return (
     <div className="col-span-2 mt-1">
+      {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
           <ImageIcon />
-          Variant Images ({images.length}/5)
+          Variant Images ({filledCount}/5)
         </span>
-        {images.length < 5 && (
+        {canAdd && (
           <button
             type="button"
-            onClick={addImage}
+            onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-dashed border-slate-300 text-xs text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
           >
             <PlusIcon /> Add image
@@ -222,57 +306,140 @@ const VariantImages: React.FC<{
         )}
       </div>
 
-      <div className="flex flex-col gap-2">
-        {images.map((img, imgIdx) => (
-          <div
-            key={imgIdx}
-            className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"
-          >
-            {/* Order badge */}
-            <div className="w-6 h-6 rounded-md bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 shrink-0">
-              {img.postOrder}
-            </div>
+      {/* Hidden file input (multi) */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleInputChange}
+      />
 
-            {/* URL input */}
-            <input
-              value={img.url}
-              onChange={(e) => updateImage(imgIdx, e.target.value)}
-              placeholder={`Image ${imgIdx + 1} — filename or full URL`}
-              className={`${inputCls} flex-1`}
-            />
-
-            {/* Thumbnail preview */}
-            {img.url && (
-              <div className="w-9 h-9 rounded-lg border border-slate-200 overflow-hidden shrink-0 bg-slate-100">
-                <img
-                  src={resolveImageUrl(img.url) ?? ""}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Remove — always show so user can clear; only truly remove if >1 slot */}
-            <button
-              type="button"
-              onClick={() => removeImage(imgIdx)}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors shrink-0"
-              title="Remove image"
-            >
-              <TrashIcon />
-            </button>
+      {/* Empty state drop zone */}
+      {filledCount === 0 && (
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onClick={() => fileInputRef.current?.click()}
+          className={`flex flex-col items-center justify-center gap-2.5 border-2 border-dashed rounded-xl py-7 cursor-pointer transition-all select-none
+            ${draggingOver
+              ? "border-blue-400 bg-blue-50 scale-[1.01]"
+              : "border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50/40"
+            }`}
+        >
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors
+            ${draggingOver ? "bg-blue-100 text-blue-500" : "bg-slate-100 border border-slate-200 text-slate-400"}`}>
+            <UploadIcon />
           </div>
-        ))}
-      </div>
+          <div className="text-center">
+            <p className="text-xs font-semibold text-slate-600">
+              {draggingOver ? "Drop images here" : "Click or drag & drop images"}
+            </p>
+            <p className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, WEBP — up to 5 images per variant</p>
+          </div>
+        </div>
+      )}
 
-      {/* Strip preview row (only shown when ≥1 image has a URL) */}
-      {images.some((img) => img.url) && (
-        <div className="flex gap-1.5 mt-2 flex-wrap">
+      {/* Filled image list */}
+      {filledCount > 0 && (
+        <div className="flex flex-col gap-2">
           {images.map((img, imgIdx) => {
-            const url = resolveImageUrl(img.url);
+            if (!img.url && !img._preview) return null;
+            const previewUrl = img._preview || resolveImageUrl(img.url);
+
+            return (
+              <div
+                key={imgIdx}
+                className="flex items-center gap-2.5 px-3 py-2 bg-white border border-slate-200 rounded-xl shadow-sm"
+              >
+                {/* Order badge */}
+                <div className="w-6 h-6 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500 shrink-0">
+                  {img.postOrder}
+                </div>
+
+                {/* Thumbnail */}
+                <div className="w-11 h-11 rounded-lg border border-slate-200 overflow-hidden shrink-0 bg-slate-100">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-300 text-base">🖼️</div>
+                  )}
+                </div>
+
+                {/* Filename / URL */}
+                <div className="flex-1 min-w-0">
+                  <input
+                    value={img.url}
+                    onChange={(e) => updateImageUrl(imgIdx, e.target.value)}
+                    placeholder="filename or URL"
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs font-mono text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:bg-white"
+                  />
+                  {img._file && (
+                    <p className="text-[10px] text-slate-400 mt-0.5 truncate pl-0.5">
+                      📎 {img._file.name}
+                      <span className="ml-1 text-slate-300">·</span>
+                      <span className="ml-1">{(img._file.size / 1024).toFixed(1)} KB</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Replace button */}
+                <button
+                  type="button"
+                  onClick={() => replaceImage(imgIdx)}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors shrink-0"
+                  title="Replace with another file"
+                >
+                  <ReplaceIcon />
+                </button>
+
+                {/* Remove button */}
+                <button
+                  type="button"
+                  onClick={() => removeImage(imgIdx)}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors shrink-0"
+                  title="Remove image"
+                >
+                  <TrashIcon />
+                </button>
+              </div>
+            );
+          })}
+
+          {/* Add-more drop zone */}
+          {canAdd && (
+            <div
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onClick={() => fileInputRef.current?.click()}
+              className={`flex items-center justify-center gap-2 border border-dashed rounded-xl py-2.5 cursor-pointer transition-all select-none
+                ${draggingOver
+                  ? "border-blue-400 bg-blue-50"
+                  : "border-slate-200 hover:border-blue-300 hover:bg-blue-50/40"
+                }`}
+            >
+              <PlusIcon />
+              <span className="text-xs text-slate-400">
+                {draggingOver ? "Drop to add" : `Add more (${5 - filledCount} remaining)`}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Thumbnail strip preview */}
+      {filledCount > 0 && (
+        <div className="flex gap-1.5 mt-2.5 flex-wrap">
+          {images.map((img, imgIdx) => {
+            const url = img._preview || resolveImageUrl(img.url);
             if (!url) return null;
             return (
               <div
@@ -310,7 +477,6 @@ const ProductDetailPanel: React.FC<{
 
   if (!product) return null;
 
-  // First available image across all variants
   const firstVariantImage = product.variants
     ?.flatMap((v) => v.images ?? [])
     .sort((a, b) => a.postOrder - b.postOrder)[0];
@@ -383,7 +549,6 @@ const ProductDetailPanel: React.FC<{
           {/* ── Tab: Overview ── */}
           {activeTab === "overview" && (
             <div className="px-6 py-5 space-y-5">
-              {/* Pricing */}
               <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <div className="text-center flex-1">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Base Price</p>
@@ -407,7 +572,6 @@ const ProductDetailPanel: React.FC<{
                 )}
               </div>
 
-              {/* Variants Table with per-variant image thumbnails */}
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">
                   Variants ({(product.variants ?? []).length})
@@ -437,7 +601,6 @@ const ProductDetailPanel: React.FC<{
                               Qty: {v.quantity}
                             </span>
                           </div>
-                          {/* Variant image strip */}
                           {variantImages.length > 0 ? (
                             <div className="flex gap-1.5 px-3 py-3 flex-wrap">
                               {variantImages.map((img, imgIdx) => {
@@ -523,7 +686,7 @@ const ProductDetailPanel: React.FC<{
             </div>
           )}
 
-          {/* ── Tab: Media — now shows per-variant ── */}
+          {/* ── Tab: Media ── */}
           {activeTab === "media" && (
             <div className="px-6 py-5 space-y-5">
               {(product.variants ?? []).every((v) => !(v.images ?? []).some((img) => img.url)) ? (
@@ -625,7 +788,6 @@ const ProductManagement: React.FC = () => {
   const [tableLoading, setTableLoading] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [form, setForm] = useState<Omit<Product, "productId">>(blankForm());
-
   const [detailProduct, setDetailProduct] = useState<ProductResponse | null>(null);
 
   useEffect(() => { loadAll(); }, []);
@@ -641,7 +803,7 @@ const ProductManagement: React.FC = () => {
       setCollections(Array.isArray(colRes.data) ? colRes.data : [colRes.data]);
       setSizes(Array.isArray(sizeRes.data) ? sizeRes.data : [sizeRes.data]);
       setColors(Array.isArray(colorRes.data) ? colorRes.data : [colorRes.data]);
-    } catch (error) {
+    } catch {
       setStatus({ type: "error", msg: "Failed to load data." });
     } finally {
       setTableLoading(false);
@@ -679,7 +841,7 @@ const ProductManagement: React.FC = () => {
     });
   };
 
-  const updateVariantImages = (variantIndex: number, images: VariantImage[]) => {
+  const updateVariantImages = (variantIndex: number, images: VariantImageLocal[]) => {
     setForm((prev) => {
       const variants = [...prev.variants];
       variants[variantIndex] = { ...variants[variantIndex], images };
@@ -737,7 +899,7 @@ const ProductManagement: React.FC = () => {
         story: form.story ?? "",
         details: form.details ?? "",
         fabricDetails: form.fabricDetails ?? "",
-        images: [], // images now live on variants
+        images: [],
         questionsAnswers: form.questionsAnswers.filter((qa) => qa.question.trim()),
         variants: form.variants
           .filter((v) => v.sizeId && v.colorId)
@@ -749,9 +911,11 @@ const ProductManagement: React.FC = () => {
             barcode: v.barcode ?? "",
             images: (v.images ?? [])
               .filter((img) => img.url.trim())
-              .map((img, idx) => ({ 
+              .map((img, idx) => ({
                 ...(v.variantId ? { variantId: v.variantId } : {}),
-                url: img.url.trim(), postOrder: idx + 1 })),
+                url: img.url.trim(),
+                postOrder: idx + 1,
+              })),
           })),
       };
 
@@ -1040,10 +1204,10 @@ const ProductManagement: React.FC = () => {
                           </div>
                         </Fld>
 
-                        {/* ── Per-Variant Images ── */}
+                        {/* ── Per-Variant Images (file upload) ── */}
                         <VariantImages
                           variantIndex={i}
-                          images={variant.images ?? [{ url: "", postOrder: 1 }]}
+                          images={(variant.images ?? [{ url: "", postOrder: 1 }]) as VariantImageLocal[]}
                           onChange={updateVariantImages}
                         />
                       </div>
@@ -1189,12 +1353,11 @@ const ProductManagement: React.FC = () => {
                 </tr>
               ) : (
                 filtered.map((product) => {
-                  // Use first image of first variant that has images
                   const firstVariantWithImage = product.variants?.find((v) => (v.images ?? []).some((img) => img.url));
-const firstImage = firstVariantWithImage?.images
-  ?.slice()
-  .sort((a, b) => a.postOrder - b.postOrder)[0];
-const imageUrl = resolveImageUrl(firstImage?.url ?? null);
+                  const firstImage = firstVariantWithImage?.images
+                    ?.slice()
+                    .sort((a, b) => a.postOrder - b.postOrder)[0];
+                  const imageUrl = resolveImageUrl(firstImage?.url ?? null);
 
                   const catName = categories.find((c) => c.categoryId === product.categoryId)?.name || "—";
                   const colName = collections.find((c) => c.collectionId === product.collectionId)?.name || "—";
