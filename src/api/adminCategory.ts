@@ -1,4 +1,6 @@
-const BASE_URL = "http://localhost:8081/api/admin/categories";
+import { ADMIN_BASE, http } from "./client";
+
+const URL = `${ADMIN_BASE}/categories`;
 
 export interface Category {
   categoryId?: number;
@@ -6,42 +8,20 @@ export interface Category {
   description?: string;
 }
 
-export const getCategories = async () => {
-  const response = await fetch(BASE_URL);
-  if (!response.ok) throw new Error(`Failed to fetch categories: ${response.status}`);
-  return { data: await response.json() };
-};
+export const getCategories = async () => ({
+  data: await http.get<Category[]>(URL, "fetch categories"),
+});
 
-export const getCategoryById = async (categoryId: number) => {
-  const response = await fetch(`${BASE_URL}/${categoryId}`);
-  if (!response.ok) throw new Error(`Failed to fetch category: ${response.status}`);
-  return { data: await response.json() };
-};
+export const addCategory = async (body: { name: string; description?: string }) => ({
+  data: await http.post<Category>(URL, body, "create category"),
+});
 
-export const addCategory = async (data: { name: string; description?: string }) => {
-  const response = await fetch(BASE_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) throw new Error(`Failed to create category: ${response.status}`);
-  return { data: await response.json() };
-};
+export const updateCategory = async (
+  id: number,
+  body: { name: string; description?: string }
+) => ({
+  data: await http.put<Category>(`${URL}/${id}`, body, "update category"),
+});
 
-export const updateCategory = async (categoryId: number, data: { name: string; description?: string }) => {
-  const response = await fetch(`${BASE_URL}/${categoryId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) throw new Error(`Failed to update category: ${response.status}`);
-  return { data: await response.json() };
-};
-
-export const deleteCategory = async (categoryId: number) => {
-  const response = await fetch(`${BASE_URL}/${categoryId}`, {
-    method: "DELETE",
-  });
-  if (!response.ok) throw new Error(`Failed to delete category: ${response.status}`);
-  return true;
-};
+export const deleteCategory = (id: number) =>
+  http.del(`${URL}/${id}`, "delete category");

@@ -1,26 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import {
   Star as StarIcon,
-  StarBorder as StarBorderIcon,
   TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
   ThumbUp as ThumbUpIcon,
-  ThumbDown as ThumbDownIcon,
-  Refresh as RefreshIcon,
   Visibility as VisibilityIcon,
   Search as SearchIcon,
-  FilterList as FilterListIcon,
   ShoppingBag as ShoppingBagIcon,
-  People as PeopleIcon,
   RateReview as RateReviewIcon,
   ChevronRight as ChevronRightIcon,
-  MoreVert as MoreVertIcon
 } from '@mui/icons-material';
-import adminReviewService, { 
-  DashboardStats, 
+import adminReviewService, {
+  DashboardStats,
   ProductWithReviewStats,
   Review,
-  CategoryReviewStats
 } from '../api/adminReview';
 
 const ReviewDashboard: React.FC = () => {

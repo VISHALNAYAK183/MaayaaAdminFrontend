@@ -7,7 +7,6 @@ import {
   deleteProduct,
   type Product,
   type ProductResponse,
-  type ProductImage,
   type VariantImage,
   type QuestionAnswer,
   type Variant,
@@ -16,47 +15,31 @@ import { getCategories, type Category } from "../api/adminCategory";
 import { getCollections, type Collection } from "../api/Admincollection";
 import { getSizes, type Size } from "../api/adminSize";
 import { getColors, type Color } from "../api/adminColor";
+import {
+  Field as Fld,
+  SectionHeader as SH,
+  StatusBanner,
+  PageHeader,
+  PageShell,
+  FormModal,
+  ConfirmDialog,
+  StatCard,
+  TableCard,
+  TableLoadingRow,
+  RowActions,
+  inputCls,
+  selectCls,
+  EyeIcon,
+  PlusIcon,
+  TrashIcon,
+  XIcon,
+  type Status,
+} from "../components/admin";
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
-const CheckIcon = () => (
-  <svg className="w-3.5 h-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-const EditIcon = () => (
-  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-  </svg>
-);
-const TrashIcon = () => (
-  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-  </svg>
-);
-const PlusIcon = () => (
-  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-  </svg>
-);
-const SearchIcon = () => (
-  <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <circle cx="11" cy="11" r="8" /><path strokeLinecap="round" d="m21 21-4.35-4.35" />
-  </svg>
-);
+// ─── Product-specific icons ────────────────────────────────────────────────
 const BarcodeIcon = () => (
   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h2M3 10h2M3 15h2M3 20h2M7 5v15M10 5v15M14 5v15M17 5v15M20 5h1v15h-1" />
-  </svg>
-);
-const EyeIcon = () => (
-  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-  </svg>
-);
-const XIcon = () => (
-  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
   </svg>
 );
 const ImageIcon = () => (
@@ -77,52 +60,6 @@ const ReplaceIcon = () => (
   </svg>
 );
 
-// ─── Shared helpers ───────────────────────────────────────────────────────────
-const Fld = ({
-  label,
-  req,
-  hint,
-  children,
-}: {
-  label: string;
-  req?: boolean;
-  hint?: string;
-  children: React.ReactNode;
-}) => (
-  <div className="flex flex-col gap-1.5">
-    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-      {label}
-      {req && <span className="text-red-500 ml-0.5">*</span>}
-    </label>
-    {children}
-    {hint && <span className="text-xs text-slate-400">{hint}</span>}
-  </div>
-);
-
-const SH = ({
-  icon,
-  title,
-  desc,
-}: {
-  icon: string;
-  title: string;
-  desc: string;
-}) => (
-  <div className="flex items-center gap-3 mb-4">
-    <div className="w-10 h-10 shrink-0 flex items-center justify-center text-lg bg-slate-50 border border-slate-200 rounded-xl">
-      {icon}
-    </div>
-    <div>
-      <div className="text-sm font-bold text-slate-800">{title}</div>
-      <div className="text-xs text-slate-400 mt-0.5">{desc}</div>
-    </div>
-  </div>
-);
-
-const inputCls =
-  "w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white placeholder:text-slate-300";
-const selectCls = `${inputCls} cursor-pointer`;
-
 // ─── Extended VariantImage with local upload fields ───────────────────────────
 interface VariantImageLocal extends VariantImage {
   _file?: File;
@@ -133,7 +70,7 @@ interface VariantImageLocal extends VariantImage {
 const blankVariant = (): Variant => ({
   sizeId: 0,
   colorId: 0,
-  quantity: 0,
+  quantity: 1,
   barcode: "",
   images: [{ url: "", postOrder: 1 }],
 });
@@ -503,7 +440,7 @@ const ProductDetailPanel: React.FC<{
   return (
     <>
       <div className="fixed inset-0 bg-black/30 z-40 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed right-0 top-0 h-full w-[460px] bg-white shadow-2xl z-50 flex flex-col overflow-hidden">
+      <div className="fixed right-0 top-0 h-full w-full sm:w-[460px] max-w-full bg-white shadow-2xl z-50 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
@@ -773,6 +710,37 @@ const ProductDetailPanel: React.FC<{
   );
 };
 
+// ─── Sort header button ───────────────────────────────────────────────────────
+const SortHeader: React.FC<{
+  label: string;
+  col: "id" | "name" | "price" | "stock";
+  active: boolean;
+  dir: "asc" | "desc";
+  onClick: () => void;
+}> = ({ label, col: _col, active, dir, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`flex items-center gap-1 text-xs font-bold uppercase tracking-wide transition-colors ${
+      active ? "text-slate-800" : "text-slate-500 hover:text-slate-700"
+    }`}
+  >
+    {label}
+    <span className={`text-[10px] ${active ? "opacity-100" : "opacity-30"}`}>
+      {active && dir === "asc" ? "▲" : "▼"}
+    </span>
+  </button>
+);
+
+// ─── Form Step Bar ────────────────────────────────────────────────────────────
+const FORM_STEPS = [
+  { id: 0, label: "Basics", icon: "📦" },
+  { id: 1, label: "Pricing", icon: "💰" },
+  { id: 2, label: "Description", icon: "📝" },
+  { id: 3, label: "Variants", icon: "🎨" },
+  { id: 4, label: "Q&A", icon: "❓" },
+] as const;
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 const ProductManagement: React.FC = () => {
   const [products, setProducts] = useState<ProductResponse[]>([]);
@@ -786,11 +754,34 @@ const ProductManagement: React.FC = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
-  const [status, setStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [status, setStatus] = useState<Status>(null);
   const [form, setForm] = useState<Omit<Product, "productId">>(blankForm());
   const [detailProduct, setDetailProduct] = useState<ProductResponse | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ id: number; name: string } | null>(null);
+
+  // ── Form step (0-4) ──
+  const [formStep, setFormStep] = useState(0);
+
+  // ── Filters ──
+  const [filterCategory, setFilterCategory] = useState<number>(0);
+  const [filterCollection, setFilterCollection] = useState<number>(0);
+  const [filterGender, setFilterGender] = useState<string>("");
+  const [filterStock, setFilterStock] = useState<"all" | "in" | "low" | "out">("all");
+
+  // ── Sort ──
+  const [sortBy, setSortBy] = useState<"id" | "name" | "price" | "stock">("id");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  // ── Pagination ──
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => { loadAll(); }, []);
+
+  // Reset to page 1 whenever filters/search/pageSize change
+  useEffect(() => {
+    setPage(1);
+  }, [search, filterCategory, filterCollection, filterGender, filterStock, pageSize, sortBy, sortDir]);
 
   const loadAll = async () => {
     setTableLoading(true);
@@ -875,16 +866,42 @@ const ProductManagement: React.FC = () => {
   );
 
   const generateAllBarcodes = useCallback(() => {
-    form.variants.forEach((_, i) => generateBarcode(i));
-  }, [form.variants.length, generateBarcode]);
+    form.variants.forEach((v, i) => {
+      if (Number(v.sizeId) > 0 && Number(v.colorId) > 0) generateBarcode(i);
+    });
+  }, [form.variants, generateBarcode]);
 
   // ── Submit ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) return setStatus({ type: "error", msg: "Product name is required." });
-    if (!form.categoryId) return setStatus({ type: "error", msg: "Please select a category." });
-    if (!form.collectionId) return setStatus({ type: "error", msg: "Please select a collection." });
-    if (!form.gender) return setStatus({ type: "error", msg: "Please select a gender." });
+    if (!form.name.trim()) {
+      setFormStep(0);
+      return setStatus({ type: "error", msg: "Product name is required." });
+    }
+    if (!form.categoryId) {
+      setFormStep(0);
+      return setStatus({ type: "error", msg: "Please select a category." });
+    }
+    if (!form.collectionId) {
+      setFormStep(0);
+      return setStatus({ type: "error", msg: "Please select a collection." });
+    }
+    if (!form.gender) {
+      setFormStep(0);
+      return setStatus({ type: "error", msg: "Please select a gender." });
+    }
+    if (Number(form.basePrice) <= 0) {
+      setFormStep(1);
+      return setStatus({ type: "error", msg: "Base price must be greater than 0." });
+    }
+    if (Number(form.discountedPrice) <= 0) {
+      setFormStep(1);
+      return setStatus({ type: "error", msg: "Discounted price must be greater than 0." });
+    }
+    if (Number(form.discountedPrice) >= Number(form.basePrice)) {
+      setFormStep(1);
+      return setStatus({ type: "error", msg: "Discounted price must be less than base price." });
+    }
 
     setLoading(true);
     setStatus(null);
@@ -966,10 +983,17 @@ const ProductManagement: React.FC = () => {
     setShowForm(true);
     setStatus(null);
     setDetailProduct(null);
+    setFormStep(0);
   };
 
-  const handleDelete = async (id: number, name: string) => {
-    if (!window.confirm(`Delete product "${name}"?`)) return;
+  const requestDelete = (id: number, name: string) => {
+    setPendingDelete({ id, name });
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const { id, name } = pendingDelete;
+    setPendingDelete(null);
     try {
       await deleteProduct(id);
       setStatus({ type: "success", msg: `Product "${name}" deleted.` });
@@ -985,80 +1009,144 @@ const ProductManagement: React.FC = () => {
     setEditingId(null);
     setShowForm(false);
     setStatus(null);
+    setFormStep(0);
   };
 
-  const filtered = products.filter((p) =>
-    (p.name ?? "").toLowerCase().includes(search.toLowerCase())
-  );
+  const clearFilters = () => {
+    setFilterCategory(0);
+    setFilterCollection(0);
+    setFilterGender("");
+    setFilterStock("all");
+    setSearch("");
+  };
+
+  const hasActiveFilters =
+    filterCategory !== 0 ||
+    filterCollection !== 0 ||
+    filterGender !== "" ||
+    filterStock !== "all" ||
+    search !== "";
+
+  // ── Stock helpers ──
+  const getTotalStock = (p: ProductResponse): number =>
+    (p.variants ?? []).reduce((sum, v) => sum + Number(v.quantity ?? 0), 0);
+
+  const getStockStatus = (p: ProductResponse): "in" | "low" | "out" => {
+    const total = getTotalStock(p);
+    if (total === 0) return "out";
+    if (total < 10) return "low";
+    return "in";
+  };
+
+  const toggleSort = (col: "name" | "price" | "stock" | "id") => {
+    if (sortBy === col) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(col);
+      setSortDir("asc");
+    }
+  };
+
+  const filtered = products.filter((p) => {
+    if (search && !(p.name ?? "").toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterCategory && p.categoryId !== filterCategory) return false;
+    if (filterCollection && p.collectionId !== filterCollection) return false;
+    if (filterGender && p.gender !== filterGender) return false;
+    if (filterStock !== "all" && getStockStatus(p) !== filterStock) return false;
+    return true;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    let cmp = 0;
+    if (sortBy === "name") cmp = (a.name ?? "").localeCompare(b.name ?? "");
+    else if (sortBy === "price") cmp = (a.discountedPrice ?? 0) - (b.discountedPrice ?? 0);
+    else if (sortBy === "stock") cmp = getTotalStock(a) - getTotalStock(b);
+    else cmp = (a.productId ?? 0) - (b.productId ?? 0);
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageStart = (safePage - 1) * pageSize;
+  const paged = sorted.slice(pageStart, pageStart + pageSize);
 
   const discountPreview =
     form.basePrice > 0 && form.discountedPrice > 0 && Number(form.discountedPrice) < Number(form.basePrice)
       ? Math.round(((Number(form.basePrice) - Number(form.discountedPrice)) / Number(form.basePrice)) * 100)
       : 0;
 
-  return (
-    <div className="min-h-screen bg-slate-100 p-8 font-sans">
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <div className="flex items-center gap-1.5 mb-2">
-            {["Dashboard", "Catalog"].map((c) => (
-              <React.Fragment key={c}>
-                <span className="text-xs text-slate-400 cursor-pointer hover:text-slate-600">{c}</span>
-                <span className="text-xs text-slate-300">›</span>
-              </React.Fragment>
-            ))}
-            <span className="text-xs text-slate-600 font-semibold">Product Management</span>
-          </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Product Management</h1>
-          <p className="text-sm text-slate-400 mt-0.5">Create and manage your product catalog</p>
-        </div>
-        <button
-          onClick={() => { reset(); setShowForm(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors"
-        >
-          <span className="text-xl leading-none">+</span>
-          <span className="text-sm font-semibold">New Product</span>
-        </button>
-      </div>
+  const discountedExceedsBase =
+    Number(form.basePrice) > 0 &&
+    Number(form.discountedPrice) > 0 &&
+    Number(form.discountedPrice) >= Number(form.basePrice);
 
-      {/* ── Status Banner ── */}
-      {status && (
-        <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium mb-4
-          ${status.type === "success" ? "bg-green-50 text-green-800 border-green-200" : "bg-red-50 text-red-800 border-red-200"}`}>
-          <span className="w-5 h-5 rounded-full bg-black/10 flex items-center justify-center text-xs font-bold shrink-0">
-            {status.type === "success" ? "✓" : "✕"}
-          </span>
-          <span className="flex-1">{status.msg}</span>
-          <button onClick={() => setStatus(null)} className="opacity-40 hover:opacity-70 text-lg leading-none">×</button>
-        </div>
-      )}
+  const canGenerateBarcode = (v: Variant): boolean =>
+    form.name.trim().length > 0 && Number(v.sizeId) > 0 && Number(v.colorId) > 0;
+
+  const canGenerateAnyBarcode =
+    form.name.trim().length > 0 &&
+    form.variants.some((v) => Number(v.sizeId) > 0 && Number(v.colorId) > 0);
+
+  return (
+    <PageShell>
+      <PageHeader
+        title="Product Management"
+        subtitle="Create and manage your product catalog"
+        actionLabel="New Product"
+        onAction={() => { reset(); setShowForm(true); }}
+      />
+
+      <StatusBanner status={status} onClose={() => setStatus(null)} />
 
       {/* ── Modal ── */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full my-6">
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
-              <h2 className="text-lg font-bold text-slate-800">
-                {editingId !== null ? "Edit Product" : "Create New Product"}
-              </h2>
-              <button onClick={reset} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
-            </div>
+      <FormModal
+        open={showForm}
+        title={editingId !== null ? "Edit Product" : "Create New Product"}
+        onClose={reset}
+        onSubmit={handleSubmit}
+        loading={loading}
+        maxWidth="4xl"
+        submitLabel={editingId !== null ? "Update Product" : "Create Product"}
+        submittingLabel={editingId !== null ? "Updating..." : "Creating..."}
+      >
+              {/* ── Step Bar ── */}
+              <div className="flex items-center gap-1 mb-2 -mt-1">
+                {FORM_STEPS.map((step, i) => (
+                  <React.Fragment key={step.id}>
+                    <button
+                      type="button"
+                      onClick={() => setFormStep(step.id)}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap
+                        ${formStep === step.id
+                          ? "bg-slate-900 text-white shadow-sm"
+                          : formStep > step.id
+                            ? "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
+                            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                        }`}
+                    >
+                      <span className="text-sm">{formStep > step.id ? "✓" : step.icon}</span>
+                      <span>{step.label}</span>
+                    </button>
+                    {i < FORM_STEPS.length - 1 && (
+                      <div className={`flex-1 h-px ${formStep > step.id ? "bg-green-200" : "bg-slate-200"}`} />
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-8">
               {/* ── 1. Basic Info ── */}
+              {formStep === 0 && (
               <div>
                 <SH icon="📦" title="Basic Information" desc="Name, category, collection and gender" />
                 <div className="grid grid-cols-2 gap-5">
                   <div className="col-span-2">
                     <Fld label="Product Name" req>
                       <input name="name" value={form.name} onChange={handleChange}
-                        placeholder="e.g. Premium Cotton Hoodie" className={inputCls} autoFocus required />
+                        placeholder="e.g. Premium Cotton Hoodie" className={inputCls} autoFocus />
                     </Fld>
                   </div>
                   <Fld label="Category" req>
-                    <select name="categoryId" value={form.categoryId} onChange={handleChange} className={selectCls} required>
+                    <select name="categoryId" value={form.categoryId} onChange={handleChange} className={selectCls}>
                       <option value={0}>Select category…</option>
                       {categories.map((c) => (
                         <option key={c.categoryId} value={c.categoryId}>{c.name}</option>
@@ -1066,7 +1154,7 @@ const ProductManagement: React.FC = () => {
                     </select>
                   </Fld>
                   <Fld label="Collection" req>
-                    <select name="collectionId" value={form.collectionId} onChange={handleChange} className={selectCls} required>
+                    <select name="collectionId" value={form.collectionId} onChange={handleChange} className={selectCls}>
                       <option value={0}>Select collection…</option>
                       {collections.map((c) => (
                         <option key={c.collectionId} value={c.collectionId}>{c.name}</option>
@@ -1074,7 +1162,7 @@ const ProductManagement: React.FC = () => {
                     </select>
                   </Fld>
                   <Fld label="Gender" req>
-                    <select name="gender" value={form.gender} onChange={handleChange} className={selectCls} required>
+                    <select name="gender" value={form.gender} onChange={handleChange} className={selectCls}>
                       <option value="">Select gender…</option>
                       {["Men", "Women", "Unisex", "Kids"].map((g) => (
                         <option key={g} value={g}>{g}</option>
@@ -1083,26 +1171,35 @@ const ProductManagement: React.FC = () => {
                   </Fld>
                 </div>
               </div>
+              )}
 
               {/* ── 2. Pricing ── */}
+              {formStep === 1 && (
               <div>
                 <SH icon="💰" title="Pricing" desc="Set the base and discounted prices" />
                 <div className="grid grid-cols-2 gap-5">
                   <Fld label="Base Price (₹)" req>
                     <div className="relative">
                       <input type="number" name="basePrice" value={form.basePrice || ""}
-                        onChange={handleChange} placeholder="e.g. 2799" className={`${inputCls} pr-7`} min={0} required />
+                        onChange={handleChange} placeholder="e.g. 2799" className={`${inputCls} pr-7`} min={0} />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none">₹</span>
                     </div>
                   </Fld>
                   <Fld label="Discounted Price (₹)" req>
                     <div className="relative">
                       <input type="number" name="discountedPrice" value={form.discountedPrice || ""}
-                        onChange={handleChange} placeholder="e.g. 1799" className={`${inputCls} pr-7`} min={0} required />
+                        onChange={handleChange} placeholder="e.g. 1799"
+                        className={`${inputCls} pr-7 ${discountedExceedsBase ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
+                        min={0} />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none">₹</span>
                     </div>
+                    {discountedExceedsBase && (
+                      <p className="mt-1.5 text-xs font-semibold text-red-600 flex items-center gap-1">
+                        <span>⚠</span> Discounted price must be less than base price
+                      </p>
+                    )}
                   </Fld>
-                  {discountPreview > 0 && (
+                  {discountPreview > 0 && !discountedExceedsBase && (
                     <div className="col-span-2">
                       <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
                         <span className="text-xs font-bold text-green-700">{discountPreview}% off</span>
@@ -1112,8 +1209,10 @@ const ProductManagement: React.FC = () => {
                   )}
                 </div>
               </div>
+              )}
 
               {/* ── 3. Description ── */}
+              {formStep === 2 && (
               <div>
                 <SH icon="📝" title="Product Description" desc="Story, details and fabric info" />
                 <div className="flex flex-col gap-5">
@@ -1131,15 +1230,19 @@ const ProductManagement: React.FC = () => {
                   </Fld>
                 </div>
               </div>
+              )}
 
               {/* ── 4. Variants + Barcode + Per-Variant Images ── */}
+              {formStep === 3 && (
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <SH icon="🎨" title="Variants & Images" desc="Size + colour + up to 5 images per variant" />
                   <button
                     type="button"
                     onClick={generateAllBarcodes}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors shrink-0 mb-4"
+                    disabled={!canGenerateAnyBarcode}
+                    title={canGenerateAnyBarcode ? "Generate barcodes for all variants with size + colour set" : "Set product name and at least one variant's size + colour first"}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors shrink-0 mb-4"
                   >
                     <BarcodeIcon /> Generate All Barcodes
                   </button>
@@ -1192,13 +1295,18 @@ const ProductManagement: React.FC = () => {
                         </Fld>
 
                         {/* Barcode */}
-                        <Fld label="Barcode (CODE128)" hint="Click ⚡ to auto-generate">
+                        <Fld label="Barcode (CODE128)" hint="Click ⚡ to auto-generate (needs product name + size + colour)">
                           <div className="flex items-center gap-2">
                             <input value={variant.barcode}
                               onChange={(e) => updateVariant(i, "barcode", e.target.value)}
                               placeholder="e.g. HOODIE-BLU-XL" className={`${inputCls} font-mono`} />
-                            <button type="button" onClick={() => generateBarcode(i)} title="Auto-generate barcode"
-                              className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => generateBarcode(i)}
+                              disabled={!canGenerateBarcode(variant)}
+                              title={canGenerateBarcode(variant) ? "Auto-generate barcode" : "Set product name, size and colour first"}
+                              className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors whitespace-nowrap"
+                            >
                               <BarcodeIcon />⚡
                             </button>
                           </div>
@@ -1230,8 +1338,10 @@ const ProductManagement: React.FC = () => {
                   </button>
                 </div>
               </div>
+              )}
 
               {/* ── 5. Q&A ── */}
+              {formStep === 4 && (
               <div>
                 <SH icon="❓" title="Questions & Answers" desc="Common customer questions and their answers" />
                 <div className="flex flex-col gap-3">
@@ -1263,96 +1373,153 @@ const ProductManagement: React.FC = () => {
                   </button>
                 </div>
               </div>
+              )}
 
-              {/* ── Form Actions ── */}
-              <div className="flex justify-end gap-3 border-t border-slate-200 pt-6">
-                <button type="button" onClick={reset}
-                  className="px-5 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors">
-                  Cancel
+              {/* ── Step Navigation ── */}
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  type="button"
+                  onClick={() => setFormStep((s) => Math.max(0, s - 1))}
+                  disabled={formStep === 0}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  ← Previous
                 </button>
-                <button type="submit" disabled={loading}
-                  className="flex items-center px-5 py-2 rounded-lg bg-slate-900 hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold shadow-md transition-all">
-                  {loading ? (
-                    <>
-                      <svg className="animate-spin w-3.5 h-3.5 mr-2" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                      </svg>
-                      {editingId !== null ? "Updating..." : "Creating..."}
-                    </>
-                  ) : (
-                    <><CheckIcon />{editingId !== null ? "Update Product" : "Create Product"}</>
-                  )}
+                <span className="text-xs font-semibold text-slate-400">
+                  Step {formStep + 1} of {FORM_STEPS.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setFormStep((s) => Math.min(FORM_STEPS.length - 1, s + 1))}
+                  disabled={formStep === FORM_STEPS.length - 1}
+                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-semibold text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next →
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+      </FormModal>
 
       {/* ── Stats Row ── */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        {[
-          { label: "Total Products", value: products.length },
-          { label: "Categories", value: categories.length },
-          { label: "Collections", value: collections.length },
-          { label: "Search Results", value: filtered.length },
-        ].map(({ label, value }) => (
-          <div key={label} className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">{label}</p>
-            <p className="text-2xl font-extrabold text-slate-900">{value}</p>
-          </div>
-        ))}
+        <StatCard label="Total Products" value={products.length} />
+        <StatCard label="Categories" value={categories.length} />
+        <StatCard label="Collections" value={collections.length} />
+        <StatCard label="Matching" value={filtered.length} />
       </div>
 
       {/* ── Table Card ── */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between gap-4 flex-wrap">
-          <h2 className="text-sm font-bold text-slate-800">All Products</h2>
-          <div className="relative w-64">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"><SearchIcon /></span>
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search products…"
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white placeholder:text-slate-300 transition-all" />
+      <TableCard
+        title="All Products"
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search products…"
+      >
+          {/* ── Filter Row ── */}
+          <div className="flex items-center gap-2 px-6 py-3 border-b border-slate-100 bg-slate-50/50 flex-wrap">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide mr-1">Filters:</span>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(Number(e.target.value))}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:border-slate-300 focus:border-blue-400 transition-colors"
+            >
+              <option value={0}>All Categories</option>
+              {categories.map((c) => (
+                <option key={c.categoryId} value={c.categoryId}>{c.name}</option>
+              ))}
+            </select>
+            <select
+              value={filterCollection}
+              onChange={(e) => setFilterCollection(Number(e.target.value))}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:border-slate-300 focus:border-blue-400 transition-colors"
+            >
+              <option value={0}>All Collections</option>
+              {collections.map((c) => (
+                <option key={c.collectionId} value={c.collectionId}>{c.name}</option>
+              ))}
+            </select>
+            <select
+              value={filterGender}
+              onChange={(e) => setFilterGender(e.target.value)}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:border-slate-300 focus:border-blue-400 transition-colors"
+            >
+              <option value="">All Genders</option>
+              {["Men", "Women", "Unisex", "Kids"].map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+            <select
+              value={filterStock}
+              onChange={(e) => setFilterStock(e.target.value as "all" | "in" | "low" | "out")}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:border-slate-300 focus:border-blue-400 transition-colors"
+            >
+              <option value="all">All Stock</option>
+              <option value="in">In Stock</option>
+              <option value="low">Low Stock (&lt;10)</option>
+              <option value="out">Out of Stock</option>
+            </select>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="ml-auto flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors"
+              >
+                <XIcon /> Clear filters
+              </button>
+            )}
           </div>
-        </div>
 
-        <div className="overflow-x-auto">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50">
               <tr>
-                {["ID", "Image", "Name", "Category", "Collection", "Gender", "Base Price", "Sale Price", "Variants", "Actions"].map((h) => (
-                  <th key={h} className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">{h}</th>
-                ))}
+                <th className="px-4 py-3 text-left">
+                  <SortHeader label="ID" col="id" active={sortBy === "id"} dir={sortDir} onClick={() => toggleSort("id")} />
+                </th>
+                <th className="px-4 py-3 text-left">
+                  <SortHeader label="Product" col="name" active={sortBy === "name"} dir={sortDir} onClick={() => toggleSort("name")} />
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Tags</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Gender</th>
+                <th className="px-4 py-3 text-left">
+                  <SortHeader label="Price" col="price" active={sortBy === "price"} dir={sortDir} onClick={() => toggleSort("price")} />
+                </th>
+                <th className="px-4 py-3 text-left">
+                  <SortHeader label="Stock" col="stock" active={sortBy === "stock"} dir={sortDir} onClick={() => toggleSort("stock")} />
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
             <tbody>
               {tableLoading ? (
+                <TableLoadingRow colSpan={7} label="Loading products…" />
+              ) : paged.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <svg className="animate-spin w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                      </svg>
-                      <span className="text-xs text-slate-400 font-medium">Loading products…</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="px-6 py-16 text-center">
+                  <td colSpan={7} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-2xl">📦</div>
                       <div>
-                        <p className="text-sm font-semibold text-slate-500">{search ? "No products match your search" : "No products yet"}</p>
-                        <p className="text-xs text-slate-400 mt-1">{search ? "Try a different keyword" : 'Click "New Product" to add one'}</p>
+                        <p className="text-sm font-semibold text-slate-500">
+                          {hasActiveFilters ? "No products match your filters" : "No products yet"}
+                        </p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {hasActiveFilters ? "Try clearing filters or a different keyword" : 'Click "New Product" to add one'}
+                        </p>
                       </div>
+                      {hasActiveFilters && (
+                        <button
+                          type="button"
+                          onClick={clearFilters}
+                          className="mt-2 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-700 text-white text-xs font-bold transition-colors"
+                        >
+                          Clear filters
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
               ) : (
-                filtered.map((product) => {
+                paged.map((product) => {
                   const firstVariantWithImage = product.variants?.find((v) => (v.images ?? []).some((img) => img.url));
                   const firstImage = firstVariantWithImage?.images
                     ?.slice()
@@ -1364,32 +1531,42 @@ const ProductManagement: React.FC = () => {
                   const disc = product.basePrice > product.discountedPrice
                     ? Math.round(((product.basePrice - product.discountedPrice) / product.basePrice) * 100) : 0;
                   const variantCount = (product.variants ?? []).length;
+                  const totalStock = getTotalStock(product);
+                  const stockStatus = getStockStatus(product);
                   const isActive = detailProduct?.productId === product.productId;
 
                   return (
-                    <tr key={product.productId}
-                      className={`border-t border-slate-100 transition-colors ${isActive ? "bg-blue-50" : "hover:bg-slate-50"}`}>
-                      <td className="px-6 py-4 text-slate-400 font-mono text-xs">{product.productId}</td>
-                      <td className="px-6 py-4">
-                        <div className="w-12 h-12 rounded-xl border border-slate-200 overflow-hidden bg-slate-100 shrink-0">
-                          {imageUrl ? (
-                            <img src={imageUrl} alt={product.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-300 text-lg">📦</div>
-                          )}
+                    <tr
+                      key={product.productId}
+                      onClick={() => setDetailProduct(isActive ? null : product)}
+                      className={`border-t border-slate-100 cursor-pointer transition-colors ${isActive ? "bg-blue-50" : "hover:bg-slate-50"}`}
+                    >
+                      <td className="px-4 py-3 text-slate-400 font-mono text-xs">#{product.productId}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-11 h-11 rounded-lg border border-slate-200 overflow-hidden bg-slate-100 shrink-0">
+                            {imageUrl ? (
+                              <img src={imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-slate-300 text-lg">📦</div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-800 truncate max-w-[200px]">{product.name}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              {variantCount} variant{variantCount !== 1 ? "s" : ""}
+                            </p>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <p className="font-semibold text-slate-800 truncate max-w-[180px]">{product.name}</p>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1">
+                          <span className="inline-block px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-semibold w-fit">{catName}</span>
+                          <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-600 text-[10px] font-semibold w-fit">{colName}</span>
+                        </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-xs font-semibold">{catName}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-600 text-xs font-semibold">{colName}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold
                           ${product.gender === "Men" ? "bg-blue-100 text-blue-700"
                             : product.gender === "Women" ? "bg-pink-100 text-pink-700"
                             : product.gender === "Kids" ? "bg-yellow-100 text-yellow-700"
@@ -1397,36 +1574,47 @@ const ProductManagement: React.FC = () => {
                           {product.gender}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-slate-400 line-through text-xs">₹{product.basePrice}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-slate-800">₹{product.discountedPrice}</span>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-slate-800">₹{product.discountedPrice}</span>
+                            {disc > 0 && (
+                              <span className="text-[9px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded">{disc}%</span>
+                            )}
+                          </div>
                           {disc > 0 && (
-                            <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded">{disc}% off</span>
+                            <span className="text-[10px] text-slate-400 line-through">₹{product.basePrice}</span>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => setDetailProduct(isActive ? null : product)}
-                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all border
-                            ${isActive
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:border-slate-300"}`}>
-                          <EyeIcon />
-                          {variantCount} variant{variantCount !== 1 ? "s" : ""}
-                        </button>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-bold text-slate-700">{totalStock}</span>
+                          <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold w-fit uppercase tracking-wide
+                            ${stockStatus === "in" ? "bg-green-100 text-green-700"
+                              : stockStatus === "low" ? "bg-amber-100 text-amber-700"
+                              : "bg-red-100 text-red-700"}`}>
+                            {stockStatus === "in" ? "In Stock" : stockStatus === "low" ? "Low" : "Out"}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => handleEdit(product)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
-                            <EditIcon />
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setDetailProduct(isActive ? null : product)}
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors
+                              ${isActive
+                                ? "bg-blue-600 text-white"
+                                : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"}`}
+                            title="View details"
+                          >
+                            <EyeIcon />
                           </button>
-                          <button onClick={() => product.productId && handleDelete(product.productId, product.name)}
-                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-                            <TrashIcon />
-                          </button>
+                          <RowActions
+                            onEdit={() => handleEdit(product)}
+                            onDelete={() => product.productId && requestDelete(product.productId, product.name)}
+                          />
                         </div>
                       </td>
                     </tr>
@@ -1435,18 +1623,61 @@ const ProductManagement: React.FC = () => {
               )}
             </tbody>
           </table>
-        </div>
-
-        {!tableLoading && filtered.length > 0 && (
-          <div className="px-6 py-3 border-t border-slate-100 bg-slate-50">
-            <p className="text-xs text-slate-400">
-              Showing <span className="font-semibold text-slate-600">{filtered.length}</span> of{" "}
-              <span className="font-semibold text-slate-600">{products.length}</span> products
-              {search && <> matching <span className="font-semibold text-slate-600">"{search}"</span></>}
-            </p>
           </div>
-        )}
-      </div>
+
+          {/* ── Pagination Footer ── */}
+          {sorted.length > 0 && (
+            <div className="flex items-center justify-between gap-4 px-6 py-3 border-t border-slate-100 bg-slate-50 flex-wrap">
+              <p className="text-xs text-slate-500">
+                Showing{" "}
+                <span className="font-semibold text-slate-700">
+                  {pageStart + 1}–{Math.min(pageStart + pageSize, sorted.length)}
+                </span>{" "}
+                of <span className="font-semibold text-slate-700">{sorted.length}</span>
+                {hasActiveFilters && (
+                  <span className="text-slate-400"> (filtered from {products.length})</span>
+                )}
+              </p>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <label className="text-xs text-slate-500 font-medium">Per page:</label>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                    className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:border-slate-300 focus:border-blue-400 transition-colors"
+                  >
+                    {[10, 25, 50, 100].map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setPage(Math.max(1, safePage - 1))}
+                    disabled={safePage === 1}
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ‹
+                  </button>
+                  <span className="text-xs text-slate-600 px-2 font-semibold">
+                    Page {safePage} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPage(Math.min(totalPages, safePage + 1))}
+                    disabled={safePage === totalPages}
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ›
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+      </TableCard>
 
       {/* ── Side Panel ── */}
       <ProductDetailPanel
@@ -1455,7 +1686,24 @@ const ProductManagement: React.FC = () => {
         colors={colors}
         onClose={() => setDetailProduct(null)}
       />
-    </div>
+
+      {/* ── Delete Confirmation ── */}
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete product?"
+        message={
+          <>
+            Are you sure you want to delete{" "}
+            <span className="font-semibold text-slate-800">"{pendingDelete?.name}"</span>?
+            This action cannot be undone.
+          </>
+        }
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
+    </PageShell>
   );
 };
 

@@ -1,20 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
-import SignIn from "./pages/AuthPages/SignIn";
-import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
-import UserProfiles from "./pages/UserProfiles";
-import Videos from "./pages/UiElements/Videos";
-import Images from "./pages/UiElements/Images";
-import Alerts from "./pages/UiElements/Alerts";
-import Badges from "./pages/UiElements/Badges";
-import Avatars from "./pages/UiElements/Avatars";
-import Buttons from "./pages/UiElements/Buttons";
-import LineChart from "./pages/Charts/LineChart";
-import BarChart from "./pages/Charts/BarChart";
-import Calendar from "./pages/Calendar";
-import BasicTables from "./pages/Tables/BasicTables";
-import FormElements from "./pages/Forms/FormElements";
-import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
@@ -27,80 +12,47 @@ import EditSection from "./pages/homeCMS/EditSection";
 import SectionItems from "./pages/homeCMS/SectionItems";
 import AddSectionItem from "./pages/homeCMS/AddSectionItem";
 import EditSectionItem from "./pages/homeCMS/EditSectionItem";
-import Category from "./pages/Category"; 
+import Category from "./pages/Category";
 import Size from "./pages/Size";
 import Color from "./pages/Color";
 import Collection from "./pages/Collection";
 import ProductManagement from "./pages/Productmanagement";
 import ReviewDashboard from "./pages/ReviewDashboard";
+
 export default function App() {
   return (
-    <>
-      <Router>
-        <ScrollToTop />
-        <Routes>
+    <Router>
+      <ScrollToTop />
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route index path="/" element={<Home />} />
 
-          {/* All pages inside AppLayout (with sidebar + header) */}
-          <Route element={<AppLayout />}>
-            <Route index path="/" element={<Home />} />
+          {/* Catalog */}
+          <Route path="/products" element={<ProductManagement />} />
+          <Route path="/categories" element={<Category />} />
+          <Route path="/collections" element={<Collection />} />
+          <Route path="/sizes" element={<Size />} />
+          <Route path="/colors" element={<Color />} />
 
-            {/* Products */}
+          {/* Sales */}
+          <Route path="/orders" element={<OrdersList />} />
+          <Route path="/orders/:orderId" element={<OrderDetails />} />
+          <Route path="/coupons/add" element={<AddCoupon />} />
 
-            {/* Orders */}
-            <Route path="/orders" element={<OrdersList />} />
-            <Route path="/orders/:orderId" element={<OrderDetails />} />
+          {/* Engagement */}
+          <Route path="/reviews" element={<ReviewDashboard />} />
 
-            {/* Coupons */}
-            <Route path="/coupons/add" element={<AddCoupon />} />
+          {/* Content */}
+          <Route path="/home-cms" element={<HomeCMS />} />
+          <Route path="/home-cms/add-section" element={<AddSection />} />
+          <Route path="/home-cms/edit/:id" element={<EditSection />} />
+          <Route path="/home-cms/section/:sectionId/items" element={<SectionItems />} />
+          <Route path="/home-cms/section/:sectionId/items/add" element={<AddSectionItem />} />
+          <Route path="/home-cms/section/:sectionId/items/edit/:itemId" element={<EditSectionItem />} />
+        </Route>
 
-            {/* Categories */}
-            <Route path="/categories" element={<Category />} /> {/* ← ADD THIS */}
-            <Route path="/sizes" element={<Size />} />
-            <Route path="/colors" element={<Color />} />
-            <Route path="/collections" element={<Collection />} />
-            <Route path="/products" element={<ProductManagement />} />
-            <Route path="/reviews" element={<ReviewDashboard />} />
-            {/* Home CMS */}
-            <Route path="/home-cms" element={<HomeCMS />} />
-            <Route path="/home-cms/add-section" element={<AddSection />} />
-            <Route path="/home-cms/edit/:id" element={<EditSection />} />
-            <Route path="/home-cms/section/:sectionId/items" element={<SectionItems />} />
-            <Route path="/home-cms/section/:sectionId/items/add" element={<AddSectionItem />} />
-            <Route path="/home-cms/section/:sectionId/items/edit/:itemId" element={<EditSectionItem />} />
-
-            {/* Other Pages */}
-            <Route path="/profile" element={<UserProfiles />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/blank" element={<Blank />} />
-
-            {/* Forms */}
-            <Route path="/form-elements" element={<FormElements />} />
-
-            {/* Tables */}
-            <Route path="/basic-tables" element={<BasicTables />} />
-
-            {/* UI Elements */}
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/avatars" element={<Avatars />} />
-            <Route path="/badge" element={<Badges />} />
-            <Route path="/buttons" element={<Buttons />} />
-            <Route path="/images" element={<Images />} />
-            <Route path="/videos" element={<Videos />} />
-
-            {/* Charts */}
-            <Route path="/line-chart" element={<LineChart />} />
-            <Route path="/bar-chart" element={<BarChart />} />
-          </Route>
-
-          {/* Auth — no layout */}
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
-
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-          
-        </Routes>
-      </Router>
-    </>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Router>
   );
 }

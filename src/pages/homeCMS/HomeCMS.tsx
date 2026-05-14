@@ -189,7 +189,6 @@ interface BlockProps {
 const SectionBlock = ({ section, onDelete, onUpdate, onAddItem, onUpdateItem, onDeleteItem }: BlockProps) => {
   const hasMeta = HAS_META.has(section.type);
   const isTall = TALL_TYPES.has(section.type);
-  const isHero = section.type === "HERO";
   const isTableSection = TABLE_SECTION_TYPES.has(section.type);
   const isProductSection = PRODUCT_SECTION_TYPES.has(section.type);
   const [editModal, setEditModal] = useState(false);
@@ -556,9 +555,6 @@ const AddHeroItemCard = ({ onAdd, allItems }: { onAdd: (p: any) => void; allItem
   const [previewDataUrl, setPreviewDataUrl] = useState("");
   const [form, setForm] = useState({ imageName: "", link: "", position: "" });
   const [posError, setPosError] = useState("");
-
-  const cardW = 130;
-  const cardH = 82;
 
   // Auto-suggest next available position
   const nextPos = allItems.length + 1;

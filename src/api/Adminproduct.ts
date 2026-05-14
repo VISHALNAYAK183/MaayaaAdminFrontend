@@ -1,7 +1,9 @@
-const BASE_URL = "http://localhost:8081/api/admin/products";
+import { ADMIN_BASE, http } from "./client";
+
+const URL = `${ADMIN_BASE}/products`;
 
 export interface ProductImage {
-  variantId?: number; 
+  variantId?: number;
   url: string;
   postOrder: number;
 }
@@ -25,7 +27,6 @@ export interface Variant {
   images: VariantImage[];
 }
 
-// Shape returned by GET /products
 export interface ProductResponse {
   productId?: number;
   name: string;
@@ -38,7 +39,7 @@ export interface ProductResponse {
   story: string | null;
   details: string | null;
   fabricDetails: string | null;
-  images: ProductImage[]; // kept for backward-compat
+  images: ProductImage[];
   reviews: {
     stars: number;
     title: string;
@@ -51,7 +52,6 @@ export interface ProductResponse {
   colors: { name: string; hex: string }[];
 }
 
-// Shape sent on POST / PUT
 export interface Product {
   productId?: number;
   name: string;
@@ -65,61 +65,24 @@ export interface Product {
   fabricDetails: string;
   questionsAnswers: QuestionAnswer[];
   variants: Variant[];
-  images: ProductImage[]; // top-level images (send [] if unused)
+  images: ProductImage[];
 }
 
 export const getProducts = async (): Promise<{ data: ProductResponse[] }> => {
-  const response = await fetch(BASE_URL);
-  if (!response.ok) throw new Error(`Failed to fetch products: ${response.status}`);
-  const json = await response.json();
-  const raw = json?.data ?? json;
+  const raw = await http.get<ProductResponse[] | ProductResponse>(URL, "fetch products");
   return { data: Array.isArray(raw) ? raw : [raw] };
 };
 
-export const getProductById = async (
-  productId: number
-): Promise<{ data: ProductResponse }> => {
-  const response = await fetch(`${BASE_URL}/${productId}`);
-  if (!response.ok) throw new Error(`Failed to fetch product: ${response.status}`);
-  const json = await response.json();
-  return { data: json?.data ?? json };
-};
-
-export const addProduct = async (data: Omit<Product, "productId">) => {
-  const response = await fetch(BASE_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    const errJson = await response.json().catch(() => null);
-    throw new Error(errJson?.message || `Failed to create product: ${response.status}`);
-  }
-  const json = await response.json();
-  return { data: json?.data ?? json };
-};
+export const addProduct = async (body: Omit<Product, "productId">) => ({
+  data: await http.post<ProductResponse>(URL, body, "create product"),
+});
 
 export const updateProduct = async (
-  productId: number,
-  data: Omit<Product, "productId">
-) => {
-  const response = await fetch(`${BASE_URL}/${productId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    const errJson = await response.json().catch(() => null);
-    throw new Error(errJson?.message || `Failed to update product: ${response.status}`);
-  }
-  const json = await response.json();
-  return { data: json?.data ?? json };
-};
+  id: number,
+  body: Omit<Product, "productId">
+) => ({
+  data: await http.put<ProductResponse>(`${URL}/${id}`, body, "update product"),
+});
 
-export const deleteProduct = async (productId: number) => {
-  const response = await fetch(`${BASE_URL}/${productId}`, {
-    method: "DELETE",
-  });
-  if (!response.ok) throw new Error(`Failed to delete product: ${response.status}`);
-  return true;
-};
+export const deleteProduct = (id: number) =>
+  http.del(`${URL}/${id}`, "delete product");

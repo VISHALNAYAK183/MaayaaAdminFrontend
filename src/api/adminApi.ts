@@ -1,21 +1,16 @@
-import axios from "axios";
+import { apiClient, clientApi, ADMIN_BASE, CLIENT_BASE } from "./client";
 import { AdminOrder } from "../types/order";
 
-export const ADMIN_BASE = "http://localhost:8081/api/admin";
-export const CLIENT_BASE = "http://localhost:8080/api";
+// Re-exported for any caller that still references these names
+export { ADMIN_BASE, CLIENT_BASE };
 
-
-export const getOrders = (status?: string) => {
-  return axios.get<AdminOrder[]>(`${ADMIN_BASE}/orders`, {
+export const getOrders = (status?: string) =>
+  apiClient.get<AdminOrder[]>(`${ADMIN_BASE}/orders`, {
     params: status ? { status } : {},
   });
-};
 
-
-export const getOrderDetails = (orderId: number) => {
-  return axios.get(`${CLIENT_BASE}/orders/details/${orderId}`);
-};
-
+export const getOrderDetails = (orderId: number) =>
+  clientApi.get(`${CLIENT_BASE}/orders/details/${orderId}`);
 
 export const shipOrder = (
   orderId: number,
@@ -25,10 +20,7 @@ export const shipOrder = (
     trackingUrl?: string;
     estimatedDeliveryDate: string;
   }
-) => {
-  return axios.post(`${ADMIN_BASE}/orders/${orderId}/ship`, data);
-};
-
+) => apiClient.post(`${ADMIN_BASE}/orders/${orderId}/ship`, data);
 
 export const updateOrderStatus = (
   orderId: number,
@@ -37,14 +29,10 @@ export const updateOrderStatus = (
     description?: string;
     location?: string;
   }
-) => {
-  return axios.put(`${ADMIN_BASE}/orders/${orderId}/status`, data);
-};
+) => apiClient.put(`${ADMIN_BASE}/orders/${orderId}/status`, data);
 
-export const approveOrder = (orderId: number) => {
-  return axios.put(`${ADMIN_BASE}/orders/${orderId}/approve`);
-};
+export const approveOrder = (orderId: number) =>
+  apiClient.put(`${ADMIN_BASE}/orders/${orderId}/approve`);
 
-export const rejectOrder = (orderId: number) => {
-  return axios.put(`${ADMIN_BASE}/orders/${orderId}/reject`);
-};
+export const rejectOrder = (orderId: number) =>
+  apiClient.put(`${ADMIN_BASE}/orders/${orderId}/reject`);
