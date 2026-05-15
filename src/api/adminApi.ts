@@ -4,9 +4,9 @@ import { AdminOrder } from "../types/order";
 // Re-exported for any caller that still references these names
 export { ADMIN_BASE, CLIENT_BASE };
 
-export const getOrders = (status?: string) =>
-  apiClient.get<AdminOrder[]>(`${ADMIN_BASE}/orders`, {
-    params: status ? { status } : {},
+export const getOrders = (status?: string, page = 0, size = 20) =>
+  apiClient.get(`${ADMIN_BASE}/orders`, {
+    params: { ...(status ? { status } : {}), page, size },
   });
 
 export const getOrderDetails = (orderId: number) =>

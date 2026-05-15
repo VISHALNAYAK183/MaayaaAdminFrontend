@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { API_BASE } from "../api/client";
 import JsBarcode from "jsbarcode";
 import {
   getProducts,
@@ -111,7 +112,8 @@ const blankForm = (): Omit<Product, "productId"> => ({
 const resolveImageUrl = (url: string | undefined | null): string | null => {
   if (!url) return null;
   if (url.startsWith("http") || url.startsWith("blob:")) return url;
-  return `https://res.cloudinary.com/maayaa/image/upload/${url}`;
+  if (url.startsWith("/")) return `${API_BASE}${url}`;
+  return null;
 };
 
 // ─── Barcode Preview Component ────────────────────────────────────────────────

@@ -1,4 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { API_BASE, ADMIN_BASE } from "../../api/client";
+
+// ─── IMAGE UPLOAD HELPER ─────────────────────────────────────────────────────
+const uploadImage = async (file: File): Promise<string> => {
+  const fd = new FormData();
+  fd.append("file", file);
+  const res = await fetch(`${ADMIN_BASE}/upload`, { method: "POST", body: fd });
+  if (!res.ok) throw new Error("Upload failed");
+  const json = await res.json();
+  return json.url.startsWith("http") ? json.url : `${API_BASE}${json.url}`;
+};
 import {
   getAllSections,
   deleteHomeSection,
@@ -34,8 +45,8 @@ const SECTION_LABEL: Record<string, string> = {
   CATEGORIES: "Categories",
   TRENDING: "Trending Now",
   REVIEWS: "Reviews",
-  WHY_MAAYAA: "Why Maayyaa",
-  WHY_SHOPWITH_MAAYAA: "Why Shop With Maayyaa",
+  WHY_MAAYAA: "Why Maayaa",
+  WHY_SHOPWITH_MAAYAA: "Why Shop With Maayaa",
 };
 
 const HAS_META = new Set(["RECOMMENDED", "FEATURED_PRODUCTS", "TRENDING"]);
@@ -46,11 +57,19 @@ const TALL_TYPES = new Set(["RECOMMENDED", "FEATURED_PRODUCTS", "TRENDING", "REV
 // Hero images are served from this base path
 const HERO_IMAGE_BASE = "/assets/images/hero/";
 
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+const GENDER_TABS: { key: string; label: string }[] = [
+  { key: "M", label: "Men" },
+  { key: "F", label: "Women" },
+  { key: "U", label: "Unisex" },
+];
+
 // ─── ROOT ────────────────────────────────────────────────────────────────────
 const HomeCMS = () => {
   const [sections, setSections] = useState<SectionWithItems[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
+  const [activeGender, setActiveGender] = useState("M");
 
   const load = async () => {
     try {
@@ -103,7 +122,11 @@ const HomeCMS = () => {
   };
 
   const updateItem = async (sectionId: number, itemId: number, payload: any) => {
-    await updateSectionItem(itemId, payload);
+    const existing = sections
+      .find((s) => s.sectionId === sectionId)
+      ?.items.find((i) => i.itemId === itemId);
+    const merged = { ...existing, ...payload };
+    await updateSectionItem(itemId, merged);
     setSections((p) =>
       p.map((s) =>
         s.sectionId === sectionId
@@ -125,6 +148,8 @@ const HomeCMS = () => {
     );
   };
 
+  const visibleSections = sections.filter((s) => s.gender === activeGender);
+
   return (
     <>
       {/* Page Header */}
@@ -144,18 +169,57 @@ const HomeCMS = () => {
         </button>
       </div>
 
+      {/* Gender Tabs */}
+      <div className="flex gap-1 mb-5 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit">
+        {GENDER_TABS.map(({ key, label }) => {
+          const count = sections.filter((s) => s.gender === key).length;
+          return (
+            <button
+              key={key}
+              onClick={() => setActiveGender(key)}
+              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                activeGender === key
+                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              }`}
+            >
+              {label}
+              {count > 0 && (
+                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${
+                  activeGender === key
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400"
+                    : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                }`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Sections */}
       <div className="space-y-4">
         {loading ? (
-          Array.from({ length: 4 }).map((_, i) => (
+          Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="bg-white dark:bg-gray-800 rounded-xl h-36 animate-pulse border border-gray-200 dark:border-gray-700" />
           ))
-        ) : sections.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-16 text-center text-gray-400 text-sm">
-            No sections yet — click "Add Section" to begin.
+        ) : visibleSections.length === 0 ? (
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-16 text-center">
+            <p className="text-gray-400 text-sm">
+              No sections for{" "}
+              <span className="font-medium">{GENDER_TABS.find((t) => t.key === activeGender)?.label}</span>{" "}
+              yet.
+            </p>
+            <button
+              onClick={() => setAddOpen(true)}
+              className="mt-3 text-blue-500 hover:text-blue-700 text-sm font-medium transition-colors"
+            >
+              + Add the first section
+            </button>
           </div>
         ) : (
-          sections.map((s) => (
+          visibleSections.map((s) => (
             <SectionBlock
               key={s.sectionId}
               section={s}
@@ -170,7 +234,11 @@ const HomeCMS = () => {
       </div>
 
       {addOpen && (
-        <SectionModal onClose={() => setAddOpen(false)} onSave={addSection} />
+        <SectionModal
+          initial={{ gender: activeGender }}
+          onClose={() => setAddOpen(false)}
+          onSave={addSection}
+        />
       )}
     </>
   );
@@ -206,7 +274,23 @@ const SectionBlock = ({ section, onDelete, onUpdate, onAddItem, onUpdateItem, on
           )}
         </div>
 
-        <div className="flex items-center gap-1 ml-3 shrink-0">
+        <div className="flex items-center gap-2 ml-3 shrink-0">
+          {/* Item count */}
+          <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 tabular-nums">
+            {section.items.length} item{section.items.length !== 1 ? "s" : ""}
+          </span>
+
+          {/* Status badge — backend stores 'Y'=Active, 'I'=Inactive, 'D'=Draft */}
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+            section.status === "Y"
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
+              : section.status === "I"
+              ? "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600"
+              : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
+          }`}>
+            {section.status === "Y" ? "Active" : section.status === "I" ? "Inactive" : section.status === "D" ? "Draft" : "—"}
+          </span>
+
           <button
             onClick={() => setEditModal(true)}
             className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -267,6 +351,7 @@ const SectionBlock = ({ section, onDelete, onUpdate, onAddItem, onUpdateItem, on
               isProductSection={isProductSection}
               onAdd={onAddItem}
               existingProductIds={section.items.map((i) => i.productId).filter(Boolean) as number[]}
+              allItems={section.items}
             />
           </div>
         </div>
@@ -703,18 +788,26 @@ const ItemCard = ({ item, tall, onUpdate, onDelete }: ItemCardProps) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [linkEdit, setLinkEdit] = useState(false);
   const [linkVal, setLinkVal] = useState(item.link ?? "");
+  const [uploading, setUploading] = useState(false);
 
   const isProduct = !!item.productId;
   const cardW = tall ? 100 : 120;
   const cardH = tall ? 130 : 78;
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    const r = new FileReader();
-    r.onload = () => onUpdate({ image: r.result as string });
-    r.readAsDataURL(f);
-  };
+    setUploading(true);
+    try {
+      const url = await uploadImage(f);
+      onUpdate({ image: url });
+    } catch {
+      alert("Image upload failed");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }, [onUpdate]);
 
   const saveLink = () => { onUpdate({ link: linkVal }); setLinkEdit(false); };
 
@@ -767,7 +860,9 @@ const ItemCard = ({ item, tall, onUpdate, onDelete }: ItemCardProps) => {
           </div>
         )}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <CameraIcon />
+          {uploading
+            ? <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+            : <CameraIcon />}
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
@@ -810,26 +905,32 @@ const ProductPickerModal = ({ onSelect, onClose, existingProductIds }: ProductPi
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
-  const limit = 12;
+  const limit = 20;
+
+  // Debounce search input — reset to page 1 when query changes
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 350);
+    return () => clearTimeout(t);
+  }, [search]);
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
         const params = new URLSearchParams({ limit: String(limit), offset: String((page - 1) * limit) });
-        const res = await fetch(`http://localhost:8081/api/admin/products?${params}`);
+        if (debouncedSearch) params.append("name", debouncedSearch);
+        const res = await fetch(`${ADMIN_BASE}/products?${params}`);
         const json = await res.json();
         setProducts(Array.isArray(json.data) ? json.data : []);
       } catch { setProducts([]); }
       finally { setLoading(false); }
     };
     load();
-  }, [page]);
+  }, [page, debouncedSearch]);
 
-  const filtered = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = products; // filtering is now server-side
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
@@ -989,26 +1090,34 @@ const ProductPickerModal = ({ onSelect, onClose, existingProductIds }: ProductPi
 
 // ─── ADD ITEM CARD (non-hero) ─────────────────────────────────────────────────
 const AddItemCard = ({
-  tall, onAdd, isProductSection = false, existingProductIds = [],
-}: { tall: boolean; onAdd: (p: any) => void; isProductSection?: boolean; existingProductIds?: number[] }) => {
+  tall, onAdd, isProductSection = false, existingProductIds = [], allItems = [],
+}: { tall: boolean; onAdd: (p: any) => void; isProductSection?: boolean; existingProductIds?: number[]; allItems?: SectionItem[] }) => {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({ image: "", link: "", heading: "", position: "1" });
+  const [form, setForm] = useState({ image: "", link: "", heading: "", position: "" });
   const [expanded, setExpanded] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [posError, setPosError] = useState("");
 
   const cardW = tall ? 90 : 115;
   const cardH = tall ? 115 : 72;
+  const nextPos = allItems.length + 1;
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      setForm((prev) => ({ ...prev, image: r.result as string }));
+    setUploading(true);
+    try {
+      const url = await uploadImage(f);
+      setForm((prev) => ({ ...prev, image: url }));
       setExpanded(true);
-    };
-    r.readAsDataURL(f);
-  };
+    } catch {
+      alert("Image upload failed");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }, []);
 
   const handleProductSelect = (product: any) => {
     onAdd({
@@ -1016,19 +1125,23 @@ const AddItemCard = ({
       image: product.images?.[0]?.url ?? null,
       link: `/product/${product.productId}`,
       heading: product.name,
-      position: Number(form.position) || 1,
+      position: nextPos,
     });
     setPickerOpen(false);
   };
 
   const submit = () => {
+    const pos = Number(form.position) || nextPos;
+    const err = validatePosition(pos, null, allItems);
+    if (err) { setPosError(err); return; }
     onAdd({
       image: form.image || null,
       link: form.link || null,
       heading: form.heading || null,
-      position: Number(form.position) || 1,
+      position: pos,
     });
-    setForm({ image: "", link: "", heading: "", position: "1" });
+    setForm({ image: "", link: "", heading: "", position: "" });
+    setPosError("");
     setExpanded(false);
   };
 
@@ -1067,11 +1180,19 @@ const AddItemCard = ({
           className="text-[11px] border border-gray-200 rounded-md px-2 py-1.5 focus:outline-none" />
         <input placeholder="Heading" value={form.heading} onChange={(e) => setForm({ ...form, heading: e.target.value })}
           className="text-[11px] border border-gray-200 rounded-md px-2 py-1.5 focus:outline-none" />
-        <input placeholder="Position" type="number" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })}
-          className="text-[11px] border border-gray-200 rounded-md px-2 py-1.5 focus:outline-none" />
+        <div className="flex flex-col gap-0.5">
+          <input
+            placeholder={`Position (${nextPos})`}
+            type="number"
+            value={form.position}
+            onChange={(e) => { setForm({ ...form, position: e.target.value }); setPosError(""); }}
+            className={`text-[11px] border rounded-md px-2 py-1.5 focus:outline-none ${posError ? "border-red-300 bg-red-50" : "border-gray-200"}`}
+          />
+          {posError && <p className="text-[10px] text-red-500 leading-tight">{posError}</p>}
+        </div>
         <div className="flex gap-1.5">
           <button onClick={submit} className="flex-1 bg-gray-900 text-white text-[11px] font-bold py-1.5 rounded-lg">Add</button>
-          <button onClick={() => setExpanded(false)} className="text-[11px] text-gray-400 px-2 border border-gray-200 rounded-lg">✕</button>
+          <button onClick={() => { setExpanded(false); setPosError(""); }} className="text-[11px] text-gray-400 px-2 border border-gray-200 rounded-lg">✕</button>
         </div>
       </div>
     );
@@ -1081,11 +1202,14 @@ const AddItemCard = ({
     <div className="flex flex-col gap-1.5 shrink-0" style={{ width: cardW }}>
       <button
         onClick={() => fileRef.current?.click()}
-        className="rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-gray-500 hover:bg-gray-50 transition-all"
+        disabled={uploading}
+        className="rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-gray-500 hover:bg-gray-50 transition-all disabled:opacity-60"
         style={{ width: cardW, height: cardH }}
         title="Click to upload image"
       >
-        <span className="text-xl font-light leading-none">+</span>
+        {uploading
+          ? <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+          : <span className="text-xl font-light leading-none">+</span>}
       </button>
       <div className="flex items-center justify-between gap-1">
         <span className="text-[10px] text-gray-300">link</span>
@@ -1173,7 +1297,7 @@ const SectionModal = ({ initial, onClose, onSave }: ModalProps) => {
                       ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white"
                       : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-500 dark:hover:border-gray-400"
                   }`}
-                >{t}</button>
+                >{SECTION_LABEL[t] ?? t}</button>
               ))}
             </div>
           </div>

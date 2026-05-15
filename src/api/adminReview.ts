@@ -1,8 +1,10 @@
 // services/adminReview.ts
 
 import axios from 'axios';
+import { API_BASE, ADMIN_BASE } from './client';
+import { getCategories } from './adminCategory';
 
-const API_BASE_URL = 'http://localhost:8081/api';
+const API_BASE_URL = `${API_BASE}/api`;
 
 export interface Review {
   reviewId: number;
@@ -12,13 +14,26 @@ export interface Review {
   description: string;
   image: string;
   title: string;
+  createdAt?: string;
 }
 
 export interface Product {
   productId: number;
   name: string;
-  images: Array<{ url: string; postOrder: number }>;
-  reviews: Review[];
+  categoryId: number;
+  variants: Array<{
+    variantId: number;
+    images: Array<{ url: string }>;
+  }>;
+  reviews: Array<{
+    reviewId: number;
+    userId: number;
+    stars: number;
+    title: string;
+    description: string;
+    image: string;
+    createdAt?: string;
+  }>;
 }
 
 export interface ProductsResponse {
@@ -67,7 +82,10 @@ class AdminReviewService {
 
   async fetchAllProducts(): Promise<Product[]> {
     try {
-      const response = await axios.get<ProductsResponse>(`${API_BASE_URL}/admin/products`);
+      // Fetch a large page so all products are included in the stats
+      const response = await axios.get<ProductsResponse>(`${ADMIN_BASE}/products`, {
+        params: { limit: 500, offset: 0 },
+      });
       return response.data.data;
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -77,22 +95,28 @@ class AdminReviewService {
 
   async getReviewDashboardData(): Promise<DashboardStats> {
     try {
-      const [allReviews, allProducts] = await Promise.all([
-        this.fetchAllReviews(),
-        this.fetchAllProducts()
+      const [allProducts, categoriesResult] = await Promise.all([
+        this.fetchAllProducts(),
+        getCategories(),
       ]);
 
-      // Map reviews to products
+      // Build a real category name map from the API
+      const categoryNameMap: Record<number, string> = {};
+      for (const cat of (categoriesResult.data ?? [])) {
+        if (cat.categoryId != null) categoryNameMap[cat.categoryId] = cat.name;
+      }
+
+      // Use embedded reviews from each product, adding productId to each
       const productsWithReviews = allProducts.map(product => ({
         ...product,
-        reviews: allReviews.filter(review => review.productId === product.productId)
+        reviews: (product.reviews ?? []).map(r => ({ ...r, productId: product.productId })),
       }));
 
       // Calculate product stats
       const productStats: ProductWithReviewStats[] = productsWithReviews.map(product => ({
         productId: product.productId,
         productName: product.name,
-        productImage: product.images[0]?.url || '',
+        productImage: product.variants?.[0]?.images?.[0]?.url || '',
         totalReviews: product.reviews.length,
         averageRating: product.reviews.length > 0
           ? product.reviews.reduce((sum, review) => sum + review.stars, 0) / product.reviews.length
@@ -121,13 +145,13 @@ class AdminReviewService {
         ? productStats.reduce((min, product) => product.averageRating < min.averageRating ? product : min, productStats[0])
         : null;
 
-      // Group by category (simplified - in real app you'd have category mapping)
+      // Group by category using real names from the API
       const categoryMap = new Map<number, { name: string; totalReviews: number; totalRating: number; productCount: number }>();
-      
+
       productsWithReviews.forEach(product => {
         if (product.reviews.length > 0) {
           const categoryId = product.categoryId || 0;
-          const categoryName = this.getCategoryName(categoryId);
+          const categoryName = categoryNameMap[categoryId] ?? `Category ${categoryId}`;
           
           if (!categoryMap.has(categoryId)) {
             categoryMap.set(categoryId, {
@@ -166,18 +190,6 @@ class AdminReviewService {
       console.error('Error fetching dashboard data:', error);
       throw error;
     }
-  }
-
-  private getCategoryName(categoryId: number): string {
-    const categories: Record<number, string> = {
-      1: 'Clothing',
-      2: 'T-Shirts',
-      3: 'Shirts',
-      4: 'Jackets & Hoodies',
-      5: 'Jeans',
-      6: 'Accessories'
-    };
-    return categories[categoryId] || `Category ${categoryId}`;
   }
 
   async getProductReviews(productId: number): Promise<Review[]> {
