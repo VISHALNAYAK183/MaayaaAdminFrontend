@@ -13,6 +13,7 @@ import {
   PageHeader,
   PageShell,
   FormModal,
+  ConfirmDialog,
   StatCard,
   TableCard,
   TableLoadingRow,
@@ -31,6 +32,9 @@ const CategoryManagement: React.FC = () => {
   const [tableLoading, setTableLoading] = useState(false);
   const [status, setStatus] = useState<Status>(null);
   const [form, setForm] = useState({ name: "", description: "" });
+  const [pendingDelete, setPendingDelete] = useState<{ id: number; name: string } | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
     loadCategories();
@@ -88,8 +92,12 @@ const CategoryManagement: React.FC = () => {
     setStatus(null);
   };
 
-  const handleDelete = async (id: number, name: string) => {
-    if (!window.confirm(`Delete category "${name}"?`)) return;
+  const requestDelete = (id: number, name: string) => setPendingDelete({ id, name });
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const { id, name } = pendingDelete;
+    setPendingDelete(null);
     try {
       await deleteCategory(id);
       setStatus({ type: "success", msg: `Category "${name}" deleted.` });
@@ -111,6 +119,12 @@ const CategoryManagement: React.FC = () => {
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       (c.description || "").toLowerCase().includes(search.toLowerCase())
   );
+
+  useEffect(() => { setPage(1); }, [search, pageSize]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageStart = (safePage - 1) * pageSize;
+  const paged = filtered.slice(pageStart, pageStart + pageSize);
 
   return (
     <PageShell>
@@ -205,7 +219,7 @@ const CategoryManagement: React.FC = () => {
                 subtitle={search ? "Try a different keyword" : 'Click "New Category" to add your first one'}
               />
             ) : (
-              filtered.map((cat) => (
+              paged.map((cat) => (
                 <tr key={cat.categoryId} className="border-t border-slate-100 hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 text-slate-400 font-mono text-xs">{cat.categoryId}</td>
                   <td className="px-6 py-4">
@@ -220,7 +234,7 @@ const CategoryManagement: React.FC = () => {
                     <RowActions
                       onEdit={() => handleEdit(cat)}
                       onDelete={() =>
-                        cat.categoryId && handleDelete(cat.categoryId, cat.name)
+                        cat.categoryId && requestDelete(cat.categoryId, cat.name)
                       }
                     />
                   </td>
@@ -229,7 +243,47 @@ const CategoryManagement: React.FC = () => {
             )}
           </tbody>
         </table>
+
+        {filtered.length > pageSize && (
+          <div className="flex items-center justify-between gap-4 px-6 py-3 border-t border-slate-100 bg-slate-50 flex-wrap">
+            <p className="text-xs text-slate-500">
+              Showing <span className="font-semibold text-slate-700">{pageStart + 1}–{Math.min(pageStart + pageSize, filtered.length)}</span> of <span className="font-semibold text-slate-700">{filtered.length}</span>
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs text-slate-500 font-medium">Per page:</label>
+                <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}
+                  className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:border-slate-300 focus:border-blue-400 transition-colors">
+                  {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+              <div className="flex items-center gap-1">
+                <button type="button" onClick={() => setPage(Math.max(1, safePage - 1))} disabled={safePage === 1}
+                  className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">‹</button>
+                <span className="text-xs text-slate-600 px-2 font-semibold">Page {safePage} of {totalPages}</span>
+                <button type="button" onClick={() => setPage(Math.min(totalPages, safePage + 1))} disabled={safePage === totalPages}
+                  className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">›</button>
+              </div>
+            </div>
+          </div>
+        )}
       </TableCard>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete category?"
+        message={
+          <>
+            Are you sure you want to delete{" "}
+            <span className="font-semibold text-slate-800">"{pendingDelete?.name}"</span>?
+            This action cannot be undone.
+          </>
+        }
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </PageShell>
   );
 };

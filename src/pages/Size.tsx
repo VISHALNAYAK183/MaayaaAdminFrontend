@@ -13,6 +13,7 @@ import {
   PageHeader,
   PageShell,
   FormModal,
+  ConfirmDialog,
   StatCard,
   TableCard,
   TableLoadingRow,
@@ -31,6 +32,7 @@ const SizeManagement: React.FC = () => {
   const [tableLoading, setTableLoading] = useState(false);
   const [status, setStatus] = useState<Status>(null);
   const [form, setForm] = useState({ label: "" });
+  const [pendingDelete, setPendingDelete] = useState<{ id: number; label: string } | null>(null);
 
   useEffect(() => {
     loadSizes();
@@ -88,8 +90,12 @@ const SizeManagement: React.FC = () => {
     setStatus(null);
   };
 
-  const handleDelete = async (id: number, label: string) => {
-    if (!window.confirm(`Delete size "${label}"?`)) return;
+  const requestDelete = (id: number, label: string) => setPendingDelete({ id, label });
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const { id, label } = pendingDelete;
+    setPendingDelete(null);
     try {
       await deleteSize(id);
       setStatus({ type: "success", msg: `Size "${label}" deleted.` });
@@ -198,7 +204,7 @@ const SizeManagement: React.FC = () => {
                   <td className="px-6 py-4">
                     <RowActions
                       onEdit={() => handleEdit(s)}
-                      onDelete={() => s.sizeId && handleDelete(s.sizeId, s.label)}
+                      onDelete={() => s.sizeId && requestDelete(s.sizeId, s.label)}
                     />
                   </td>
                 </tr>
@@ -207,6 +213,22 @@ const SizeManagement: React.FC = () => {
           </tbody>
         </table>
       </TableCard>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete size?"
+        message={
+          <>
+            Are you sure you want to delete{" "}
+            <span className="font-semibold text-slate-800">"{pendingDelete?.label}"</span>?
+            This action cannot be undone.
+          </>
+        }
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </PageShell>
   );
 };

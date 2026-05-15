@@ -59,6 +59,22 @@ const ReplaceIcon = () => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
   </svg>
 );
+const DuplicateIcon = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <rect x="8" y="8" width="12" height="12" rx="2" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" />
+  </svg>
+);
+const DragHandleIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+    <circle cx="7" cy="5" r="1.4" />
+    <circle cx="13" cy="5" r="1.4" />
+    <circle cx="7" cy="10" r="1.4" />
+    <circle cx="13" cy="10" r="1.4" />
+    <circle cx="7" cy="15" r="1.4" />
+    <circle cx="13" cy="15" r="1.4" />
+  </svg>
+);
 
 // ─── Extended VariantImage with local upload fields ───────────────────────────
 interface VariantImageLocal extends VariantImage {
@@ -221,6 +237,44 @@ const VariantImages: React.FC<{
     onChange(variantIndex, updated.length > 0 ? updated : [{ url: "", postOrder: 1 }]);
   };
 
+  // ── Drag-to-reorder ──
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const onRowDragStart = (e: React.DragEvent<HTMLDivElement>, idx: number) => {
+    setDragIdx(idx);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(idx));
+  };
+
+  const onRowDragOver = (e: React.DragEvent<HTMLDivElement>, idx: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (dragIdx === null || dragIdx === idx) return;
+    setDragOverIdx(idx);
+  };
+
+  const onRowDrop = (e: React.DragEvent<HTMLDivElement>, idx: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dragIdx === null || dragIdx === idx) {
+      setDragIdx(null);
+      setDragOverIdx(null);
+      return;
+    }
+    const next = [...images];
+    const [moved] = next.splice(dragIdx, 1);
+    next.splice(idx, 0, moved);
+    onChange(variantIndex, next.map((img, i) => ({ ...img, postOrder: i + 1 })));
+    setDragIdx(null);
+    setDragOverIdx(null);
+  };
+
+  const onRowDragEnd = () => {
+    setDragIdx(null);
+    setDragOverIdx(null);
+  };
+
   const filledCount = images.filter((img) => img.url).length;
   const canAdd = filledCount < 5;
 
@@ -286,11 +340,31 @@ const VariantImages: React.FC<{
             if (!img.url && !img._preview) return null;
             const previewUrl = img._preview || resolveImageUrl(img.url);
 
+            const isDragging = dragIdx === imgIdx;
+            const isDragOver = dragOverIdx === imgIdx;
+
             return (
               <div
                 key={imgIdx}
-                className="flex items-center gap-2.5 px-3 py-2 bg-white border border-slate-200 rounded-xl shadow-sm"
+                draggable
+                onDragStart={(e) => onRowDragStart(e, imgIdx)}
+                onDragOver={(e) => onRowDragOver(e, imgIdx)}
+                onDrop={(e) => onRowDrop(e, imgIdx)}
+                onDragEnd={onRowDragEnd}
+                className={`flex items-center gap-2.5 px-3 py-2 bg-white border rounded-xl shadow-sm transition-all
+                  ${isDragging ? "opacity-40" : ""}
+                  ${isDragOver ? "border-blue-400 ring-2 ring-blue-100" : "border-slate-200"}
+                `}
               >
+                {/* Drag handle */}
+                <button
+                  type="button"
+                  className="w-5 h-7 flex items-center justify-center text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing shrink-0"
+                  title="Drag to reorder"
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  <DragHandleIcon />
+                </button>
                 {/* Order badge */}
                 <div className="w-6 h-6 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500 shrink-0">
                   {img.postOrder}
@@ -758,6 +832,9 @@ const ProductManagement: React.FC = () => {
   const [form, setForm] = useState<Omit<Product, "productId">>(blankForm());
   const [detailProduct, setDetailProduct] = useState<ProductResponse | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{ id: number; name: string } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [pendingBulkDelete, setPendingBulkDelete] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // ── Form step (0-4) ──
   const [formStep, setFormStep] = useState(0);
@@ -903,6 +980,20 @@ const ProductManagement: React.FC = () => {
       return setStatus({ type: "error", msg: "Discounted price must be less than base price." });
     }
 
+    // Variant uniqueness — no two variants may share the same size + colour
+    const validVariants = form.variants.filter((v) => v.sizeId && v.colorId);
+    const variantKeys = new Set<string>();
+    for (const v of validVariants) {
+      const key = `${v.sizeId}-${v.colorId}`;
+      if (variantKeys.has(key)) {
+        setFormStep(3);
+        const sizeLabel = (sizes.find((s) => (s as any).sizeId === v.sizeId) as any)?.label ?? `#${v.sizeId}`;
+        const colorName = (colors.find((c) => (c as any).colorId === v.colorId) as any)?.name ?? `#${v.colorId}`;
+        return setStatus({ type: "error", msg: `Duplicate variant: ${sizeLabel} / ${colorName} appears twice.` });
+      }
+      variantKeys.add(key);
+    }
+
     setLoading(true);
     setStatus(null);
     try {
@@ -990,6 +1081,82 @@ const ProductManagement: React.FC = () => {
     setPendingDelete({ id, name });
   };
 
+  // ── Bulk selection ──
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const togglePageSelect = (ids: number[], allChecked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allChecked) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const confirmBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    setBulkDeleting(true);
+    try {
+      const results = await Promise.allSettled(ids.map((id) => deleteProduct(id)));
+      const failed = results.filter((r) => r.status === "rejected").length;
+      if (failed === 0) {
+        setStatus({ type: "success", msg: `${ids.length} product${ids.length !== 1 ? "s" : ""} deleted.` });
+      } else {
+        setStatus({ type: "error", msg: `Deleted ${ids.length - failed} of ${ids.length}. ${failed} failed.` });
+      }
+      clearSelection();
+      setPendingBulkDelete(false);
+      loadAll();
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  // ── Duplicate: prefill form from existing product, drop variantId/productId ──
+  const handleDuplicate = (product: ProductResponse) => {
+    const mappedVariants: Variant[] = (product.variants ?? []).map((v: any) => ({
+      sizeId: Number(v.sizeId ?? 0),
+      colorId: Number(v.colorId ?? 0),
+      quantity: Number(v.quantity ?? 0),
+      barcode: "",
+      images: (v.images ?? [])
+        .filter((img: VariantImage) => img.url)
+        .map((img: VariantImage, idx: number) => ({ url: img.url, postOrder: idx + 1 })),
+    }));
+
+    setForm({
+      name: `${product.name} (Copy)`,
+      categoryId: Number(product.categoryId ?? 0),
+      collectionId: Number(product.collectionId ?? 0),
+      gender: product.gender ?? "",
+      basePrice: Number(product.basePrice ?? 0),
+      discountedPrice: Number(product.discountedPrice ?? 0),
+      story: product.story ?? "",
+      details: product.details ?? "",
+      fabricDetails: product.fabricDetails ?? "",
+      questionsAnswers: product.questionsAnswers?.length
+        ? product.questionsAnswers
+        : [{ question: "", answer: "" }],
+      variants: mappedVariants.length ? mappedVariants : [blankVariant()],
+      images: [],
+    });
+    setEditingId(null);
+    setShowForm(true);
+    setStatus({ type: "success", msg: `Duplicated "${product.name}" — review and save.` });
+    setDetailProduct(null);
+    setFormStep(0);
+  };
+
   const confirmDelete = async () => {
     if (!pendingDelete) return;
     const { id, name } = pendingDelete;
@@ -1051,7 +1218,7 @@ const ProductManagement: React.FC = () => {
     if (search && !(p.name ?? "").toLowerCase().includes(search.toLowerCase())) return false;
     if (filterCategory && p.categoryId !== filterCategory) return false;
     if (filterCollection && p.collectionId !== filterCollection) return false;
-    if (filterGender && p.gender !== filterGender) return false;
+    if (filterGender && (p.gender ?? "").toLowerCase() !== filterGender.toLowerCase()) return false;
     if (filterStock !== "all" && getStockStatus(p) !== filterStock) return false;
     return true;
   });
@@ -1087,6 +1254,69 @@ const ProductManagement: React.FC = () => {
     form.name.trim().length > 0 &&
     form.variants.some((v) => Number(v.sizeId) > 0 && Number(v.colorId) > 0);
 
+  // ── Validate a single step. Returns error message or null. ──
+  const validateStep = (step: number): string | null => {
+    if (step === 0) {
+      if (!form.name.trim()) return "Product name is required.";
+      if (!form.categoryId) return "Please select a category.";
+      if (!form.collectionId) return "Please select a collection.";
+      if (!form.gender) return "Please select a gender.";
+      return null;
+    }
+    if (step === 1) {
+      if (Number(form.basePrice) <= 0) return "Base price must be greater than 0.";
+      if (Number(form.discountedPrice) <= 0) return "Discounted price must be greater than 0.";
+      if (Number(form.discountedPrice) >= Number(form.basePrice))
+        return "Discounted price must be less than base price.";
+      return null;
+    }
+    if (step === 3) {
+      const validVariants = form.variants.filter((v) => v.sizeId && v.colorId);
+      if (validVariants.length === 0) return "Add at least one variant with size and colour.";
+      const seen = new Set<string>();
+      for (const v of validVariants) {
+        const key = `${v.sizeId}-${v.colorId}`;
+        if (seen.has(key)) {
+          const sizeLabel = (sizes.find((s) => (s as any).sizeId === v.sizeId) as any)?.label ?? `#${v.sizeId}`;
+          const colorName = (colors.find((c) => (c as any).colorId === v.colorId) as any)?.name ?? `#${v.colorId}`;
+          return `Duplicate variant: ${sizeLabel} / ${colorName} appears twice.`;
+        }
+        seen.add(key);
+      }
+      return null;
+    }
+    return null;
+  };
+
+  const stepError = validateStep(formStep);
+  const isLastStep = formStep === FORM_STEPS.length - 1;
+
+  const handleNext = () => {
+    const err = validateStep(formStep);
+    if (err) {
+      setStatus({ type: "error", msg: err });
+      return;
+    }
+    setFormStep((s) => Math.min(FORM_STEPS.length - 1, s + 1));
+  };
+
+  // Clicking a step tab: allow going back freely; going forward only if all preceding steps are valid.
+  const handleStepTabClick = (target: number) => {
+    if (target <= formStep) {
+      setFormStep(target);
+      return;
+    }
+    for (let s = formStep; s < target; s++) {
+      const err = validateStep(s);
+      if (err) {
+        setFormStep(s);
+        setStatus({ type: "error", msg: err });
+        return;
+      }
+    }
+    setFormStep(target);
+  };
+
   return (
     <PageShell>
       <PageHeader
@@ -1115,7 +1345,7 @@ const ProductManagement: React.FC = () => {
                   <React.Fragment key={step.id}>
                     <button
                       type="button"
-                      onClick={() => setFormStep(step.id)}
+                      onClick={() => handleStepTabClick(step.id)}
                       className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap
                         ${formStep === step.id
                           ? "bg-slate-900 text-white shadow-sm"
@@ -1375,6 +1605,13 @@ const ProductManagement: React.FC = () => {
               </div>
               )}
 
+              {/* ── Inline step error ── */}
+              {stepError && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
+                  <span>⚠</span> {stepError}
+                </div>
+              )}
+
               {/* ── Step Navigation ── */}
               <div className="flex items-center justify-between pt-1">
                 <button
@@ -1390,8 +1627,9 @@ const ProductManagement: React.FC = () => {
                 </span>
                 <button
                   type="button"
-                  onClick={() => setFormStep((s) => Math.min(FORM_STEPS.length - 1, s + 1))}
-                  disabled={formStep === FORM_STEPS.length - 1}
+                  onClick={handleNext}
+                  disabled={isLastStep || stepError !== null}
+                  title={stepError ?? undefined}
                   className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-semibold text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   Next →
@@ -1469,10 +1707,55 @@ const ProductManagement: React.FC = () => {
             )}
           </div>
 
+          {/* ── Bulk action bar (shown when items selected) ── */}
+          {selectedIds.size > 0 && (
+            <div className="flex items-center justify-between gap-3 px-6 py-3 border-b border-blue-200 bg-blue-50">
+              <p className="text-xs font-semibold text-blue-900">
+                {selectedIds.size} selected
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPendingBulkDelete(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors"
+                >
+                  <TrashIcon />
+                  Delete {selectedIds.size}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50">
               <tr>
+                <th className="px-4 py-3 text-left w-10">
+                  {(() => {
+                    const pageIds = paged.map((p) => p.productId!).filter(Boolean) as number[];
+                    const allChecked = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+                    const someChecked = pageIds.some((id) => selectedIds.has(id));
+                    return (
+                      <input
+                        type="checkbox"
+                        checked={allChecked}
+                        ref={(el) => {
+                          if (el) el.indeterminate = !allChecked && someChecked;
+                        }}
+                        onChange={() => togglePageSelect(pageIds, allChecked)}
+                        className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer"
+                        title={allChecked ? "Deselect this page" : "Select this page"}
+                      />
+                    );
+                  })()}
+                </th>
                 <th className="px-4 py-3 text-left">
                   <SortHeader label="ID" col="id" active={sortBy === "id"} dir={sortDir} onClick={() => toggleSort("id")} />
                 </th>
@@ -1492,10 +1775,10 @@ const ProductManagement: React.FC = () => {
             </thead>
             <tbody>
               {tableLoading ? (
-                <TableLoadingRow colSpan={7} label="Loading products…" />
+                <TableLoadingRow colSpan={8} label="Loading products…" />
               ) : paged.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-16 text-center">
+                  <td colSpan={8} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-2xl">📦</div>
                       <div>
@@ -1535,12 +1818,22 @@ const ProductManagement: React.FC = () => {
                   const stockStatus = getStockStatus(product);
                   const isActive = detailProduct?.productId === product.productId;
 
+                  const isSelected = product.productId !== undefined && selectedIds.has(product.productId);
                   return (
                     <tr
                       key={product.productId}
                       onClick={() => setDetailProduct(isActive ? null : product)}
-                      className={`border-t border-slate-100 cursor-pointer transition-colors ${isActive ? "bg-blue-50" : "hover:bg-slate-50"}`}
+                      className={`border-t border-slate-100 cursor-pointer transition-colors
+                        ${isSelected ? "bg-blue-50/70" : isActive ? "bg-blue-50" : "hover:bg-slate-50"}`}
                     >
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => product.productId && toggleSelect(product.productId)}
+                          className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer"
+                        />
+                      </td>
                       <td className="px-4 py-3 text-slate-400 font-mono text-xs">#{product.productId}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3 min-w-0">
@@ -1610,6 +1903,14 @@ const ProductManagement: React.FC = () => {
                             title="View details"
                           >
                             <EyeIcon />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDuplicate(product)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                            title="Duplicate product"
+                          >
+                            <DuplicateIcon />
                           </button>
                           <RowActions
                             onEdit={() => handleEdit(product)}
@@ -1702,6 +2003,23 @@ const ProductManagement: React.FC = () => {
         tone="danger"
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
+      />
+
+      {/* ── Bulk Delete Confirmation ── */}
+      <ConfirmDialog
+        open={pendingBulkDelete}
+        title={`Delete ${selectedIds.size} products?`}
+        message={
+          <>
+            Are you sure you want to delete{" "}
+            <span className="font-semibold text-slate-800">{selectedIds.size}</span>{" "}
+            product{selectedIds.size !== 1 ? "s" : ""}? This action cannot be undone.
+          </>
+        }
+        confirmLabel={bulkDeleting ? "Deleting…" : `Delete ${selectedIds.size}`}
+        tone="danger"
+        onConfirm={confirmBulkDelete}
+        onCancel={() => setPendingBulkDelete(false)}
       />
     </PageShell>
   );

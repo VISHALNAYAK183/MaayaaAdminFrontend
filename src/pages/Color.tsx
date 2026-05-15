@@ -13,6 +13,7 @@ import {
   PageHeader,
   PageShell,
   FormModal,
+  ConfirmDialog,
   StatCard,
   TableCard,
   TableLoadingRow,
@@ -34,6 +35,7 @@ const ColorManagement: React.FC = () => {
     name: "",
     hex: "#000000",
   });
+  const [pendingDelete, setPendingDelete] = useState<{ id: number; name: string } | null>(null);
 
   useEffect(() => {
     loadColors();
@@ -95,8 +97,12 @@ const ColorManagement: React.FC = () => {
     setStatus(null);
   };
 
-  const handleDelete = async (id: number, name: string) => {
-    if (!window.confirm(`Delete color "${name}"?`)) return;
+  const requestDelete = (id: number, name: string) => setPendingDelete({ id, name });
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const { id, name } = pendingDelete;
+    setPendingDelete(null);
     try {
       await deleteColor(id);
       setStatus({ type: "success", msg: `Color "${name}" deleted.` });
@@ -250,7 +256,7 @@ const ColorManagement: React.FC = () => {
                     <RowActions
                       onEdit={() => handleEdit(color)}
                       onDelete={() =>
-                        color.colorId && handleDelete(color.colorId, color.name)
+                        color.colorId && requestDelete(color.colorId, color.name)
                       }
                     />
                   </td>
@@ -260,6 +266,22 @@ const ColorManagement: React.FC = () => {
           </tbody>
         </table>
       </TableCard>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete color?"
+        message={
+          <>
+            Are you sure you want to delete{" "}
+            <span className="font-semibold text-slate-800">"{pendingDelete?.name}"</span>?
+            This action cannot be undone.
+          </>
+        }
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </PageShell>
   );
 };
