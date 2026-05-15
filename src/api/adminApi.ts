@@ -10,7 +10,7 @@ export const getOrders = (status?: string, page = 0, size = 20) =>
   });
 
 export const getOrderDetails = (orderId: number) =>
-  clientApi.get(`${CLIENT_BASE}/orders/details/${orderId}`);
+  clientApi.get(`${CLIENT_BASE}/orders/admin/${orderId}`);
 
 export const shipOrder = (
   orderId: number,

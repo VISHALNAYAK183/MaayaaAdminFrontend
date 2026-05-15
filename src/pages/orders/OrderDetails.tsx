@@ -47,7 +47,7 @@ export default function OrderDetails() {
     if (!window.confirm("Approve this order?")) return;
     setActionLoading(true);
     try {
-      await approveOrder(data.order.order_id);
+      await approveOrder(data.order.orderId);
       await load();
     } catch {
       alert("Failed to approve order. Please try again.");
@@ -60,7 +60,7 @@ export default function OrderDetails() {
     if (!window.confirm("Reject this order? This cannot be undone.")) return;
     setActionLoading(true);
     try {
-      await rejectOrder(data.order.order_id);
+      await rejectOrder(data.order.orderId);
       await load();
     } catch {
       alert("Failed to reject order. Please try again.");
@@ -106,8 +106,8 @@ export default function OrderDetails() {
           </svg>
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Order #{order.order_id}</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Home / Orders / #{order.order_id}</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Order #{order.orderId}</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Home / Order Management / #{order.orderId}</p>
         </div>
         <span className={`ml-auto text-xs font-semibold px-3 py-1 rounded-full border ${STATUS_STYLE[status] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
           {status.replace(/_/g, " ")}
@@ -126,9 +126,9 @@ export default function OrderDetails() {
                 <p className="px-6 py-8 text-sm text-center text-gray-400">No products</p>
               ) : (
                 products.map((p: any) => (
-                  <div key={p.product_id} className="px-6 py-4 flex items-center gap-4">
+                  <div key={p.productId} className="px-6 py-4 flex items-center gap-4">
                     <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 shrink-0 overflow-hidden">
-                      {resolveImg(p.image) && <img src={resolveImg(p.image)!} alt={p.name} className="w-full h-full object-cover" />}
+                      {resolveImg(p.imageUrl) && <img src={resolveImg(p.imageUrl)!} alt={p.name} className="w-full h-full object-cover" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{p.name}</p>
@@ -177,13 +177,14 @@ export default function OrderDetails() {
 
             {/* PLACED — Ship */}
             {status === "PLACED" && (
-              <ShipOrderModal orderId={order.order_id} onSuccess={load} />
+              <ShipOrderModal orderId={order.orderId} onSuccess={load} />
             )}
 
             {/* SHIPPED / OUT_FOR_DELIVERY — Update status */}
             {["SHIPPED", "OUT_FOR_DELIVERY"].includes(status) && (
               <UpdateStatusModal
-                orderId={order.order_id}
+                key={status}
+                orderId={order.orderId}
                 currentStatus={status}
                 onSuccess={load}
               />

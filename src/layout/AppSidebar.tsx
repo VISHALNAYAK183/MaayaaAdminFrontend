@@ -38,7 +38,7 @@ const salesItems: NavItem[] = [
     icon: <DollarLineIcon />,
     name: "Sales",
     subItems: [
-      { name: "Orders", path: "/orders" },
+      { name: "Order Management", path: "/orders" },
       { name: "Coupons", path: "/coupons/add" },
     ],
   },
