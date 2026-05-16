@@ -5,6 +5,7 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import OrdersList from "./pages/orders/OrdersList";
 import OrderDetails from "./pages/orders/OrderDetails";
+import ReturnsList from "./pages/returns/ReturnsList";
 import AddCoupon from "./pages/coupons/AddCoupon";
 import HomeCMS from "./pages/homeCMS/HomeCMS";
 import AddSection from "./pages/homeCMS/AddSection";
@@ -37,6 +38,7 @@ export default function App() {
           {/* Sales */}
           <Route path="/orders" element={<OrdersList />} />
           <Route path="/orders/:orderId" element={<OrderDetails />} />
+          <Route path="/returns" element={<ReturnsList />} />
           <Route path="/coupons/add" element={<AddCoupon />} />
 
           {/* Engagement */}
