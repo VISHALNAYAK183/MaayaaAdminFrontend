@@ -16,9 +16,9 @@ export type ExchangeStatus =
   | "REFUND_INITIATED"
   | "REJECTED";
 
-// Shape returned by GET /api/admin/exchanges — matches AdminExchangeService.
-// userId / variant details (size, color, image) are NOT in this payload yet;
-// detail modal shows IDs only. Backend enrichment to be done later.
+// Shape returned by GET /api/admin/exchanges — matches AdminExchangeResponseDTO.
+// Every key is a strict superset of the legacy map: original keys are still
+// present, plus product / customer / variant size+colour / timestamps.
 export type AdminExchange = {
   exchangeId: number;
   reason: string | null;
@@ -33,6 +33,28 @@ export type AdminExchange = {
   orderItemId: number | null;
   oldVariantId: number | null;
   newVariantId: number | null;
+
+  // Enrichment added by AdminExchangeResponseDTO
+  approvedAt: string | null;
+  rejectedAt: string | null;
+  completedAt: string | null;
+
+  productId: number | null;
+  productName: string | null;
+  productImage: string | null;
+
+  oldVariantSize: string | null;
+  oldVariantColor: string | null;
+  oldVariantHex: string | null;
+
+  newVariantSize: string | null;
+  newVariantColor: string | null;
+  newVariantHex: string | null;
+
+  userId: number | null;
+  userName: string | null;
+  userEmail: string | null;
+  userPhone: string | null;
 };
 
 export const getAdminExchanges = () =>

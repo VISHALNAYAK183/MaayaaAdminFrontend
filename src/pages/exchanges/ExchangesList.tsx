@@ -45,6 +45,14 @@ const formatDate = (iso: string | null) => {
     : d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 };
 
+const variantLabel = (size: string | null, color: string | null, fallbackId: number | null) => {
+  const parts: string[] = [];
+  if (size)  parts.push(`Size ${size}`);
+  if (color) parts.push(color);
+  if (parts.length) return parts.join(" / ");
+  return fallbackId != null ? `#${fallbackId}` : "—";
+};
+
 type QcAction = "onlineApprove" | "onlineReject" | "warehousePass" | "warehouseFail";
 
 const QC_LABEL: Record<QcAction, string> = {
@@ -286,13 +294,44 @@ export default function ExchangesList() {
               </button>
             </div>
 
+            {selected.productName && (
+              <div className="flex gap-3 mb-4">
+                {selected.productImage && (
+                  <img
+                    src={selected.productImage}
+                    alt=""
+                    className="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                  />
+                )}
+                <div className="text-sm">
+                  <p className="font-medium text-gray-900 dark:text-white">{selected.productName}</p>
+                  {selected.orderItemId != null && (
+                    <p className="text-xs text-gray-400">Order item #{selected.orderItemId}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
             <dl className="text-sm grid grid-cols-2 gap-y-2 gap-x-4">
-              <dt className="text-gray-500">Order Item</dt>
-              <dd className="text-gray-900 dark:text-white">#{selected.orderItemId ?? "—"}</dd>
+              {(selected.userName || selected.userEmail) && (
+                <>
+                  <dt className="text-gray-500">Customer</dt>
+                  <dd className="text-gray-900 dark:text-white">
+                    {selected.userName ?? (selected.userId != null ? `#${selected.userId}` : "—")}
+                    {selected.userEmail && (
+                      <span className="block text-[11px] text-gray-400 truncate">{selected.userEmail}</span>
+                    )}
+                  </dd>
+                </>
+              )}
               <dt className="text-gray-500">Old variant</dt>
-              <dd className="text-gray-900 dark:text-white">#{selected.oldVariantId ?? "—"}</dd>
+              <dd className="text-gray-900 dark:text-white">
+                {variantLabel(selected.oldVariantSize, selected.oldVariantColor, selected.oldVariantId)}
+              </dd>
               <dt className="text-gray-500">New variant</dt>
-              <dd className="text-gray-900 dark:text-white">#{selected.newVariantId ?? "—"}</dd>
+              <dd className="text-gray-900 dark:text-white">
+                {variantLabel(selected.newVariantSize, selected.newVariantColor, selected.newVariantId)}
+              </dd>
               <dt className="text-gray-500">Reason</dt>
               <dd className="text-gray-900 dark:text-white">{selected.reason ?? "—"}</dd>
               <dt className="text-gray-500">Comments</dt>
@@ -362,7 +401,7 @@ export default function ExchangesList() {
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
-              {["Exchange", "Order Item", "Old → New variant", "Reason", "Status", "Requested", "Actions"].map((h) => (
+              {["Exchange", "Product", "Customer", "Old → New", "Reason", "Status", "Requested", "Actions"].map((h) => (
                 <th
                   key={h}
                   className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide py-3 px-5"
@@ -376,7 +415,7 @@ export default function ExchangesList() {
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
-                  {Array.from({ length: 7 }).map((__, j) => (
+                  {Array.from({ length: 8 }).map((__, j) => (
                     <td key={j} className="py-4 px-5">
                       <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                     </td>
@@ -385,7 +424,7 @@ export default function ExchangesList() {
               ))
             ) : visible.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center text-gray-400 text-sm">
+                <td colSpan={8} className="py-16 text-center text-gray-400 text-sm">
                   No exchanges in this view
                 </td>
               </tr>
@@ -400,13 +439,33 @@ export default function ExchangesList() {
                       <span className="block text-[11px] text-gray-400">order #{e.orderId}</span>
                     )}
                   </td>
-                  <td className="py-4 px-5 text-sm text-gray-700 dark:text-gray-300">
-                    #{e.orderItemId ?? "—"}
+                  <td className="py-4 px-5">
+                    <div className="flex items-center gap-2 max-w-[220px]">
+                      {e.productImage && (
+                        <img
+                          src={e.productImage}
+                          alt=""
+                          className="w-10 h-10 object-cover rounded border border-gray-200 dark:border-gray-700 shrink-0"
+                        />
+                      )}
+                      <div className="text-sm text-gray-900 dark:text-white truncate">
+                        {e.productName ?? "—"}
+                        {e.orderItemId != null && (
+                          <span className="block text-[11px] text-gray-400">item #{e.orderItemId}</span>
+                        )}
+                      </div>
+                    </div>
                   </td>
                   <td className="py-4 px-5 text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-mono">#{e.oldVariantId ?? "—"}</span>
+                    <div className="truncate max-w-[180px]">{e.userName ?? (e.userId != null ? `#${e.userId}` : "—")}</div>
+                    {e.userEmail && (
+                      <div className="text-[11px] text-gray-400 truncate max-w-[180px]">{e.userEmail}</div>
+                    )}
+                  </td>
+                  <td className="py-4 px-5 text-sm text-gray-700 dark:text-gray-300">
+                    <span>{variantLabel(e.oldVariantSize, e.oldVariantColor, e.oldVariantId)}</span>
                     <span className="mx-1 text-gray-400">→</span>
-                    <span className="font-mono">#{e.newVariantId ?? "—"}</span>
+                    <span>{variantLabel(e.newVariantSize, e.newVariantColor, e.newVariantId)}</span>
                   </td>
                   <td className="py-4 px-5 text-sm text-gray-700 dark:text-gray-300 max-w-[200px] truncate">
                     {e.reason ?? "—"}
