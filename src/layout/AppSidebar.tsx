@@ -29,6 +29,8 @@ const catalogItems: NavItem[] = [
       { name: "Collections", path: "/collections" },
       { name: "Sizes", path: "/sizes" },
       { name: "Colors", path: "/colors" },
+      { name: "Stock Management", path: "/stock" },
+      { name: "Product Costs", path: "/costs" },
     ],
   },
 ];

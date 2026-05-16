@@ -90,8 +90,24 @@ export default function OrderDetails() {
     );
   }
 
-  const { order, products = [] } = data;
+  const { order, products = [], shipment, timeline = [] } = data;
   const status: string = order.status ?? "";
+
+  const sortedTimeline = [...timeline].sort(
+    (a: any, b: any) =>
+      new Date(a.event_time ?? a.eventTime ?? 0).getTime() -
+      new Date(b.event_time ?? b.eventTime ?? 0).getTime()
+  );
+
+  const fmtDateTime = (iso?: string | null) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "—";
+    return d.toLocaleString("en-IN", {
+      year: "numeric", month: "short", day: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
+  };
 
   return (
     <div className="space-y-5">
@@ -147,6 +163,100 @@ export default function OrderDetails() {
                 <span className="text-sm font-bold text-gray-900 dark:text-white">₹{Number(order.amount).toLocaleString()}</span>
               </div>
             )}
+          </div>
+
+          {/* Shipment + timeline */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Shipment timeline</h2>
+              {shipment?.tracking_url && (
+                <a
+                  href={shipment.tracking_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                >
+                  Track ↗
+                </a>
+              )}
+            </div>
+
+            {shipment && (
+              <div className="px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm border-b border-gray-100 dark:border-gray-700">
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">Carrier</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{shipment.carrier ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">Tracking #</p>
+                  <p className="font-mono text-xs text-gray-900 dark:text-white break-all">
+                    {shipment.tracking_number ?? "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">Est. delivery</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {shipment.estimated_delivery_date
+                      ? new Date(shipment.estimated_delivery_date).toLocaleDateString("en-IN", {
+                          year: "numeric", month: "short", day: "numeric",
+                        })
+                      : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">Shipment status</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{shipment.status ?? "—"}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="px-6 py-5">
+              {sortedTimeline.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">
+                  No shipment events yet
+                </p>
+              ) : (
+                <ol className="space-y-0">
+                  {sortedTimeline.map((evt: any, idx: number) => {
+                    const isLast = idx === sortedTimeline.length - 1;
+                    return (
+                      <li key={`${evt.status}-${idx}`} className="flex gap-4">
+                        <div className="flex flex-col items-center">
+                          <div
+                            className={`w-3 h-3 rounded-full border-2 ${
+                              isLast
+                                ? "bg-emerald-500 border-emerald-500"
+                                : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-500"
+                            }`}
+                          />
+                          {!isLast && (
+                            <div className="w-0.5 flex-1 min-h-[2rem] bg-gray-200 dark:bg-gray-700" />
+                          )}
+                        </div>
+                        <div className="flex-1 pb-4">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <p className="font-medium text-sm text-gray-900 dark:text-white">
+                              {(evt.status ?? "").replace(/_/g, " ")}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {fmtDateTime(evt.event_time ?? evt.eventTime)}
+                            </p>
+                          </div>
+                          {evt.description && (
+                            <p className="text-xs text-gray-600 dark:text-gray-300 mt-0.5">{evt.description}</p>
+                          )}
+                          {evt.location && (
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                              📍 {evt.location}
+                            </p>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </div>
           </div>
         </div>
 

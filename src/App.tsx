@@ -6,6 +6,8 @@ import Home from "./pages/Dashboard/Home";
 import OrdersList from "./pages/orders/OrdersList";
 import OrderDetails from "./pages/orders/OrderDetails";
 import ReturnsList from "./pages/returns/ReturnsList";
+import StockManagement from "./pages/stock/StockManagement";
+import CostManagement from "./pages/cost/CostManagement";
 import AddCoupon from "./pages/coupons/AddCoupon";
 import HomeCMS from "./pages/homeCMS/HomeCMS";
 import AddSection from "./pages/homeCMS/AddSection";
@@ -34,6 +36,8 @@ export default function App() {
           <Route path="/collections" element={<Collection />} />
           <Route path="/sizes" element={<Size />} />
           <Route path="/colors" element={<Color />} />
+          <Route path="/stock" element={<StockManagement />} />
+          <Route path="/costs" element={<CostManagement />} />
 
           {/* Sales */}
           <Route path="/orders" element={<OrdersList />} />

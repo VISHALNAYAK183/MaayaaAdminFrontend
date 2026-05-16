@@ -6,6 +6,14 @@ import { getCategories } from './adminCategory';
 
 const API_BASE_URL = `${API_BASE}/api`;
 
+export type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'FLAGGED';
+
+export const moderateReview = (reviewId: number, status: ReviewStatus) =>
+  axios.put(`${API_BASE_URL}/reviews/${reviewId}/moderate`, { status });
+
+export const getPendingReviews = () =>
+  axios.get<any[]>(`${API_BASE_URL}/reviews/pending`);
+
 export interface Review {
   reviewId: number;
   userId: number;

@@ -3,6 +3,9 @@ import adminReviewService, {
   DashboardStats,
   ProductWithReviewStats,
   Review,
+  ReviewStatus,
+  moderateReview,
+  getPendingReviews,
 } from '../api/adminReview';
 import { API_BASE, CLIENT_API_BASE } from '../api/client';
 
@@ -155,14 +158,50 @@ const ReviewDashboard: React.FC = () => {
   const [sentiment, setSentiment] = useState<'all' | 'positive' | 'negative'>('all');
   const [reviewPage, setReviewPage] = useState(0);
 
+  // Moderation
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
+  const [moderatingId, setModeratingId] = useState<number | null>(null);
+
+  const refresh = async () => {
+    try {
+      const [data, pending] = await Promise.all([
+        adminReviewService.getReviewDashboardData(),
+        getPendingReviews().catch(() => ({ data: [] as any[] })),
+      ]);
+      setDashboardData(data);
+      setPendingCount(Array.isArray(pending.data) ? pending.data.length : 0);
+    } catch {
+      setError('Failed to fetch review data. Please try again.');
+    }
+  };
+
+  const handleModerate = async (reviewId: number, status: ReviewStatus) => {
+    if (!window.confirm(`${status === 'APPROVED' ? 'Approve' : status === 'REJECTED' ? 'Reject' : 'Flag'} this review?`)) {
+      return;
+    }
+    setModeratingId(reviewId);
+    try {
+      await moderateReview(reviewId, status);
+      // Optimistically remove from the open dialog so the moderator can move on.
+      if (dialogProduct) {
+        setDialogProduct({
+          ...dialogProduct,
+          reviews: dialogProduct.reviews.filter((r) => r.reviewId !== reviewId),
+        });
+      }
+      await refresh();
+    } catch (e: any) {
+      alert(e?.response?.data || 'Failed to moderate review');
+    } finally {
+      setModeratingId(null);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
-        const data = await adminReviewService.getReviewDashboardData();
-        setDashboardData(data);
-      } catch {
-        setError('Failed to fetch review data. Please try again.');
+        await refresh();
       } finally {
         setLoading(false);
       }
@@ -237,7 +276,7 @@ const ReviewDashboard: React.FC = () => {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5">
         <StatCard
           label="Total Reviews"
           color="bg-blue-100 dark:bg-blue-900/30"
@@ -249,6 +288,21 @@ const ReviewDashboard: React.FC = () => {
         >
           <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{d.overallTotalReviews}</p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">across {d.productStats.length} products</p>
+        </StatCard>
+
+        <StatCard
+          label="Pending Moderation"
+          color="bg-amber-100 dark:bg-amber-900/30"
+          icon={
+            <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
+        >
+          <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+            {pendingCount ?? '—'}
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">awaiting approval</p>
         </StatCard>
 
         <StatCard
@@ -557,38 +611,65 @@ const ReviewDashboard: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {pagedReviews.map((review) => (
-                    <div
-                      key={review.reviewId}
-                      className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 flex gap-4"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Stars value={review.stars} />
-                          <span className="text-xs text-gray-400 dark:text-gray-500">User #{review.userId}</span>
-                          {review.createdAt && (
-                            <span className="text-xs text-gray-400 dark:text-gray-500">
-                              · {new Date(review.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </span>
+                  {pagedReviews.map((review) => {
+                    const busy = moderatingId === review.reviewId;
+                    return (
+                      <div
+                        key={review.reviewId}
+                        className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 flex gap-4"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Stars value={review.stars} />
+                            <span className="text-xs text-gray-400 dark:text-gray-500">User #{review.userId}</span>
+                            {review.createdAt && (
+                              <span className="text-xs text-gray-400 dark:text-gray-500">
+                                · {new Date(review.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </span>
+                            )}
+                          </div>
+                          {review.title && (
+                            <p className="text-sm font-medium text-gray-900 dark:text-white mb-0.5">{review.title}</p>
                           )}
+                          {review.description && (
+                            <p className="text-sm text-gray-600 dark:text-gray-300">{review.description}</p>
+                          )}
+
+                          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                            <button
+                              onClick={() => handleModerate(review.reviewId, 'APPROVED')}
+                              disabled={busy}
+                              className="text-[11px] px-2.5 py-1 rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white"
+                            >
+                              {busy ? '…' : 'Approve'}
+                            </button>
+                            <button
+                              onClick={() => handleModerate(review.reviewId, 'REJECTED')}
+                              disabled={busy}
+                              className="text-[11px] px-2.5 py-1 rounded-lg font-medium bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 disabled:opacity-50"
+                            >
+                              Reject
+                            </button>
+                            <button
+                              onClick={() => handleModerate(review.reviewId, 'FLAGGED')}
+                              disabled={busy}
+                              className="text-[11px] px-2.5 py-1 rounded-lg font-medium bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 disabled:opacity-50"
+                            >
+                              Flag
+                            </button>
+                          </div>
                         </div>
-                        {review.title && (
-                          <p className="text-sm font-medium text-gray-900 dark:text-white mb-0.5">{review.title}</p>
-                        )}
-                        {review.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-300">{review.description}</p>
+                        {review.image && (
+                          <img
+                            src={resolveUrl(review.image, CLIENT_API_BASE)}
+                            alt=""
+                            className="w-14 h-14 rounded-lg object-cover shrink-0"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
                         )}
                       </div>
-                      {review.image && (
-                        <img
-                          src={resolveUrl(review.image, CLIENT_API_BASE)}
-                          alt=""
-                          className="w-14 h-14 rounded-lg object-cover shrink-0"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
