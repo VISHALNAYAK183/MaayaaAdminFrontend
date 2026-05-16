@@ -42,6 +42,7 @@ const salesItems: NavItem[] = [
     subItems: [
       { name: "Order Management", path: "/orders" },
       { name: "Returns & Refunds", path: "/returns" },
+      { name: "Exchanges", path: "/exchanges" },
       { name: "Coupons", path: "/coupons/add" },
     ],
   },

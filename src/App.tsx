@@ -6,6 +6,7 @@ import Home from "./pages/Dashboard/Home";
 import OrdersList from "./pages/orders/OrdersList";
 import OrderDetails from "./pages/orders/OrderDetails";
 import ReturnsList from "./pages/returns/ReturnsList";
+import ExchangesList from "./pages/exchanges/ExchangesList";
 import StockManagement from "./pages/stock/StockManagement";
 import CostManagement from "./pages/cost/CostManagement";
 import AddCoupon from "./pages/coupons/AddCoupon";
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/orders" element={<OrdersList />} />
           <Route path="/orders/:orderId" element={<OrderDetails />} />
           <Route path="/returns" element={<ReturnsList />} />
+          <Route path="/exchanges" element={<ExchangesList />} />
           <Route path="/coupons/add" element={<AddCoupon />} />
 
           {/* Engagement */}
