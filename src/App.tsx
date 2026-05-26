@@ -22,6 +22,7 @@ import Color from "./pages/Color";
 import Collection from "./pages/Collection";
 import ProductManagement from "./pages/Productmanagement";
 import ReviewDashboard from "./pages/ReviewDashboard";
+import AnalyticsDashboard from "./pages/analytics/AnalyticsDashboard";
 
 export default function App() {
   return (
@@ -49,6 +50,7 @@ export default function App() {
 
           {/* Engagement */}
           <Route path="/reviews" element={<ReviewDashboard />} />
+          <Route path="/analytics" element={<AnalyticsDashboard />} />
 
           {/* Content */}
           <Route path="/home-cms" element={<HomeCMS />} />

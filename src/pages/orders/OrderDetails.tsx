@@ -1,6 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { getOrderDetails, approveOrder, rejectOrder } from "../../api/adminApi";
+import {
+  getOrderDetails,
+  approveOrder,
+  rejectOrder,
+  generateInvoice,
+  downloadInvoicePdf,
+} from "../../api/adminApi";
 import { CLIENT_API_BASE } from "../../api/client";
 import ShipOrderModal from "../../components/ShipOrderModal";
 import UpdateStatusModal from "../../components/UpdateStatusModal";
@@ -27,7 +33,29 @@ export default function OrderDetails() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const handleDownloadInvoice = async () => {
+    setInvoiceLoading(true);
+    try {
+      const gen = await generateInvoice(Number(orderId));
+      const invoiceId = (gen.data as any)?.invoiceId ?? (gen.data as any)?.id;
+      if (!invoiceId) throw new Error("missing invoiceId");
+      const res = await downloadInvoicePdf(invoiceId);
+      const blob = new Blob([res.data as Blob], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `invoice-${orderId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Failed to download invoice.");
+    } finally {
+      setInvoiceLoading(false);
+    }
+  };
 
   const load = async () => {
     try {
@@ -302,6 +330,16 @@ export default function OrderDetails() {
 
             {["DELIVERED", "REJECTED"].includes(status) && (
               <p className="text-sm text-gray-400 text-center py-2">No further actions available.</p>
+            )}
+
+            {status && status !== "REQUESTED" && status !== "REJECTED" && (
+              <button
+                onClick={handleDownloadInvoice}
+                disabled={invoiceLoading}
+                className="mt-3 w-full py-2.5 bg-gray-900 hover:bg-gray-700 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
+              >
+                {invoiceLoading ? "Generating…" : "Download Invoice"}
+              </button>
             )}
           </div>
         </div>

@@ -1,24 +1,26 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import adminReviewService, {
-  DashboardStats,
-  ProductWithReviewStats,
-  Review,
-  ReviewStatus,
-  moderateReview,
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  getReviewDashboard,
+  getReviews,
   getPendingReviews,
+  moderateReview,
+  ReviewDashboard as ReviewDashboardData,
+  ProductReviewStats,
+  Review,
+  ReviewSort,
+  ReviewStatus,
 } from '../api/adminReview';
 import { API_BASE, CLIENT_API_BASE } from '../api/client';
 
 const PRODUCTS_PER_PAGE = 10;
 const REVIEWS_PER_PAGE = 6;
 
-// Product images are served from the admin backend; review images from the user backend
 const resolveUrl = (url: string | undefined | null, base: string) => {
   if (!url) return '';
   return url.startsWith('/') ? `${base}${url}` : url;
 };
 
-function StarRow({ count, filled }: { count: number; filled: boolean }) {
+function StarRow({ filled }: { filled: boolean }) {
   return (
     <svg viewBox="0 0 20 20" fill={filled ? '#FBBF24' : '#D1D5DB'} className="w-4 h-4">
       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -30,7 +32,7 @@ function Stars({ value, max = 5 }: { value: number; max?: number }) {
   return (
     <div className="flex">
       {Array.from({ length: max }, (_, i) => (
-        <StarRow key={i} count={i + 1} filled={i < Math.round(value)} />
+        <StarRow key={i} filled={i < Math.round(value)} />
       ))}
     </div>
   );
@@ -123,96 +125,124 @@ function Pagination({
   );
 }
 
-function applyFilters(
-  reviews: Review[],
-  starFilter: number,
-  sentiment: 'all' | 'positive' | 'negative',
-  sortBy: 'recent' | 'oldest' | 'rating_high' | 'rating_low',
-): Review[] {
-  let out = [...reviews];
-  if (starFilter > 0) out = out.filter((r) => r.stars === starFilter);
-  if (sentiment === 'positive') out = out.filter((r) => r.stars >= 4);
-  if (sentiment === 'negative') out = out.filter((r) => r.stars <= 2);
-  switch (sortBy) {
-    case 'recent':       out.sort((a, b) => b.reviewId - a.reviewId); break;
-    case 'oldest':       out.sort((a, b) => a.reviewId - b.reviewId); break;
-    case 'rating_high':  out.sort((a, b) => b.stars - a.stars); break;
-    case 'rating_low':   out.sort((a, b) => a.stars - b.stars); break;
-  }
-  return out;
-}
-
 const ReviewDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [dashboardData, setDashboardData] = useState<DashboardStats | null>(null);
+  const [dashboardData, setDashboardData] = useState<ReviewDashboardData | null>(null);
 
-  // Product table
   const [searchTerm, setSearchTerm] = useState('');
   const [productPage, setProductPage] = useState(0);
 
-  // Review dialog
-  const [dialogProduct, setDialogProduct] = useState<ProductWithReviewStats | null>(null);
+  // Dialog state — backed by server requests
+  const [dialogProduct, setDialogProduct] = useState<ProductReviewStats | null>(null);
   const [starFilter, setStarFilter] = useState(0);
-  const [sortBy, setSortBy] = useState<'recent' | 'oldest' | 'rating_high' | 'rating_low'>('recent');
-  const [sentiment, setSentiment] = useState<'all' | 'positive' | 'negative'>('all');
+  const [sortBy, setSortBy] = useState<ReviewSort>('recent');
   const [reviewPage, setReviewPage] = useState(0);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsTotalPages, setReviewsTotalPages] = useState(1);
+  const [reviewsTotal, setReviewsTotal] = useState(0);
 
-  // Moderation
   const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [moderatingId, setModeratingId] = useState<number | null>(null);
 
-  const refresh = async () => {
+  // All Reviews (flat list, no productId filter)
+  const [allRatingFilter, setAllRatingFilter] = useState(0);
+  const [allStatusFilter, setAllStatusFilter] = useState<'ALL' | ReviewStatus>('ALL');
+  const [allSortBy, setAllSortBy] = useState<ReviewSort>('recent');
+  const [allPage, setAllPage] = useState(0);
+  const [allReviews, setAllReviews] = useState<Review[]>([]);
+  const [allReviewsLoading, setAllReviewsLoading] = useState(false);
+  const [allReviewsTotalPages, setAllReviewsTotalPages] = useState(1);
+  const [allReviewsTotal, setAllReviewsTotal] = useState(0);
+
+  const refreshDashboard = useCallback(async () => {
+    const [dash, pending] = await Promise.all([
+      getReviewDashboard(),
+      getPendingReviews().catch(() => ({ data: [] as Review[] })),
+    ]);
+    setDashboardData(dash.data);
+    setPendingCount(Array.isArray(pending.data) ? pending.data.length : 0);
+  }, []);
+
+  const fetchAllReviews = useCallback(async () => {
+    setAllReviewsLoading(true);
     try {
-      const [data, pending] = await Promise.all([
-        adminReviewService.getReviewDashboardData(),
-        getPendingReviews().catch(() => ({ data: [] as any[] })),
-      ]);
-      setDashboardData(data);
-      setPendingCount(Array.isArray(pending.data) ? pending.data.length : 0);
+      const res = await getReviews({
+        rating: allRatingFilter > 0 ? allRatingFilter : undefined,
+        status: allStatusFilter === 'ALL' ? undefined : allStatusFilter,
+        sort: allSortBy,
+        page: allPage,
+        size: 10,
+      });
+      setAllReviews(res.data.content);
+      setAllReviewsTotalPages(Math.max(1, res.data.totalPages));
+      setAllReviewsTotal(res.data.totalElements);
     } catch {
-      setError('Failed to fetch review data. Please try again.');
+      setAllReviews([]);
+      setAllReviewsTotalPages(1);
+      setAllReviewsTotal(0);
+    } finally {
+      setAllReviewsLoading(false);
     }
-  };
+  }, [allRatingFilter, allStatusFilter, allSortBy, allPage]);
+
+  const fetchProductReviews = useCallback(async () => {
+    if (!dialogProduct) return;
+    setReviewsLoading(true);
+    try {
+      const res = await getReviews({
+        productId: dialogProduct.productId,
+        rating: starFilter > 0 ? starFilter : undefined,
+        sort: sortBy,
+        page: reviewPage,
+        size: REVIEWS_PER_PAGE,
+      });
+      setReviews(res.data.content);
+      setReviewsTotalPages(Math.max(1, res.data.totalPages));
+      setReviewsTotal(res.data.totalElements);
+    } catch {
+      setReviews([]);
+      setReviewsTotalPages(1);
+      setReviewsTotal(0);
+    } finally {
+      setReviewsLoading(false);
+    }
+  }, [dialogProduct, starFilter, sortBy, reviewPage]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        await refreshDashboard();
+      } catch {
+        setError('Failed to fetch review data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [refreshDashboard]);
+
+  useEffect(() => { setProductPage(0); }, [searchTerm]);
+  useEffect(() => { setReviewPage(0); }, [starFilter, sortBy, dialogProduct]);
+  useEffect(() => { fetchProductReviews(); }, [fetchProductReviews]);
+  useEffect(() => { setAllPage(0); }, [allRatingFilter, allStatusFilter, allSortBy]);
+  useEffect(() => { fetchAllReviews(); }, [fetchAllReviews]);
 
   const handleModerate = async (reviewId: number, status: ReviewStatus) => {
-    if (!window.confirm(`${status === 'APPROVED' ? 'Approve' : status === 'REJECTED' ? 'Reject' : 'Flag'} this review?`)) {
-      return;
-    }
+    if (!window.confirm(
+      `${status === 'APPROVED' ? 'Approve' : status === 'REJECTED' ? 'Reject' : 'Flag'} this review?`
+    )) return;
     setModeratingId(reviewId);
     try {
       await moderateReview(reviewId, status);
-      // Optimistically remove from the open dialog so the moderator can move on.
-      if (dialogProduct) {
-        setDialogProduct({
-          ...dialogProduct,
-          reviews: dialogProduct.reviews.filter((r) => r.reviewId !== reviewId),
-        });
-      }
-      await refresh();
+      await Promise.all([refreshDashboard(), fetchProductReviews(), fetchAllReviews()]);
     } catch (e: any) {
       alert(e?.response?.data || 'Failed to moderate review');
     } finally {
       setModeratingId(null);
     }
   };
-
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        await refresh();
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  // Reset product page when search changes
-  useEffect(() => { setProductPage(0); }, [searchTerm]);
-
-  // Reset review page when filters change
-  useEffect(() => { setReviewPage(0); }, [starFilter, sortBy, sentiment, dialogProduct]);
 
   const filteredProducts = useMemo(() =>
     (dashboardData?.productStats ?? []).filter((p) =>
@@ -227,21 +257,10 @@ const ReviewDashboard: React.FC = () => {
     (productPage + 1) * PRODUCTS_PER_PAGE,
   );
 
-  const filteredReviews = useMemo(
-    () => dialogProduct ? applyFilters(dialogProduct.reviews, starFilter, sentiment, sortBy) : [],
-    [dialogProduct, starFilter, sentiment, sortBy],
-  );
-  const reviewTotalPages = Math.max(1, Math.ceil(filteredReviews.length / REVIEWS_PER_PAGE));
-  const pagedReviews = filteredReviews.slice(
-    reviewPage * REVIEWS_PER_PAGE,
-    (reviewPage + 1) * REVIEWS_PER_PAGE,
-  );
-
-  const openDialog = (product: ProductWithReviewStats) => {
+  const openDialog = (product: ProductReviewStats) => {
     setDialogProduct(product);
     setStarFilter(0);
     setSortBy('recent');
-    setSentiment('all');
   };
 
   if (loading) {
@@ -255,19 +274,18 @@ const ReviewDashboard: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error || !dashboardData) {
     return (
       <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-sm text-red-700 dark:text-red-400">
-        {error}
+        {error || 'No review data.'}
       </div>
     );
   }
 
-  const d = dashboardData!;
+  const d = dashboardData;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Review Dashboard</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -275,7 +293,6 @@ const ReviewDashboard: React.FC = () => {
         </p>
       </div>
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5">
         <StatCard
           label="Total Reviews"
@@ -353,7 +370,7 @@ const ReviewDashboard: React.FC = () => {
           <div className="flex items-center gap-1 mt-0.5">
             <Stars value={d.highestRatedProduct?.averageRating ?? 0} />
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              {d.highestRatedProduct?.averageRating.toFixed(1) ?? '—'}
+              {d.highestRatedProduct ? d.highestRatedProduct.averageRating.toFixed(1) : '—'}
             </span>
           </div>
         </StatCard>
@@ -373,13 +390,12 @@ const ReviewDashboard: React.FC = () => {
           <div className="flex items-center gap-1 mt-0.5">
             <Stars value={d.lowestRatedProduct?.averageRating ?? 0} />
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              {d.lowestRatedProduct?.averageRating.toFixed(1) ?? '—'}
+              {d.lowestRatedProduct ? d.lowestRatedProduct.averageRating.toFixed(1) : '—'}
             </span>
           </div>
         </StatCard>
       </div>
 
-      {/* Category Performance */}
       {d.categoryStats.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
@@ -414,7 +430,133 @@ const ReviewDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Product Review Table */}
+      {/* All Reviews (server-driven, no product filter) */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">All Reviews</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              {allReviewsTotal} review{allReviewsTotal !== 1 ? 's' : ''} match the current filters
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={allRatingFilter}
+              onChange={(e) => setAllRatingFilter(Number(e.target.value))}
+              className="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={0}>All Stars</option>
+              {[5, 4, 3, 2, 1].map((s) => (
+                <option key={s} value={s}>{s} Star{s !== 1 ? 's' : ''}</option>
+              ))}
+            </select>
+            <select
+              value={allStatusFilter}
+              onChange={(e) => setAllStatusFilter(e.target.value as any)}
+              className="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="PENDING">Pending</option>
+              <option value="APPROVED">Approved</option>
+              <option value="REJECTED">Rejected</option>
+              <option value="FLAGGED">Flagged</option>
+            </select>
+            <select
+              value={allSortBy}
+              onChange={(e) => setAllSortBy(e.target.value as ReviewSort)}
+              className="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="recent">Most Recent</option>
+              <option value="oldest">Oldest First</option>
+              <option value="highest">Highest Rating</option>
+              <option value="lowest">Lowest Rating</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="p-6">
+          {allReviewsLoading ? (
+            <div className="text-center py-12 text-sm text-gray-400 dark:text-gray-500">Loading reviews…</div>
+          ) : allReviews.length === 0 ? (
+            <div className="text-center py-12 text-sm text-gray-400 dark:text-gray-500">
+              No reviews match the selected filters.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {allReviews.map((review) => {
+                const busy = moderatingId === review.reviewId;
+                const productName =
+                  d.productStats.find((p) => p.productId === review.productId)?.productName
+                  ?? `Product #${review.productId}`;
+                return (
+                  <div
+                    key={review.reviewId}
+                    className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 flex gap-4"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <Stars value={review.stars} />
+                        <span className="text-xs text-gray-700 dark:text-gray-200 font-medium">{productName}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">· User #{review.userId}</span>
+                        {review.updatedAt && (
+                          <span className="text-xs text-gray-400 dark:text-gray-500">
+                            · {new Date(review.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        )}
+                        {review.status && (
+                          <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
+                            {review.status}
+                          </span>
+                        )}
+                      </div>
+                      {review.title && (
+                        <p className="text-sm font-medium text-gray-900 dark:text-white mb-0.5">{review.title}</p>
+                      )}
+                      {review.description && (
+                        <p className="text-sm text-gray-600 dark:text-gray-300">{review.description}</p>
+                      )}
+                      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                        <button
+                          onClick={() => handleModerate(review.reviewId, 'APPROVED')}
+                          disabled={busy}
+                          className="text-[11px] px-2.5 py-1 rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white"
+                        >
+                          {busy ? '…' : 'Approve'}
+                        </button>
+                        <button
+                          onClick={() => handleModerate(review.reviewId, 'REJECTED')}
+                          disabled={busy}
+                          className="text-[11px] px-2.5 py-1 rounded-lg font-medium bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 disabled:opacity-50"
+                        >
+                          Reject
+                        </button>
+                        <button
+                          onClick={() => handleModerate(review.reviewId, 'FLAGGED')}
+                          disabled={busy}
+                          className="text-[11px] px-2.5 py-1 rounded-lg font-medium bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 disabled:opacity-50"
+                        >
+                          Flag
+                        </button>
+                      </div>
+                    </div>
+                    {review.image && (
+                      <img
+                        src={resolveUrl(review.image, CLIENT_API_BASE)}
+                        alt=""
+                        className="w-14 h-14 rounded-lg object-cover shrink-0"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <Pagination page={allPage} totalPages={allReviewsTotalPages} onChange={setAllPage} />
+      </div>
+
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
@@ -509,14 +651,12 @@ const ReviewDashboard: React.FC = () => {
         <Pagination page={productPage} totalPages={productTotalPages} onChange={setProductPage} />
       </div>
 
-      {/* Reviews Dialog */}
       {dialogProduct && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setDialogProduct(null); }}
         >
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-            {/* Dialog header */}
             <div className="flex items-start justify-between p-6 border-b border-gray-200 dark:border-gray-700 gap-4">
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate">
@@ -525,33 +665,6 @@ const ReviewDashboard: React.FC = () => {
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   {dialogProduct.totalReviews} reviews · {dialogProduct.averageRating.toFixed(1)} avg rating
                 </p>
-              </div>
-
-              {/* Star distribution */}
-              <div className="shrink-0 w-48 space-y-1">
-                {[5, 4, 3, 2, 1].map((star) => {
-                  const count = dialogProduct.reviews.filter((r) => r.stars === star).length;
-                  const pct = dialogProduct.totalReviews > 0 ? (count / dialogProduct.totalReviews) * 100 : 0;
-                  return (
-                    <button
-                      key={star}
-                      onClick={() => setStarFilter(starFilter === star ? 0 : star)}
-                      className={`flex items-center gap-1.5 w-full group rounded px-1 py-0.5 transition-colors ${starFilter === star ? 'bg-yellow-50 dark:bg-yellow-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
-                    >
-                      <span className="text-xs text-gray-500 dark:text-gray-400 w-3">{star}</span>
-                      <svg className="w-3 h-3 text-yellow-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
-                        <div
-                          className="bg-yellow-400 rounded-full h-1.5 transition-all"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-gray-400 dark:text-gray-500 w-5 text-right">{count}</span>
-                    </button>
-                  );
-                })}
               </div>
 
               <button
@@ -578,40 +691,31 @@ const ReviewDashboard: React.FC = () => {
               </select>
 
               <select
-                value={sentiment}
-                onChange={(e) => setSentiment(e.target.value as any)}
-                className="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-              >
-                <option value="all">All Sentiments</option>
-                <option value="positive">Positive (4–5★)</option>
-                <option value="negative">Negative (1–2★)</option>
-              </select>
-
-              <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(e.target.value as ReviewSort)}
                 className="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               >
                 <option value="recent">Most Recent</option>
                 <option value="oldest">Oldest First</option>
-                <option value="rating_high">Highest Rating</option>
-                <option value="rating_low">Lowest Rating</option>
+                <option value="highest">Highest Rating</option>
+                <option value="lowest">Lowest Rating</option>
               </select>
 
               <span className="ml-auto text-xs text-gray-400 dark:text-gray-500 self-center">
-                {filteredReviews.length} result{filteredReviews.length !== 1 ? 's' : ''}
+                {reviewsTotal} result{reviewsTotal !== 1 ? 's' : ''}
               </span>
             </div>
 
-            {/* Review list */}
             <div className="flex-1 overflow-y-auto p-6">
-              {pagedReviews.length === 0 ? (
+              {reviewsLoading ? (
+                <div className="text-center py-12 text-sm text-gray-400 dark:text-gray-500">Loading reviews…</div>
+              ) : reviews.length === 0 ? (
                 <div className="text-center py-12 text-sm text-gray-400 dark:text-gray-500">
                   No reviews match the selected filters.
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {pagedReviews.map((review) => {
+                  {reviews.map((review) => {
                     const busy = moderatingId === review.reviewId;
                     return (
                       <div
@@ -622,9 +726,14 @@ const ReviewDashboard: React.FC = () => {
                           <div className="flex items-center gap-2 mb-1">
                             <Stars value={review.stars} />
                             <span className="text-xs text-gray-400 dark:text-gray-500">User #{review.userId}</span>
-                            {review.createdAt && (
+                            {review.updatedAt && (
                               <span className="text-xs text-gray-400 dark:text-gray-500">
-                                · {new Date(review.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                · {new Date(review.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </span>
+                            )}
+                            {review.status && (
+                              <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
+                                {review.status}
                               </span>
                             )}
                           </div>
@@ -674,8 +783,7 @@ const ReviewDashboard: React.FC = () => {
               )}
             </div>
 
-            {/* Dialog pagination */}
-            <Pagination page={reviewPage} totalPages={reviewTotalPages} onChange={setReviewPage} />
+            <Pagination page={reviewPage} totalPages={reviewsTotalPages} onChange={setReviewPage} />
           </div>
         </div>
       )}

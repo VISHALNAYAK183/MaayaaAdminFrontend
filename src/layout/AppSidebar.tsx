@@ -52,7 +52,10 @@ const engagementItems: NavItem[] = [
   {
     icon: <ShootingStarIcon />,
     name: "Engagement",
-    subItems: [{ name: "Reviews", path: "/reviews" }],
+    subItems: [
+      { name: "Reviews", path: "/reviews" },
+      { name: "Analytics", path: "/analytics" },
+    ],
   },
 ];
 

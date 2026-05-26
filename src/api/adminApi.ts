@@ -1,12 +1,36 @@
-import { apiClient, clientApi, ADMIN_BASE, CLIENT_BASE } from "./client";
+import { apiClient, clientApi, ADMIN_BASE, CLIENT_BASE, API_BASE } from "./client";
 import { AdminOrder } from "../types/order";
 
 // Re-exported for any caller that still references these names
 export { ADMIN_BASE, CLIENT_BASE };
 
-export const getOrders = (status?: string, page = 0, size = 20) =>
+export const getOrders = (
+  status?: string,
+  page = 0,
+  size = 20,
+  sortBy?: "newest" | "price",
+  direction: "asc" | "desc" = "desc"
+) =>
   apiClient.get(`${ADMIN_BASE}/orders`, {
-    params: { ...(status ? { status } : {}), page, size },
+    params: {
+      ...(status ? { status } : {}),
+      page,
+      size,
+      ...(sortBy ? { sortBy, direction } : {}),
+    },
+  });
+
+export const getMostOrderedProducts = () =>
+  apiClient.get<Array<{ product_id: number; product_name: string; total_ordered: number }>>(
+    `${ADMIN_BASE}/orders/most-ordered-products`
+  );
+
+export const generateInvoice = (orderId: number) =>
+  apiClient.post(`${API_BASE}/invoice/test/${orderId}`);
+
+export const downloadInvoicePdf = (invoiceId: number) =>
+  apiClient.get<Blob>(`${API_BASE}/invoice/download/${invoiceId}`, {
+    responseType: "blob",
   });
 
 export const getOrderDetails = (orderId: number) =>

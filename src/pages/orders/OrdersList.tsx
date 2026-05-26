@@ -27,21 +27,30 @@ export default function OrdersList() {
   const [tab, setTab] = useState("PENDING");
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [sortKey, setSortKey] = useState<"default" | "newest" | "price_desc" | "price_asc">("default");
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [modal, setModal] = useState<ModalState | null>(null);
   const navigate = useNavigate();
 
-  useEffect(() => { setPage(0); }, [tab]);
-  useEffect(() => { fetchOrders(); }, [tab, page]);
+  useEffect(() => { setPage(0); }, [tab, sortKey]);
+  useEffect(() => { fetchOrders(); }, [tab, page, sortKey]);
+
+  const sortArgs = (): { sortBy?: "newest" | "price"; direction: "asc" | "desc" } => {
+    if (sortKey === "newest")     return { sortBy: "newest",  direction: "desc" };
+    if (sortKey === "price_desc") return { sortBy: "price",   direction: "desc" };
+    if (sortKey === "price_asc")  return { sortBy: "price",   direction: "asc"  };
+    return { direction: "desc" };
+  };
 
   const fetchOrders = async () => {
     setLoading(true);
     try {
+      const { sortBy, direction } = sortArgs();
       if (tab === "PENDING") {
         const [reqRes, placedRes] = await Promise.all([
-          getOrders("REQUESTED", 0, 100),
-          getOrders("PLACED", 0, 100),
+          getOrders("REQUESTED", 0, 100, sortBy, direction),
+          getOrders("PLACED", 0, 100, sortBy, direction),
         ]);
         const req = reqRes.data as any;
         const placed = placedRes.data as any;
@@ -50,7 +59,7 @@ export default function OrdersList() {
         setOrders([...reqOrders, ...placedOrders].sort((a, b) => b.order_id - a.order_id));
         setTotalPages(1);
       } else {
-        const res = await getOrders(tab, page);
+        const res = await getOrders(tab, page, 20, sortBy, direction);
         const body = res.data as any;
         setOrders(Array.isArray(body) ? body : (body.content ?? []));
         setTotalPages(body.total_pages ?? 1);
@@ -222,9 +231,10 @@ export default function OrdersList() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-5 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit flex-wrap">
-        {TABS.map((t) => (
+      {/* Tabs + Sort */}
+      <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
+        <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit flex-wrap">
+          {TABS.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -236,7 +246,18 @@ export default function OrdersList() {
           >
             {TAB_LABEL[t] ?? t.replace(/_/g, " ")}
           </button>
-        ))}
+          ))}
+        </div>
+        <select
+          value={sortKey}
+          onChange={(e) => setSortKey(e.target.value as any)}
+          className="text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+        >
+          <option value="default">Default</option>
+          <option value="newest">Newest first</option>
+          <option value="price_desc">Price: high → low</option>
+          <option value="price_asc">Price: low → high</option>
+        </select>
       </div>
 
       {/* Table */}
