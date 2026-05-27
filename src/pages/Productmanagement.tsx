@@ -105,13 +105,15 @@ const blankForm = (): Omit<Product, "productId"> => ({
   details: "",
   fabricDetails: "",
   hsnCode: "",
-  gstRate: 0,
+  // -1 = "not picked yet". 0 is a real, selectable rate (exempt goods).
+  gstRate: -1,
   questionsAnswers: [{ question: "", answer: "" }],
   variants: [blankVariant()],
   images: [],
 });
 
 // GST rates allowed for textiles + general retail. Per current GSTN slabs.
+// 0% is valid (e.g. raw cotton, sanitary napkins, books).
 const GST_RATE_OPTIONS = [0, 5, 12, 18, 28] as const;
 
 // ─── Resolve image URL ────────────────────────────────────────────────────────
@@ -994,9 +996,9 @@ const ProductManagement: React.FC = () => {
       setFormStep(1);
       return setStatus({ type: "error", msg: "HSN code is required for GST filing." });
     }
-    if (!Number(form.gstRate) || Number(form.gstRate) <= 0) {
+    if (Number(form.gstRate) < 0 || !Number.isFinite(Number(form.gstRate))) {
       setFormStep(1);
-      return setStatus({ type: "error", msg: "Select a GST rate (5 / 12 / 18 / 28%)." });
+      return setStatus({ type: "error", msg: "Select a GST rate (0 / 5 / 12 / 18 / 28%)." });
     }
 
     // Variant uniqueness — no two variants may share the same size + colour
@@ -1027,7 +1029,7 @@ const ProductManagement: React.FC = () => {
         details: form.details ?? "",
         fabricDetails: form.fabricDetails ?? "",
         hsnCode: (form.hsnCode ?? "").trim(),
-        gstRate: Number(form.gstRate ?? 0),
+        gstRate: Number(form.gstRate),
         images: [],
         questionsAnswers: form.questionsAnswers.filter((qa) => qa.question.trim()),
         variants: form.variants
@@ -1086,7 +1088,8 @@ const ProductManagement: React.FC = () => {
       details: product.details ?? "",
       fabricDetails: product.fabricDetails ?? "",
       hsnCode: product.hsnCode ?? "",
-      gstRate: Number(product.gstRate ?? 0),
+      // null → force re-selection. 0 is a real rate (exempt goods).
+      gstRate: product.gstRate == null ? -1 : Number(product.gstRate),
       questionsAnswers: product.questionsAnswers?.length
         ? product.questionsAnswers
         : [{ question: "", answer: "" }],
@@ -1168,7 +1171,8 @@ const ProductManagement: React.FC = () => {
       details: product.details ?? "",
       fabricDetails: product.fabricDetails ?? "",
       hsnCode: product.hsnCode ?? "",
-      gstRate: Number(product.gstRate ?? 0),
+      // null → force re-selection. 0 is a real rate (exempt goods).
+      gstRate: product.gstRate == null ? -1 : Number(product.gstRate),
       questionsAnswers: product.questionsAnswers?.length
         ? product.questionsAnswers
         : [{ question: "", answer: "" }],
@@ -1296,7 +1300,7 @@ const ProductManagement: React.FC = () => {
       // GST classification — also enforced on submit but failing here avoids
       // the user racing all the way to step 4 only to be bounced back.
       if (!form.hsnCode || !form.hsnCode.trim()) return "HSN code is required for GST filing.";
-      if (!Number(form.gstRate) || Number(form.gstRate) <= 0) return "Select a GST rate (5 / 12 / 18 / 28%).";
+      if (Number(form.gstRate) < 0 || !Number.isFinite(Number(form.gstRate))) return "Select a GST rate (0 / 5 / 12 / 18 / 28%).";
       return null;
     }
     if (step === 3) {
@@ -1478,15 +1482,23 @@ const ProductManagement: React.FC = () => {
                       className={inputCls}
                     />
                   </Fld>
-                  <Fld label="GST Rate (%)" req hint="Textiles: 5% if ≤ ₹1,000, else 12%. Confirm with CA.">
+                  <Fld
+                    label="GST Rate (%)"
+                    req
+                    hint="Textiles: 5% if sale value (post-discount) ≤ ₹1,000 per piece, else 12%. Confirm with CA."
+                  >
                     <select
                       name="gstRate"
-                      value={String(form.gstRate ?? 0)}
-                      onChange={handleChange}
+                      value={Number(form.gstRate) < 0 ? "" : String(form.gstRate)}
+                      onChange={(e) => {
+                        setStatus(null);
+                        const v = e.target.value;
+                        setForm((prev) => ({ ...prev, gstRate: v === "" ? -1 : Number(v) }));
+                      }}
                       className={selectCls}
                     >
-                      <option value="0">Select rate</option>
-                      {GST_RATE_OPTIONS.filter((r) => r > 0).map((r) => (
+                      <option value="">Select rate</option>
+                      {GST_RATE_OPTIONS.map((r) => (
                         <option key={r} value={r}>{r}%</option>
                       ))}
                     </select>

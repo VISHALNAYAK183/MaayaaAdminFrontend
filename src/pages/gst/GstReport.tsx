@@ -6,7 +6,11 @@ import {
 } from "../../api/gstApi";
 
 const currency = (n: number | null | undefined) =>
-  "₹" + Number(n ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  "₹" +
+  Number(n ?? 0).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
 const monthLabel = (yyyymm: string) => {
   const [y, m] = yyyymm.split("-").map(Number);
@@ -27,12 +31,20 @@ export default function GstReportPage() {
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
-    setLoading(true);
-    setError("");
-    getGstReport(month)
-      .then((res) => setData(res.data))
-      .catch(() => setError("Failed to load GST report."))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await getGstReport(month);
+        if (!cancelled) setData(res.data);
+      } catch {
+        if (!cancelled) setError("Failed to load GST report.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [month]);
 
   const handleDownload = async () => {
@@ -40,14 +52,32 @@ export default function GstReportPage() {
     try {
       const res = await downloadGstr1Csv(month);
       const blob = new Blob([res.data as Blob], { type: "text/csv;charset=utf-8" });
+      // A 0-byte file uploads silently to the GST portal and gets rejected as
+      // malformed — bail out here with a clear message instead.
+      if (blob.size === 0) {
+        alert(`No invoices for ${monthLabel(month)} — nothing to export.`);
+        return;
+      }
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `gstr1-${month}.csv`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch {
-      alert("Failed to download GSTR-1 CSV.");
+    } catch (e: unknown) {
+      // responseType:"blob" means the error body comes back as a Blob — try to
+      // surface the actual server message rather than a generic failure.
+      const err = e as { response?: { data?: unknown } };
+      const data = err?.response?.data;
+      let serverMsg: string | undefined;
+      if (data instanceof Blob) {
+        try {
+          serverMsg = JSON.parse(await data.text())?.message;
+        } catch { /* not JSON */ }
+      } else if (data && typeof data === "object" && "message" in data) {
+        serverMsg = String((data as { message: unknown }).message);
+      }
+      alert(serverMsg || "Failed to download GSTR-1 CSV.");
     } finally {
       setDownloading(false);
     }

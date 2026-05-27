@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   listExpenses,
   createExpense,
@@ -17,10 +17,21 @@ const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
 
 const GST_RATES = [0, 5, 12, 18, 28] as const;
 
+// Format-check only — backend still verifies on save.
+const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+
+// Round-trip safety on taxable × rate ≈ amount. Two-rupee tolerance covers
+// vendor rounding policy differences without letting a wrong amount slide.
+const AMOUNT_TOLERANCE = 2;
+
 const PAGE_SIZE = 20;
 
 const currency = (n: number | null | undefined) =>
-  "₹" + Number(n ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  "₹" +
+  Number(n ?? 0).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
 const fmtDate = (iso: string) => {
   if (!iso) return "—";
@@ -67,7 +78,12 @@ export default function ExpenseManagement() {
   const [form, setForm] = useState<FormState>(emptyForm());
   const [saving, setSaving] = useState(false);
 
-  const fetch = async () => {
+  // Guards against out-of-order responses when the user changes
+  // page/filter faster than the network responds.
+  const fetchSeq = useRef(0);
+
+  const loadExpenses = async () => {
+    const seq = ++fetchSeq.current;
     setLoading(true);
     setError("");
     try {
@@ -76,19 +92,29 @@ export default function ExpenseManagement() {
         PAGE_SIZE,
         filter === "ALL" ? undefined : filter,
       );
+      if (seq !== fetchSeq.current) return;
       setRows(res.data.content);
       setTotalPages(Math.max(1, res.data.totalPages));
       setTotalElements(res.data.totalElements);
     } catch {
+      if (seq !== fetchSeq.current) return;
       setError("Failed to load expenses.");
       setRows([]);
     } finally {
-      setLoading(false);
+      if (seq === fetchSeq.current) setLoading(false);
     }
   };
 
   useEffect(() => { setPage(0); }, [filter]);
-  useEffect(() => { fetch(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page, filter]);
+  useEffect(() => {
+    loadExpenses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, filter]);
+
+  // Live GSTIN validity — only flag once the user has typed all 15 chars,
+  // so they aren't nagged mid-typing on every keystroke.
+  const gstinBad =
+    form.vendorGstin.length === 15 && !GSTIN_RE.test(form.vendorGstin);
 
   // ---- Derived totals shown above the table ----
   const totals = useMemo(() => {
@@ -117,7 +143,7 @@ export default function ExpenseManagement() {
       category: row.category,
       description: row.description ?? "",
       vendorName: row.vendorName ?? "",
-      vendorGstin: row.vendorGstin ?? "",
+      vendorGstin: (row.vendorGstin ?? "").toUpperCase(),
       invoiceNumber: row.invoiceNumber ?? "",
       taxableValue: row.taxableValue == null ? "" : String(row.taxableValue),
       gstRate: row.gstRate == null ? "0" : String(row.gstRate),
@@ -136,25 +162,54 @@ export default function ExpenseManagement() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.amount || Number(form.amount) <= 0) {
+    const amount = Number(form.amount);
+    if (!form.amount || !Number.isFinite(amount) || amount <= 0) {
       alert("Amount must be greater than 0.");
       return;
     }
-    if (form.vendorGstin && form.vendorGstin.trim().length !== 15) {
-      alert("Vendor GSTIN must be 15 characters.");
+
+    const gstin = form.vendorGstin.trim().toUpperCase();
+    if (gstin && !GSTIN_RE.test(gstin)) {
+      alert(
+        "Vendor GSTIN format is invalid.\n\n" +
+          "Expected: 15 chars — 2-digit state code, 5 letters, 4 digits, 1 letter, " +
+          "1 alphanumeric, 'Z', 1 alphanumeric.\n" +
+          "Example: 29AAGCR4375J1ZU",
+      );
       return;
+    }
+
+    // Cross-check that the user-entered total matches taxable × (1 + rate%).
+    // Skip when no taxable / no rate was entered (the row will simply have no ITC).
+    const rate = Number(form.gstRate);
+    const taxable = form.taxableValue ? Number(form.taxableValue) : null;
+    if (taxable != null && Number.isFinite(taxable) && taxable > 0 && rate > 0) {
+      const expected = taxable * (1 + rate / 100);
+      if (Math.abs(expected - amount) > AMOUNT_TOLERANCE) {
+        alert(
+          `Total paid does not match taxable × (1 + GST%).\n\n` +
+            `Taxable: ₹${taxable.toFixed(2)}\n` +
+            `GST ${rate}%: ₹${(taxable * rate / 100).toFixed(2)}\n` +
+            `Expected total: ₹${expected.toFixed(2)}\n` +
+            `Entered total: ₹${amount.toFixed(2)}\n\n` +
+            `Fix one of the three numbers — saving as-is would break ITC reconciliation.`,
+        );
+        return;
+      }
     }
 
     const body: ExpenseRequest = {
       category: form.category,
       description: form.description.trim() || null,
       vendorName: form.vendorName.trim() || null,
-      vendorGstin: form.vendorGstin.trim() || null,
+      vendorGstin: gstin || null,
       invoiceNumber: form.invoiceNumber.trim() || null,
-      taxableValue: form.taxableValue ? Number(form.taxableValue) : null,
-      gstRate: Number(form.gstRate ?? 0),
-      amount: Number(form.amount),
-      incurredAt: new Date(form.incurredAt).toISOString(),
+      taxableValue: taxable,
+      gstRate: Number.isFinite(rate) ? rate : 0,
+      amount,
+      // Noon UTC on the picked date — keeps the calendar date intact
+      // regardless of the server's tax-period zone (UTC today, possibly IST later).
+      incurredAt: `${form.incurredAt}T12:00:00Z`,
     };
 
     setSaving(true);
@@ -165,19 +220,20 @@ export default function ExpenseManagement() {
         await updateExpense(editingId, body);
       }
       closeForm();
-      await fetch();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || err?.message || "Failed to save expense.");
+      await loadExpenses();
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      alert(e?.response?.data?.message || e?.message || "Failed to save expense.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Delete this expense? (soft delete — can be restored from DB)")) return;
+    if (!window.confirm("Delete this expense? This will remove it from GST and analytics totals.")) return;
     try {
       await deleteExpense(id);
-      await fetch();
+      await loadExpenses();
     } catch {
       alert("Failed to delete.");
     }
@@ -202,19 +258,24 @@ export default function ExpenseManagement() {
         </button>
       </div>
 
-      {/* Totals strip */}
+      {/* Totals strip — page-scoped. Period totals live on the GST report page. */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Stat label="Total (this page)" value={currency(totals.total)} />
+        <Stat
+          label={`Sum of visible (${rows.length} of ${totalElements})`}
+          value={currency(totals.total)}
+        />
         {CATEGORIES.map((c) => (
           <Stat
             key={c.value}
-            label={c.label}
+            label={`${c.label} (visible)`}
             value={currency(totals.byCat[c.value] ?? 0)}
           />
         ))}
       </div>
       <div className="text-xs text-gray-500 dark:text-gray-400">
-        ITC claimable (this page): <span className="font-semibold text-emerald-600 dark:text-emerald-400">{currency(totals.itc)}</span>
+        <span className="italic">Note:</span> totals above cover only the {rows.length} row{rows.length === 1 ? "" : "s"} on this page.
+        For the period total, use the <a href="/gst-report" className="underline">GST report</a>.
+        {" "}ITC on visible rows: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{currency(totals.itc)}</span>
       </div>
 
       {/* Filter */}
@@ -380,13 +441,24 @@ export default function ExpenseManagement() {
                   className={inputCls}
                 />
               </Field>
-              <Field label="Vendor GSTIN" hint="15 chars — leave blank if vendor isn't registered">
+              <Field
+                label="Vendor GSTIN"
+                hint={
+                  gstinBad
+                    ? "Format looks wrong — should be 29AAGCR4375J1ZU style"
+                    : "15 chars — leave blank if vendor isn't registered"
+                }
+              >
                 <input
                   value={form.vendorGstin}
                   onChange={(e) => setForm({ ...form, vendorGstin: e.target.value.toUpperCase() })}
                   placeholder="e.g. 29AAGCR4375J1ZU"
                   maxLength={15}
-                  className={inputCls + " uppercase font-mono text-xs"}
+                  className={
+                    inputCls +
+                    " uppercase font-mono text-xs" +
+                    (gstinBad ? " border-red-400 focus:ring-red-500" : "")
+                  }
                 />
               </Field>
               <Field label="Invoice #">

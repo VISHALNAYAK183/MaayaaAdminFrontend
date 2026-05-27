@@ -41,17 +41,53 @@ export default function OrderDetails() {
     try {
       const lookup = await getInvoiceByOrder(Number(orderId));
       const invoiceId = lookup.data?.invoiceId;
-      if (!invoiceId) throw new Error("missing invoiceId");
+      if (typeof invoiceId !== "number" || !Number.isFinite(invoiceId) || invoiceId <= 0) {
+        alert("No invoice exists for this order yet. Approve the order first.");
+        return;
+      }
       const res = await downloadInvoicePdf(invoiceId);
       const blob = new Blob([res.data as Blob], { type: "application/pdf" });
+      if (blob.size === 0) {
+        alert("Invoice PDF came back empty — please retry, or contact support if it persists.");
+        return;
+      }
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `invoice-${orderId}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (e: any) {
-      alert(e?.response?.data?.message || "Failed to download invoice. Approve the order first.");
+    } catch (err: unknown) {
+      const e = err as { response?: { status?: number; data?: unknown } };
+      const status = e?.response?.status;
+
+      // downloadInvoicePdf is responseType:"blob", so an error body comes back
+      // as a Blob — `.data.message` would be undefined. Parse the blob as JSON
+      // when present.
+      let serverMsg: string | undefined;
+      const data = e?.response?.data;
+      if (data instanceof Blob) {
+        try {
+          const text = await data.text();
+          serverMsg = JSON.parse(text)?.message;
+        } catch {
+          /* not JSON, fall through to status-based messages */
+        }
+      } else if (data && typeof data === "object" && "message" in data) {
+        serverMsg = String((data as { message: unknown }).message);
+      }
+
+      if (serverMsg) {
+        alert(serverMsg);
+      } else if (status === 404) {
+        alert("No invoice exists for this order yet. Approve the order first.");
+      } else if (status === 401 || status === 403) {
+        alert("You don't have permission to download this invoice.");
+      } else if (typeof status === "number" && status >= 500) {
+        alert(`Server error (${status}) while generating the invoice. Please retry.`);
+      } else {
+        alert("Failed to download invoice. Please check your connection and retry.");
+      }
     } finally {
       setInvoiceLoading(false);
     }
