@@ -7,13 +7,34 @@ import {
   Expense,
   ExpenseCategory,
   ExpenseRequest,
+  isOperatingCategory,
 } from "../../api/expenseApi";
 
-const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
-  { value: "MARKETING",   label: "Marketing" },
-  { value: "GATEWAY_FEE", label: "Gateway fee" },
-  { value: "OTHER",       label: "Other" },
+type CategoryMeta = {
+  value: ExpenseCategory;
+  label: string;
+  operating: boolean;
+};
+
+// Order chosen to keep operating categories first in the dropdown so the
+// common case (ads, gateway, travel) is one click away. COGS-linked
+// categories follow, visually grouped by the "kind" badge.
+const CATEGORIES: CategoryMeta[] = [
+  { value: "MARKETING",    label: "Marketing",         operating: true  },
+  { value: "ADS",          label: "Ads spend",         operating: true  },
+  { value: "GATEWAY_FEE",  label: "Gateway fee",       operating: true  },
+  { value: "TRAVEL",       label: "Travel",            operating: true  },
+  { value: "OFFICE",       label: "Office / Rent",     operating: true  },
+  { value: "SALARY",       label: "Salary / Payroll",  operating: true  },
+  { value: "OTHER",        label: "Other (operating)", operating: true  },
+  { value: "RAW_MATERIAL", label: "Raw material",      operating: false },
+  { value: "PACKAGING",    label: "Packaging",         operating: false },
+  { value: "COURIER",      label: "Courier / Shipping",operating: false },
 ];
+
+const CATEGORY_LABEL: Record<ExpenseCategory, string> = Object.fromEntries(
+  CATEGORIES.map((c) => [c.value, c.label]),
+) as Record<ExpenseCategory, string>;
 
 const GST_RATES = [0, 5, 12, 18, 28] as const;
 
@@ -117,17 +138,22 @@ export default function ExpenseManagement() {
     form.vendorGstin.length === 15 && !GSTIN_RE.test(form.vendorGstin);
 
   // ---- Derived totals shown above the table ----
+  // Split into operating vs COGS-linked so the admin can see at a glance
+  // which subset will reduce gross profit (operating) vs which subset is
+  // only here to claim ITC (COGS-linked — already in per-unit ProductCost).
   const totals = useMemo(() => {
-    const total = rows.reduce((s, r) => s + Number(r.amount ?? 0), 0);
-    const byCat: Record<string, number> = {};
+    let operating = 0;
+    let cogsLinked = 0;
+    let itc = 0;
     for (const r of rows) {
-      byCat[r.category] = (byCat[r.category] ?? 0) + Number(r.amount ?? 0);
+      const amt = Number(r.amount ?? 0);
+      if (isOperatingCategory(r.category)) operating += amt;
+      else cogsLinked += amt;
+      if (r.itcEligible) {
+        itc += Number(r.cgst ?? 0) + Number(r.sgst ?? 0) + Number(r.igst ?? 0);
+      }
     }
-    const itc = rows.reduce(
-      (s, r) => s + (r.itcEligible ? Number(r.cgst ?? 0) + Number(r.sgst ?? 0) + Number(r.igst ?? 0) : 0),
-      0,
-    );
-    return { total, byCat, itc };
+    return { operating, cogsLinked, total: operating + cogsLinked, itc };
   }, [rows]);
 
   // ---- Form actions ----
@@ -264,21 +290,32 @@ export default function ExpenseManagement() {
           label={`Sum of visible (${rows.length} of ${totalElements})`}
           value={currency(totals.total)}
         />
-        {CATEGORIES.map((c) => (
-          <Stat
-            key={c.value}
-            label={`${c.label} (visible)`}
-            value={currency(totals.byCat[c.value] ?? 0)}
-          />
-        ))}
+        <Stat
+          label="Operating (visible)"
+          hint="hits net profit"
+          value={currency(totals.operating)}
+        />
+        <Stat
+          label="COGS-linked (visible)"
+          hint="ITC only — already in COGS via ProductCost"
+          value={currency(totals.cogsLinked)}
+        />
+        <Stat
+          label="ITC (visible)"
+          hint="claimable input tax"
+          value={currency(totals.itc)}
+        />
       </div>
       <div className="text-xs text-gray-500 dark:text-gray-400">
         <span className="italic">Note:</span> totals above cover only the {rows.length} row{rows.length === 1 ? "" : "s"} on this page.
         For the period total, use the <a href="/gst-report" className="underline">GST report</a>.
-        {" "}ITC on visible rows: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{currency(totals.itc)}</span>
+        {" "}Operating expenses are subtracted from gross profit; COGS-linked rows
+        (raw material / packaging / courier) are recorded only for ITC because the
+        per-unit cost is already in ProductCost.
       </div>
 
-      {/* Filter */}
+      {/* Filter — split into operating and COGS-linked groups so the user
+          can see which categories drive net profit vs which exist for ITC. */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">Category:</span>
         <button
@@ -287,11 +324,23 @@ export default function ExpenseManagement() {
         >
           All
         </button>
-        {CATEGORIES.map((c) => (
+        {CATEGORIES.filter((c) => c.operating).map((c) => (
           <button
             key={c.value}
             onClick={() => setFilter(c.value)}
             className={chipCls(filter === c.value)}
+            title="Operating — subtracted from gross profit"
+          >
+            {c.label}
+          </button>
+        ))}
+        <span className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700" aria-hidden />
+        {CATEGORIES.filter((c) => !c.operating).map((c) => (
+          <button
+            key={c.value}
+            onClick={() => setFilter(c.value)}
+            className={chipCls(filter === c.value) + " ring-1 ring-amber-200 dark:ring-amber-800/40"}
+            title="COGS-linked — ITC only, per-unit cost lives in ProductCost"
           >
             {c.label}
           </button>
@@ -331,8 +380,20 @@ export default function ExpenseManagement() {
                 <tr key={r.expenseId} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
                   <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{fmtDate(r.incurredAt)}</td>
                   <td className="py-3 px-4">
-                    <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
-                      {r.category}
+                    <span
+                      className={
+                        "inline-block text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border " +
+                        (isOperatingCategory(r.category)
+                          ? "bg-blue-50 text-blue-700 border-blue-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200")
+                      }
+                      title={
+                        isOperatingCategory(r.category)
+                          ? "Operating — subtracted from gross profit"
+                          : "COGS-linked — ITC only, per-unit cost in ProductCost"
+                      }
+                    >
+                      {CATEGORY_LABEL[r.category] ?? r.category}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{r.description ?? "—"}</td>
@@ -414,15 +475,30 @@ export default function ExpenseManagement() {
                   required
                 />
               </Field>
-              <Field label="Category" required>
+              <Field
+                label="Category"
+                required
+                hint={
+                  isOperatingCategory(form.category)
+                    ? "Operating — subtracted from gross profit"
+                    : "COGS-linked — ITC only. Per-unit cost must already be in ProductCost; otherwise net profit will be too high."
+                }
+              >
                 <select
                   value={form.category}
                   onChange={(e) => setForm({ ...form, category: e.target.value as ExpenseCategory })}
                   className={inputCls}
                 >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
+                  <optgroup label="Operating (reduces net profit)">
+                    {CATEGORIES.filter((c) => c.operating).map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="COGS-linked (ITC only)">
+                    {CATEGORIES.filter((c) => !c.operating).map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </optgroup>
                 </select>
               </Field>
               <Field label="Description" className="col-span-2">
@@ -540,11 +616,12 @@ const chipCls = (active: boolean) =>
     ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
     : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600");
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
       <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</p>
       <p className="text-xl font-bold mt-1 text-gray-900 dark:text-white">{value}</p>
+      {hint && <p className="mt-1 text-[10px] text-gray-400">{hint}</p>}
     </div>
   );
 }

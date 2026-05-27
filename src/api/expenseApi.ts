@@ -1,6 +1,37 @@
 import { apiClient, ADMIN_BASE } from "./client";
 
-export type ExpenseCategory = "MARKETING" | "GATEWAY_FEE" | "OTHER";
+export type ExpenseCategory =
+  // Operating — subtracted from gross profit
+  | "MARKETING"
+  | "ADS"
+  | "GATEWAY_FEE"
+  | "TRAVEL"
+  | "OFFICE"
+  | "SALARY"
+  | "OTHER"
+  // COGS-linked — recorded only for ITC; per-unit cost is in ProductCost
+  | "RAW_MATERIAL"
+  | "PACKAGING"
+  | "COURIER";
+
+export const OPERATING_CATEGORIES: ExpenseCategory[] = [
+  "MARKETING",
+  "ADS",
+  "GATEWAY_FEE",
+  "TRAVEL",
+  "OFFICE",
+  "SALARY",
+  "OTHER",
+];
+
+export const COGS_LINKED_CATEGORIES: ExpenseCategory[] = [
+  "RAW_MATERIAL",
+  "PACKAGING",
+  "COURIER",
+];
+
+export const isOperatingCategory = (c: ExpenseCategory): boolean =>
+  OPERATING_CATEGORIES.includes(c);
 
 export interface Expense {
   expenseId: number;
