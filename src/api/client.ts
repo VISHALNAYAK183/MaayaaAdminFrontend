@@ -12,6 +12,21 @@ export const apiClient = axios.create({
   baseURL: API_BASE,
 });
 
+/**
+ * Spring Data Page response shape. Used wherever an admin list endpoint
+ * supports server-side pagination (expenses, stock, returns, exchanges,
+ * products). Always prefer this over fetching a full list and filtering
+ * on the client — see hooks/useDebouncedValue and components/ui/Pagination
+ * for the matching UI building blocks.
+ */
+export interface PageResp<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
 export const clientApi = axios.create({
   baseURL: CLIENT_API_BASE,
 });

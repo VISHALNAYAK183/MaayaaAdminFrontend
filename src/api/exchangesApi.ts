@@ -1,4 +1,4 @@
-import { apiClient, ADMIN_BASE } from "./client";
+import { apiClient, ADMIN_BASE, type PageResp } from "./client";
 
 export type ExchangeStatus =
   | "REQUESTED"
@@ -57,8 +57,25 @@ export type AdminExchange = {
   userPhone: string | null;
 };
 
-export const getAdminExchanges = () =>
-  apiClient.get<AdminExchange[]>(`${ADMIN_BASE}/exchanges`);
+/**
+ * Server-paged Exchanges list. `statuses` is a list because tabs are
+ * composite (e.g. "Pickup" matches 4 statuses) — the backend takes a
+ * CSV which Spring binds to List&lt;ExchangeStatus&gt;.
+ *
+ * Pass an empty array (or omit) for the "All" tab.
+ */
+export const getAdminExchanges = (
+  page = 0,
+  size = 20,
+  statuses?: ExchangeStatus[],
+) =>
+  apiClient.get<PageResp<AdminExchange>>(`${ADMIN_BASE}/exchanges`, {
+    params: {
+      page,
+      size,
+      ...(statuses && statuses.length > 0 ? { statuses: statuses.join(",") } : {}),
+    },
+  });
 
 export const approveOnlineQc = (id: number, comment: string) =>
   apiClient.put(`${ADMIN_BASE}/exchanges/${id}/online-qc/approve`, { comment });

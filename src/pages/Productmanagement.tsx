@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { API_BASE } from "../api/client";
 import JsBarcode from "jsbarcode";
 import {
-  getProducts,
+  getAdminProducts,
   addProduct,
   updateProduct,
   deleteProduct,
@@ -11,7 +11,10 @@ import {
   type VariantImage,
   type QuestionAnswer,
   type Variant,
+  type ProductSortBy,
+  type ProductStockFilter,
 } from "../api/Adminproduct";
+import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { getCategories, type Category } from "../api/adminCategory";
 import { getCollections, type Collection } from "../api/Admincollection";
 import { getSizes, type Size } from "../api/adminSize";
@@ -863,32 +866,93 @@ const ProductManagement: React.FC = () => {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   // ── Pagination ──
+  // page is 1-indexed in this component (the UI says "Page X of Y"); the
+  // backend uses 0-indexed pages, so we subtract 1 when calling the API.
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [totalProducts, setTotalProducts] = useState(0);
 
-  useEffect(() => { loadAll(); }, []);
+  // Debounce the search box so typing doesn't fire a request per keystroke.
+  const debouncedSearch = useDebouncedValue(search, 300);
 
-  // Reset to page 1 whenever filters/search/pageSize change
+  // Out-of-order response guard.
+  const fetchSeq = useRef(0);
+
+  useEffect(() => { loadLookups(); }, []);
+
+  // Reset to page 1 whenever filters/search/pageSize change.
   useEffect(() => {
     setPage(1);
-  }, [search, filterCategory, filterCollection, filterGender, filterStock, pageSize, sortBy, sortDir]);
+  }, [debouncedSearch, filterCategory, filterCollection, filterGender, filterStock, pageSize, sortBy, sortDir]);
 
-  const loadAll = async () => {
-    setTableLoading(true);
+  // Refetch the product list whenever any server-side input changes.
+  useEffect(() => {
+    loadProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, debouncedSearch, filterCategory, filterCollection, filterGender, filterStock, sortBy, sortDir]);
+
+  /**
+   * Categories, collections, sizes, colours are essentially static — load
+   * once on mount. Splitting these out keeps the product fetch quick and
+   * lets the lookups survive a filter change.
+   */
+  const loadLookups = async () => {
     try {
-      const [prodRes, catRes, colRes, sizeRes, colorRes] = await Promise.all([
-        getProducts(), getCategories(), getCollections(), getSizes(), getColors(),
+      const [catRes, colRes, sizeRes, colorRes] = await Promise.all([
+        getCategories(), getCollections(), getSizes(), getColors(),
       ]);
-      setProducts(prodRes.data);
       setCategories(Array.isArray(catRes.data) ? catRes.data : [catRes.data]);
       setCollections(Array.isArray(colRes.data) ? colRes.data : [colRes.data]);
       setSizes(Array.isArray(sizeRes.data) ? sizeRes.data : [sizeRes.data]);
       setColors(Array.isArray(colorRes.data) ? colorRes.data : [colorRes.data]);
     } catch {
-      setStatus({ type: "error", msg: "Failed to load data." });
-    } finally {
-      setTableLoading(false);
+      setStatus({ type: "error", msg: "Failed to load lookups." });
     }
+  };
+
+  /**
+   * Server-paged product fetch — every filter/sort/page change comes here.
+   * Race protection: if the user clicks faster than the server responds,
+   * older responses are discarded so the table never displays stale rows.
+   */
+  const loadProducts = async () => {
+    const seq = ++fetchSeq.current;
+    setTableLoading(true);
+    try {
+      const res = await getAdminProducts({
+        categoryId:   filterCategory || undefined,
+        collectionId: filterCollection || undefined,
+        gender:       filterGender || undefined,
+        name:         debouncedSearch || undefined,
+        stock:        filterStock as ProductStockFilter,
+        sortBy:       sortBy as ProductSortBy,
+        sortDir,
+        page:         Math.max(0, page - 1),
+        size:         pageSize,
+      });
+      if (seq !== fetchSeq.current) return;
+      setProducts(res.items ?? []);
+      setTotalProducts(res.total ?? 0);
+    } catch {
+      if (seq !== fetchSeq.current) return;
+      setStatus({ type: "error", msg: "Failed to load products." });
+      setProducts([]);
+      setTotalProducts(0);
+    } finally {
+      if (seq === fetchSeq.current) setTableLoading(false);
+    }
+  };
+
+  /**
+   * Same lookups + the first product page. Called after a mutation
+   * (create / update / delete / bulk delete) so the table reflects the
+   * change immediately. Lookups rarely change but a category/collection
+   * just-added in another tab should appear next time the user opens
+   * the filter dropdown.
+   */
+  const loadAll = async () => {
+    await loadLookups();
+    await loadProducts();
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -1243,28 +1307,12 @@ const ProductManagement: React.FC = () => {
     }
   };
 
-  const filtered = products.filter((p) => {
-    if (search && !(p.name ?? "").toLowerCase().includes(search.toLowerCase())) return false;
-    if (filterCategory && p.categoryId !== filterCategory) return false;
-    if (filterCollection && p.collectionId !== filterCollection) return false;
-    if (filterGender && (p.gender ?? "").toLowerCase() !== filterGender.toLowerCase()) return false;
-    if (filterStock !== "all" && getStockStatus(p) !== filterStock) return false;
-    return true;
-  });
-
-  const sorted = [...filtered].sort((a, b) => {
-    let cmp = 0;
-    if (sortBy === "name") cmp = (a.name ?? "").localeCompare(b.name ?? "");
-    else if (sortBy === "price") cmp = (a.discountedPrice ?? 0) - (b.discountedPrice ?? 0);
-    else if (sortBy === "stock") cmp = getTotalStock(a) - getTotalStock(b);
-    else cmp = (a.productId ?? 0) - (b.productId ?? 0);
-    return sortDir === "asc" ? cmp : -cmp;
-  });
-
-  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  // Server already filtered / sorted / paginated — `products` is the
+  // current page directly. `paged` kept as an alias for the JSX below
+  // which iterates rows under that name.
+  const totalPages = Math.max(1, Math.ceil(totalProducts / pageSize));
   const safePage = Math.min(page, totalPages);
-  const pageStart = (safePage - 1) * pageSize;
-  const paged = sorted.slice(pageStart, pageStart + pageSize);
+  const paged = products;
 
   const discountPreview =
     form.basePrice > 0 && form.discountedPrice > 0 && Number(form.discountedPrice) < Number(form.basePrice)
@@ -1706,10 +1754,10 @@ const ProductManagement: React.FC = () => {
 
       {/* ── Stats Row ── */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <StatCard label="Total Products" value={products.length} />
+        <StatCard label="Total Products" value={totalProducts} />
         <StatCard label="Categories" value={categories.length} />
         <StatCard label="Collections" value={collections.length} />
-        <StatCard label="Matching" value={filtered.length} />
+        <StatCard label="Matching" value={totalProducts} />
       </div>
 
       {/* ── Table Card ── */}
@@ -2006,16 +2054,17 @@ const ProductManagement: React.FC = () => {
           </div>
 
           {/* ── Pagination Footer ── */}
-          {sorted.length > 0 && (
+          {totalProducts > 0 && (
             <div className="flex items-center justify-between gap-4 px-6 py-3 border-t border-slate-100 bg-slate-50 flex-wrap">
               <p className="text-xs text-slate-500">
                 Showing{" "}
                 <span className="font-semibold text-slate-700">
-                  {pageStart + 1}–{Math.min(pageStart + pageSize, sorted.length)}
+                  {(safePage - 1) * pageSize + 1}–
+                  {Math.min((safePage - 1) * pageSize + paged.length, totalProducts)}
                 </span>{" "}
-                of <span className="font-semibold text-slate-700">{sorted.length}</span>
+                of <span className="font-semibold text-slate-700">{totalProducts}</span>
                 {hasActiveFilters && (
-                  <span className="text-slate-400"> (filtered from {products.length})</span>
+                  <span className="text-slate-400"> (filtered)</span>
                 )}
               </p>
 

@@ -1,60 +1,100 @@
-import { useEffect, useMemo, useState } from "react";
-import { getStockManagement, updateStock, StockRow } from "../../api/stockApi";
+import { useEffect, useRef, useState } from "react";
+import {
+  getStockManagement,
+  getStockSummary,
+  updateStock,
+  StockRow,
+  StockSummary,
+  StockFilter,
+  LOW_STOCK_THRESHOLD,
+} from "../../api/stockApi";
 import { getSizes, Size } from "../../api/adminSize";
 import { getColors, Color } from "../../api/adminColor";
+import Pagination from "../../components/ui/Pagination";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
-const LOW_STOCK_THRESHOLD = 5;   // mirrors backend StockManagementService.lowStock rule
+const PAGE_SIZE = 20;
 
 export default function StockManagement() {
   const [rows, setRows] = useState<StockRow[]>([]);
+  const [summary, setSummary] = useState<StockSummary>({ total: 0, low: 0, out: 0 });
   const [sizes, setSizes] = useState<Record<number, string>>({});
   const [colors, setColors] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<Record<number, number>>({});
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"ALL" | "LOW" | "OUT">("ALL");
+  const [filter, setFilter] = useState<StockFilter>("ALL");
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
 
-  const load = async () => {
+  // Debounce the search input so we don't fire a request per keystroke.
+  const debouncedSearch = useDebouncedValue(search, 300);
+
+  // Guards against race conditions when the user changes filters faster
+  // than the network responds — same pattern as the expenses page.
+  const fetchSeq = useRef(0);
+
+  const loadStock = async () => {
+    const seq = ++fetchSeq.current;
     setLoading(true);
     try {
-      const [stockRes, sizeRes, colorRes] = await Promise.all([
-        getStockManagement(),
-        getSizes(),
-        getColors(),
-      ]);
-
-      const sizeMap: Record<number, string> = {};
-      (sizeRes.data ?? []).forEach((s: Size) => {
-        if (s.sizeId != null) sizeMap[s.sizeId] = s.label;
-      });
-
-      const colorMap: Record<number, string> = {};
-      (colorRes.data ?? []).forEach((c: Color) => {
-        if (c.colorId != null) colorMap[c.colorId] = c.name;
-      });
-
-      setSizes(sizeMap);
-      setColors(colorMap);
-      setRows(stockRes.data?.data ?? []);
+      const res = await getStockManagement(page, PAGE_SIZE, debouncedSearch.trim(), filter);
+      if (seq !== fetchSeq.current) return;
+      setRows(res.data.content);
+      setTotalPages(Math.max(1, res.data.totalPages));
+      setTotalElements(res.data.totalElements);
     } catch {
+      if (seq !== fetchSeq.current) return;
       setRows([]);
+      setTotalPages(1);
+      setTotalElements(0);
     } finally {
-      setLoading(false);
+      if (seq === fetchSeq.current) setLoading(false);
     }
   };
 
-  useEffect(() => { load(); }, []);
+  const loadSummary = async () => {
+    try {
+      const res = await getStockSummary();
+      setSummary(res.data);
+    } catch {
+      setSummary({ total: 0, low: 0, out: 0 });
+    }
+  };
 
-  const visible = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return rows.filter((r) => {
-      if (filter === "LOW" && !r.lowStock) return false;
-      if (filter === "OUT" && r.quantity > 0) return false;
-      if (q && !r.productName.toLowerCase().includes(q)) return false;
-      return true;
-    });
-  }, [rows, search, filter]);
+  // Lookups are static-ish — fetch once on mount.
+  useEffect(() => {
+    (async () => {
+      try {
+        const [sizeRes, colorRes] = await Promise.all([getSizes(), getColors()]);
+        const sizeMap: Record<number, string> = {};
+        (sizeRes.data ?? []).forEach((s: Size) => {
+          if (s.sizeId != null) sizeMap[s.sizeId] = s.label;
+        });
+        const colorMap: Record<number, string> = {};
+        (colorRes.data ?? []).forEach((c: Color) => {
+          if (c.colorId != null) colorMap[c.colorId] = c.name;
+        });
+        setSizes(sizeMap);
+        setColors(colorMap);
+      } catch {
+        /* fall through — labels will show as #id */
+      }
+    })();
+    loadSummary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Reset to page 0 whenever the filter changes — otherwise the user can
+  // land on page 5 of a filtered set that only has 1 page.
+  useEffect(() => { setPage(0); }, [filter, debouncedSearch]);
+
+  useEffect(() => {
+    loadStock();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, filter, debouncedSearch]);
 
   const handleDraftChange = (variantId: number, value: string) => {
     const n = Number(value);
@@ -69,33 +109,28 @@ export default function StockManagement() {
     setSaving(row.variantId);
     try {
       await updateStock(row.variantId, next);
+      // Patch in place so the user sees the change immediately, and
+      // refresh the summary (low/out counts may have shifted).
       setRows((rs) =>
         rs.map((r) =>
           r.variantId === row.variantId
             ? { ...r, quantity: next, lowStock: next <= LOW_STOCK_THRESHOLD }
-            : r
-        )
+            : r,
+        ),
       );
       setDrafts((d) => {
         const copy = { ...d };
         delete copy[row.variantId];
         return copy;
       });
-    } catch (e: any) {
-      alert(e?.response?.data?.message || "Failed to update stock");
+      loadSummary();
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      alert(err?.response?.data?.message || "Failed to update stock");
     } finally {
       setSaving(null);
     }
   };
-
-  const counts = useMemo(
-    () => ({
-      total: rows.length,
-      low: rows.filter((r) => r.lowStock).length,
-      out: rows.filter((r) => r.quantity === 0).length,
-    }),
-    [rows]
-  );
 
   return (
     <div>
@@ -103,9 +138,9 @@ export default function StockManagement() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Stock Management</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Home / Stock Management · {counts.total} variant{counts.total === 1 ? "" : "s"} ·
-            <span className="text-amber-600 dark:text-amber-400 ml-1">{counts.low} low</span> ·
-            <span className="text-red-600 dark:text-red-400 ml-1">{counts.out} out</span>
+            Home / Stock Management · {summary.total} variant{summary.total === 1 ? "" : "s"} ·
+            <span className="text-amber-600 dark:text-amber-400 ml-1">{summary.low} low</span> ·
+            <span className="text-red-600 dark:text-red-400 ml-1">{summary.out} out</span>
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -159,14 +194,14 @@ export default function StockManagement() {
                   ))}
                 </tr>
               ))
-            ) : visible.length === 0 ? (
+            ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-16 text-center text-gray-400 text-sm">
                   No variants matching your filters
                 </td>
               </tr>
             ) : (
-              visible.map((row) => {
+              rows.map((row) => {
                 const draft = drafts[row.variantId];
                 const dirty = draft != null && draft !== row.quantity;
                 const isBusy = saving === row.variantId;
@@ -224,7 +259,12 @@ export default function StockManagement() {
             )}
           </tbody>
         </table>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
+
+      <p className="mt-3 text-xs text-gray-400">
+        Showing {rows.length} of {totalElements} matching variant{totalElements === 1 ? "" : "s"}
+      </p>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getAdminReturns,
   approveReturn,
@@ -7,9 +7,13 @@ import {
   rejectRefund,
   completeRefund,
   AdminReturn,
+  AdminReturnStatus,
 } from "../../api/returnsApi";
+import Pagination from "../../components/ui/Pagination";
 
-const TABS: Array<AdminReturn["returnStatus"] | "ALL"> = [
+const PAGE_SIZE = 20;
+
+const TABS: Array<AdminReturnStatus | "ALL"> = [
   "ALL",
   "REQUESTED",
   "APPROVED",
@@ -38,29 +42,51 @@ const formatDate = (iso: string | null) => {
 export default function ReturnsList() {
   const [returns, setReturns] = useState<AdminReturn[]>([]);
   const [tab, setTab] = useState<typeof TABS[number]>("ALL");
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [selected, setSelected] = useState<AdminReturn | null>(null);
 
+  // Out-of-order response guard — same pattern as expenses/stock.
+  const fetchSeq = useRef(0);
+
   const fetchReturns = async () => {
+    const seq = ++fetchSeq.current;
     setLoading(true);
     try {
-      const res = await getAdminReturns();
-      const data = Array.isArray(res.data) ? res.data : [];
-      setReturns(data.sort((a, b) => (b.returnId ?? 0) - (a.returnId ?? 0)));
+      const res = await getAdminReturns(
+        page,
+        PAGE_SIZE,
+        tab === "ALL" ? undefined : tab,
+      );
+      if (seq !== fetchSeq.current) return;
+      setReturns(res.data.content);
+      setTotalPages(Math.max(1, res.data.totalPages));
+      setTotalElements(res.data.totalElements);
     } catch {
+      if (seq !== fetchSeq.current) return;
       setReturns([]);
+      setTotalPages(1);
+      setTotalElements(0);
     } finally {
-      setLoading(false);
+      if (seq === fetchSeq.current) setLoading(false);
     }
   };
 
-  useEffect(() => { fetchReturns(); }, []);
+  // Reset to page 0 whenever the user changes tab — otherwise switching
+  // from REFUNDED page 3 to REQUESTED could land on a page that doesn't
+  // exist in the new set.
+  useEffect(() => { setPage(0); }, [tab]);
 
-  const visible = useMemo(
-    () => (tab === "ALL" ? returns : returns.filter((r) => r.returnStatus === tab)),
-    [returns, tab]
-  );
+  useEffect(() => {
+    fetchReturns();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, tab]);
+
+  // Server already paginates by tab — rows are the visible list directly.
+  const visible = returns;
 
   const runAction = async (returnId: number, action: Action, confirmText: string) => {
     if (!window.confirm(confirmText)) return;
@@ -241,7 +267,9 @@ export default function ReturnsList() {
 
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Returns & Refunds</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Home / Returns</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          Home / Returns · {totalElements} total
+        </p>
       </div>
 
       <div className="flex gap-1 mb-5 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit flex-wrap">
@@ -358,6 +386,7 @@ export default function ReturnsList() {
             )}
           </tbody>
         </table>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
     </div>
   );

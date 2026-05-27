@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getAdminExchanges,
   approveOnlineQc,
@@ -10,6 +10,9 @@ import {
   AdminExchange,
   ExchangeStatus,
 } from "../../api/exchangesApi";
+import Pagination from "../../components/ui/Pagination";
+
+const PAGE_SIZE = 20;
 
 // Collapse the 14 statuses into 5 lifecycle buckets for the tab bar.
 const TABS: Array<{ key: string; label: string; match: ExchangeStatus[] | null }> = [
@@ -65,6 +68,9 @@ const QC_LABEL: Record<QcAction, string> = {
 export default function ExchangesList() {
   const [exchanges, setExchanges] = useState<AdminExchange[]>([]);
   const [tab, setTab] = useState<string>("ALL");
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [selected, setSelected] = useState<AdminExchange | null>(null);
@@ -73,26 +79,43 @@ export default function ExchangesList() {
   const [qcDialog, setQcDialog] = useState<{ id: number; action: QcAction } | null>(null);
   const [qcComment, setQcComment] = useState("");
 
+  // Out-of-order response guard.
+  const fetchSeq = useRef(0);
+
   const fetchExchanges = async () => {
+    const seq = ++fetchSeq.current;
     setLoading(true);
     try {
-      const res = await getAdminExchanges();
-      const data = Array.isArray(res.data) ? res.data : [];
-      setExchanges(data.sort((a, b) => (b.exchangeId ?? 0) - (a.exchangeId ?? 0)));
+      const tabDef = TABS.find((t) => t.key === tab);
+      // tabDef.match === null means the "All" tab — send no status filter.
+      const res = await getAdminExchanges(
+        page,
+        PAGE_SIZE,
+        tabDef?.match ?? undefined,
+      );
+      if (seq !== fetchSeq.current) return;
+      setExchanges(res.data.content);
+      setTotalPages(Math.max(1, res.data.totalPages));
+      setTotalElements(res.data.totalElements);
     } catch {
+      if (seq !== fetchSeq.current) return;
       setExchanges([]);
+      setTotalPages(1);
+      setTotalElements(0);
     } finally {
-      setLoading(false);
+      if (seq === fetchSeq.current) setLoading(false);
     }
   };
 
-  useEffect(() => { fetchExchanges(); }, []);
+  useEffect(() => { setPage(0); }, [tab]);
 
-  const visible = useMemo(() => {
-    const tabDef = TABS.find((t) => t.key === tab);
-    if (!tabDef || tabDef.match === null) return exchanges;
-    return exchanges.filter((e) => tabDef.match!.includes(e.exchangeStatus));
-  }, [exchanges, tab]);
+  useEffect(() => {
+    fetchExchanges();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, page]);
+
+  // Server already filtered by the tab's status list — rows are visible directly.
+  const visible = exchanges;
 
   const openQcDialog = (id: number, action: QcAction) => {
     setQcComment("");
@@ -484,7 +507,11 @@ export default function ExchangesList() {
             )}
           </tbody>
         </table>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
+      <p className="mt-3 text-xs text-gray-400">
+        Showing {visible.length} of {totalElements} matching exchange{totalElements === 1 ? "" : "s"}
+      </p>
     </div>
   );
 }

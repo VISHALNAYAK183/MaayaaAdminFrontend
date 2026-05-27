@@ -1,4 +1,4 @@
-import { apiClient, ADMIN_BASE } from "./client";
+import { apiClient, ADMIN_BASE, type PageResp } from "./client";
 
 export type AdminReturn = {
   returnId: number;
@@ -37,8 +37,24 @@ export type AdminReturn = {
   refundedAt: string | null;
 };
 
-export const getAdminReturns = () =>
-  apiClient.get<AdminReturn[]>(`${ADMIN_BASE}/returns`);
+export type AdminReturnStatus = AdminReturn["returnStatus"];
+
+/**
+ * Server-paged Returns list.
+ * Status is optional — omit for the "All" tab.
+ */
+export const getAdminReturns = (
+  page = 0,
+  size = 20,
+  status?: AdminReturnStatus,
+) =>
+  apiClient.get<PageResp<AdminReturn>>(`${ADMIN_BASE}/returns`, {
+    params: {
+      page,
+      size,
+      ...(status ? { status } : {}),
+    },
+  });
 
 export const approveReturn = (returnId: number) =>
   apiClient.put(`${ADMIN_BASE}/returns/${returnId}/approve`);

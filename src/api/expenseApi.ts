@@ -1,4 +1,5 @@
-import { apiClient, ADMIN_BASE } from "./client";
+import { apiClient, ADMIN_BASE, type PageResp } from "./client";
+export type { PageResp };
 
 export type ExpenseCategory =
   // Operating — subtracted from gross profit
@@ -49,14 +50,6 @@ export interface Expense {
   amount: number;
   itcEligible: boolean;
   incurredAt: string; // ISO timestamp
-}
-
-export interface PageResp<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
 }
 
 export interface ExpenseRequest {
