@@ -25,8 +25,14 @@ export const getMostOrderedProducts = () =>
     `${ADMIN_BASE}/orders/most-ordered-products`
   );
 
-export const generateInvoice = (orderId: number) =>
-  apiClient.post(`${API_BASE}/invoice/test/${orderId}`);
+/**
+ * Look up the invoice for an order (created at approval time).
+ * Returns at minimum { invoiceId, invoiceNumber, total }.
+ */
+export const getInvoiceByOrder = (orderId: number) =>
+  apiClient.get<{ invoiceId: number; invoiceNumber: string; total: number }>(
+    `${API_BASE}/invoice/by-order/${orderId}`,
+  );
 
 export const downloadInvoicePdf = (invoiceId: number) =>
   apiClient.get<Blob>(`${API_BASE}/invoice/download/${invoiceId}`, {

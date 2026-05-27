@@ -39,6 +39,8 @@ export interface ProductResponse {
   story: string | null;
   details: string | null;
   fabricDetails: string | null;
+  hsnCode?: string | null;
+  gstRate?: number | null;
   images: ProductImage[];
   reviews: {
     stars: number;
@@ -63,6 +65,8 @@ export interface Product {
   story: string;
   details: string;
   fabricDetails: string;
+  hsnCode: string;
+  gstRate: number;
   questionsAnswers: QuestionAnswer[];
   variants: Variant[];
   images: ProductImage[];

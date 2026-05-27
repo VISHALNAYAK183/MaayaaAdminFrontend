@@ -1,9 +1,19 @@
 import { apiClient, ADMIN_BASE } from "./client";
 
+export interface CategoryExpense {
+  category: string;
+  amount: number;
+}
+
 export interface AnalyticsDashboard {
   totalRevenue: number;
   totalCost: number;
   grossProfit: number;
+  totalExpenses: number;
+  netProfit: number;
+  netMargin: number;
+  averageSellingPrice: number;
+  expenseBreakdown: CategoryExpense[] | null;
   totalOrders: number;
   deliveredOrders: number;
   totalProductsSold: number;
@@ -21,6 +31,7 @@ export interface ProductAnalytics {
   averageRating: number | null;
   totalReviews: number;
   stockLeft: number;
+  averageSellingPrice: number | null;
 }
 
 export type AnalyticsRange = "DAY" | "WEEK" | "MONTH" | "ALL";
@@ -30,6 +41,11 @@ export interface AnalyticsProfit {
   totalRevenue: number;
   totalCost: number;
   grossProfit: number;
+  totalExpenses: number;
+  netProfit: number;
+  netMargin: number;
+  averageSellingPrice: number;
+  expenseBreakdown: CategoryExpense[] | null;
   totalOrders: number;
   totalProductsSold: number;
   averageOrderValue: number;

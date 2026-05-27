@@ -1,12 +1,13 @@
 import { apiClient, ADMIN_BASE } from "./client";
 
+// Payment-gateway fees are no longer a per-product cost — see Expense module.
+// Legacy 'PAYMENT_GATEWAY' rows are migrated to 'OTHER' by the PR 1 SQL.
 export type CostType =
   | "RAW_MATERIAL"
   | "PRINTING"
   | "PACKAGING"
   | "TAG"
   | "SHIPPING"
-  | "PAYMENT_GATEWAY"
   | "OTHER";
 
 export const COST_TYPES: CostType[] = [
@@ -15,7 +16,6 @@ export const COST_TYPES: CostType[] = [
   "PACKAGING",
   "TAG",
   "SHIPPING",
-  "PAYMENT_GATEWAY",
   "OTHER",
 ];
 

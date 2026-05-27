@@ -55,6 +55,8 @@ const engagementItems: NavItem[] = [
     subItems: [
       { name: "Reviews", path: "/reviews" },
       { name: "Analytics", path: "/analytics" },
+      { name: "Expenses", path: "/expenses" },
+      { name: "GST Report", path: "/gst-report" },
     ],
   },
 ];

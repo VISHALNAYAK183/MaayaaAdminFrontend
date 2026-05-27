@@ -89,12 +89,24 @@ export default function AnalyticsDashboardPage() {
 
   const overallKpis = [
     { label: "Total Revenue",       value: currency(overall.totalRevenue) },
-    { label: "Total Cost",          value: currency(overall.totalCost) },
+    { label: "Total Cost (COGS)",   value: currency(overall.totalCost) },
     {
       label: "Gross Profit",
       value: currency(overall.grossProfit),
       tone: Number(overall.grossProfit) >= 0 ? "good" : "bad",
     },
+    { label: "Operating Expenses", value: currency(overall.totalExpenses) },
+    {
+      label: "Net Profit",
+      value: currency(overall.netProfit),
+      tone: Number(overall.netProfit) >= 0 ? "good" : "bad",
+    },
+    {
+      label: "Net Margin",
+      value: (overall.netMargin ?? 0).toFixed(2) + "%",
+      tone: (overall.netMargin ?? 0) >= 0 ? "good" : "bad",
+    },
+    { label: "Avg Selling Price",   value: currency(overall.averageSellingPrice) },
     { label: "Avg Order Value",     value: currency(overall.averageOrderValue) },
     { label: "Total Orders",        value: number(overall.totalOrders) },
     { label: "Delivered Orders",    value: number(overall.deliveredOrders) },
@@ -111,12 +123,24 @@ export default function AnalyticsDashboardPage() {
   const rangeKpis = rangeData
     ? [
         { label: "Revenue",       value: currency(rangeData.totalRevenue) },
-        { label: "Cost",          value: currency(rangeData.totalCost) },
+        { label: "Cost (COGS)",   value: currency(rangeData.totalCost) },
         {
           label: "Gross Profit",
           value: currency(rangeData.grossProfit),
           tone: Number(rangeData.grossProfit) >= 0 ? "good" : "bad",
         },
+        { label: "Operating Expenses", value: currency(rangeData.totalExpenses) },
+        {
+          label: "Net Profit",
+          value: currency(rangeData.netProfit),
+          tone: Number(rangeData.netProfit) >= 0 ? "good" : "bad",
+        },
+        {
+          label: "Net Margin",
+          value: (rangeData.netMargin ?? 0).toFixed(2) + "%",
+          tone: (rangeData.netMargin ?? 0) >= 0 ? "good" : "bad",
+        },
+        { label: "Avg Selling Price", value: currency(rangeData.averageSellingPrice) },
         { label: "Avg Order Value", value: currency(rangeData.averageOrderValue) },
         { label: "Orders",        value: number(rangeData.totalOrders) },
         { label: "Units Sold",    value: number(rangeData.totalProductsSold) },
@@ -173,11 +197,29 @@ export default function AnalyticsDashboardPage() {
             ))}
           </div>
         ) : rangeData ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {rangeKpis.map((k) => (
-              <Card key={k.label} {...k} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {rangeKpis.map((k) => (
+                <Card key={k.label} {...k} />
+              ))}
+            </div>
+            {Array.isArray(rangeData.expenseBreakdown) && rangeData.expenseBreakdown.length > 0 && (
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  Expense breakdown:
+                </span>
+                {rangeData.expenseBreakdown.map((b) => (
+                  <span
+                    key={b.category}
+                    className="text-xs px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600"
+                  >
+                    <span className="font-semibold mr-1">{b.category}:</span>
+                    {currency(b.amount)}
+                  </span>
+                ))}
+              </div>
+            )}
+          </>
         ) : (
           <p className="text-sm text-gray-400">No data for this range.</p>
         )}

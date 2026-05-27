@@ -4,7 +4,7 @@ import {
   getOrderDetails,
   approveOrder,
   rejectOrder,
-  generateInvoice,
+  getInvoiceByOrder,
   downloadInvoicePdf,
 } from "../../api/adminApi";
 import { CLIENT_API_BASE } from "../../api/client";
@@ -39,8 +39,8 @@ export default function OrderDetails() {
   const handleDownloadInvoice = async () => {
     setInvoiceLoading(true);
     try {
-      const gen = await generateInvoice(Number(orderId));
-      const invoiceId = (gen.data as any)?.invoiceId ?? (gen.data as any)?.id;
+      const lookup = await getInvoiceByOrder(Number(orderId));
+      const invoiceId = lookup.data?.invoiceId;
       if (!invoiceId) throw new Error("missing invoiceId");
       const res = await downloadInvoicePdf(invoiceId);
       const blob = new Blob([res.data as Blob], { type: "application/pdf" });
@@ -50,8 +50,8 @@ export default function OrderDetails() {
       a.download = `invoice-${orderId}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch {
-      alert("Failed to download invoice.");
+    } catch (e: any) {
+      alert(e?.response?.data?.message || "Failed to download invoice. Approve the order first.");
     } finally {
       setInvoiceLoading(false);
     }

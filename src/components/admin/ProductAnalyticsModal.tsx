@@ -49,6 +49,10 @@ export default function ProductAnalyticsModal({ productId, productName, onClose 
           tone: Number(data.profit) >= 0 ? "text-emerald-600" : "text-red-600",
         },
         { label: "Profit Margin", value: margin.toFixed(2) + "%", tone: marginTone },
+        {
+          label: "Avg Selling Price",
+          value: data.averageSellingPrice != null ? currency(data.averageSellingPrice) : "—",
+        },
         { label: "Stock Left",    value: number(data.stockLeft) },
         {
           label: "Avg Rating",
