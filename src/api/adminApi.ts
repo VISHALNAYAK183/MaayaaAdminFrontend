@@ -1,5 +1,4 @@
 import { apiClient, clientApi, ADMIN_BASE, CLIENT_BASE, API_BASE } from "./client";
-import { AdminOrder } from "../types/order";
 
 // Re-exported for any caller that still references these names
 export { ADMIN_BASE, CLIENT_BASE };

@@ -61,7 +61,7 @@ export const getSectionById = (id: number) =>
   axios.get<HomeSection>(`${ADMIN_BASE}/home-cms/section/${id}`);
 
 export const addHomeSection = (data: AddSectionPayload) =>
-  axios.post(`${ADMIN_BASE}/home-cms/section`, data);
+  axios.post<HomeSection>(`${ADMIN_BASE}/home-cms/section`, data);
 
 export const updateHomeSection = (id: number, data: AddSectionPayload) =>
   axios.put(`${ADMIN_BASE}/home-cms/section/${id}`, data);
@@ -77,7 +77,7 @@ export const getSectionItems = (sectionId: number) =>
   axios.get<SectionItem[]>(`${ADMIN_BASE}/home-cms/section/${sectionId}/item`);
 
 export const addSectionItem = (sectionId: number, data: AddItemPayload) =>
-  axios.post(`${ADMIN_BASE}/home-cms/section/${sectionId}/item`, data);
+  axios.post<SectionItem>(`${ADMIN_BASE}/home-cms/section/${sectionId}/item`, data);
 
 export const updateSectionItem = (itemId: number, data: AddItemPayload) =>
   axios.put(`${ADMIN_BASE}/home-cms/item/${itemId}`, data);

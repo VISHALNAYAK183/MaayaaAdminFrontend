@@ -87,7 +87,7 @@ export default function AnalyticsDashboardPage() {
     );
   }
 
-  const overallKpis = [
+  const overallKpis: CardProps[] = [
     { label: "Total Revenue",       value: currency(overall.totalRevenue) },
     { label: "Total Cost (COGS)",   value: currency(overall.totalCost) },
     {
@@ -120,7 +120,7 @@ export default function AnalyticsDashboardPage() {
     },
   ];
 
-  const rangeKpis = rangeData
+  const rangeKpis: CardProps[] = rangeData
     ? [
         { label: "Revenue",       value: currency(rangeData.totalRevenue) },
         { label: "Cost (COGS)",   value: currency(rangeData.totalCost) },
