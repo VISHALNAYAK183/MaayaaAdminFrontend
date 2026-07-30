@@ -1,6 +1,5 @@
 import axios from "axios";
-
-const ADMIN_BASE = "http://localhost:8081/api/admin";
+import { ADMIN_BASE } from "./client";
 
 /* ================================
    INTERFACES

@@ -23,7 +23,9 @@ export interface User {
   phone: string;
 }
 
-export const ADMIN_BASE = "http://localhost:8081/api/admin";
+// Re-exported so existing importers of ADMIN_BASE from this module keep working.
+export { ADMIN_BASE } from "./client";
+import { ADMIN_BASE } from "./client";
 
 // Get all coupons
 export const getCoupons = () => {
