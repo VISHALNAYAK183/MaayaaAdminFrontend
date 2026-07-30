@@ -5,7 +5,12 @@ import { updateHomeSection } from "../../api/homeCms";
 const SECTION_TYPES = [
   "HERO", "RECOMMENDED", "FEATURED_PRODUCTS", "PROMO", "CATEGORIES", "TRENDING",
 ];
-const GENDERS = ["M", "F", "U"];
+// Values are the backend Gender enum names; labels are what the admin sees.
+const GENDERS = [
+  { value: "MALE", label: "Men" },
+  { value: "FEMALE", label: "Women" },
+  { value: "OTHER", label: "Unisex" },
+];
 
 const EditSection = () => {
   const { id } = useParams();
@@ -118,13 +123,13 @@ const EditSection = () => {
               <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">Gender</label>
                 <div className="flex gap-2">
-                  {GENDERS.map((g) => (
-                    <button key={g} type="button" onClick={() => setForm({ ...form, gender: g })}
+                  {GENDERS.map(({ value, label }) => (
+                    <button key={value} type="button" onClick={() => setForm({ ...form, gender: value })}
                       className={`flex-1 py-2.5 rounded-lg text-xs font-bold border transition-colors ${
-                        form.gender === g ? "bg-gray-900 text-white border-gray-900" : "border-gray-200 text-gray-600 hover:border-gray-400"
+                        form.gender === value ? "bg-gray-900 text-white border-gray-900" : "border-gray-200 text-gray-600 hover:border-gray-400"
                       }`}
                     >
-                      {g}
+                      {label}
                     </button>
                   ))}
                 </div>

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { API_BASE } from "../api/client";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { API_BASE, CLIENT_API_BASE, CLIENT_BASE } from "../api/client";
 import JsBarcode from "jsbarcode";
 import {
   getAdminProducts,
@@ -85,7 +85,34 @@ const DragHandleIcon = () => (
 interface VariantImageLocal extends VariantImage {
   _file?: File;
   _preview?: string;
+  _uploading?: boolean;
+  _uploadError?: boolean;
 }
+
+// ─── IMAGE UPLOAD HELPER ─────────────────────────────────────────────────────
+// Posts the raw file to the CUSTOMER backend so it lands in the folder the
+// storefront serves /uploads/ from — the admin backend serves a different
+// folder, so uploading there would render nothing on the storefront. Stores
+// the host-relative "/uploads/<file>" verbatim (the frontend prefixes its own
+// IMAGE_BASE_URL), keeping the value portable across environments.
+const uploadImage = async (file: File): Promise<string> => {
+  const fd = new FormData();
+  fd.append("file", file);
+  const res = await fetch(`${CLIENT_BASE}/upload`, { method: "POST", body: fd });
+  if (!res.ok) throw new Error("Image upload failed");
+  const json = await res.json();
+  return json.url as string;
+};
+
+// ─── Gender options ───────────────────────────────────────────────────────────
+// Values are the backend Gender enum names; labels are what the admin sees.
+const GENDER_OPTIONS = [
+  { value: "MALE", label: "Men" },
+  { value: "FEMALE", label: "Women" },
+  { value: "OTHER", label: "Unisex" },
+];
+const genderLabel = (g: string) =>
+  GENDER_OPTIONS.find((o) => o.value === g)?.label ?? g;
 
 // ─── Blank variant ────────────────────────────────────────────────────────────
 const blankVariant = (): Variant => ({
@@ -123,6 +150,10 @@ const GST_RATE_OPTIONS = [0, 5, 12, 18, 28] as const;
 const resolveImageUrl = (url: string | undefined | null): string | null => {
   if (!url) return null;
   if (url.startsWith("http") || url.startsWith("blob:")) return url;
+  // Product images live on the customer backend (it serves /uploads/ and is
+  // what the storefront resolves against); anything else falls back to the
+  // admin backend (e.g. invoice assets).
+  if (url.startsWith("/uploads/")) return `${CLIENT_API_BASE}${url}`;
   if (url.startsWith("/")) return `${API_BASE}${url}`;
   return null;
 };
@@ -167,32 +198,44 @@ const VariantImages: React.FC<{
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [draggingOver, setDraggingOver] = useState(false);
 
-  // Strip file extension to get a clean filename
-  const extractFileName = (file: File): string =>
-    file.name.replace(/\.[^/.]+$/, "");
-
-  // Process dropped / selected files into image slots
-  const handleFiles = (files: FileList | null) => {
+  // Process dropped / selected files into image slots. Shows a preview +
+  // "uploading" placeholder immediately, then swaps in the real server URL
+  // once each file finishes uploading. Sequential so `working` stays the
+  // single source of truth across awaits instead of racing stale props.
+  const handleFiles = async (files: FileList | null) => {
     if (!files) return;
-    const filledCount = images.filter((img) => img.url).length;
+    const filledCount = images.filter((img) => img.url || img._uploading).length;
     const remaining = 5 - filledCount;
     if (remaining <= 0) return;
 
     const toAdd = Array.from(files).slice(0, remaining);
-    const updated: VariantImageLocal[] = [...images];
+    let working: VariantImageLocal[] = [...images];
 
     toAdd.forEach((file) => {
-      const fileName = extractFileName(file);
       const preview = URL.createObjectURL(file);
-      const emptyIdx = updated.findIndex((img) => !img.url);
+      const entry: VariantImageLocal = { url: "", postOrder: 0, _file: file, _preview: preview, _uploading: true };
+      const emptyIdx = working.findIndex((img) => !img.url && !img._uploading && !img._uploadError);
       if (emptyIdx !== -1) {
-        updated[emptyIdx] = { ...updated[emptyIdx], url: fileName, _file: file, _preview: preview };
-      } else if (updated.length < 5) {
-        updated.push({ url: fileName, postOrder: updated.length + 1, _file: file, _preview: preview });
+        working[emptyIdx] = entry;
+      } else if (working.length < 5) {
+        working.push(entry);
       }
     });
 
-    onChange(variantIndex, updated.map((img, i) => ({ ...img, postOrder: i + 1 })));
+    working = working.map((img, i) => ({ ...img, postOrder: i + 1 }));
+    onChange(variantIndex, working);
+
+    for (const file of toAdd) {
+      const idx = working.findIndex((img) => img._file === file && img._uploading);
+      if (idx === -1) continue;
+      try {
+        const url = await uploadImage(file);
+        working = working.map((img, i) => (i === idx ? { ...img, url, _uploading: false } : img));
+      } catch {
+        working = working.map((img, i) => (i === idx ? { ...img, _uploading: false, _uploadError: true } : img));
+      }
+      onChange(variantIndex, working);
+    }
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -216,27 +259,36 @@ const VariantImages: React.FC<{
   // Allow manual URL/filename edit (for existing products loaded from API)
   const updateImageUrl = (imgIdx: number, url: string) => {
     const updated = images.map((img, i) =>
-      i === imgIdx ? { ...img, url, _file: undefined, _preview: undefined } : img
+      i === imgIdx ? { ...img, url, _file: undefined, _preview: undefined, _uploadError: false } : img
     );
     onChange(variantIndex, updated);
   };
 
-  // Replace a single slot with a new file
+  // Replace a single slot with a new file — uploads it for real, same as handleFiles.
   const replaceImage = (imgIdx: number) => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
       const prev = images[imgIdx];
       if (prev._preview) URL.revokeObjectURL(prev._preview);
-      const updated = images.map((img, i) =>
+
+      let working = images.map((img, i) =>
         i === imgIdx
-          ? { ...img, url: extractFileName(file), _file: file, _preview: URL.createObjectURL(file) }
+          ? { ...img, url: "", _file: file, _preview: URL.createObjectURL(file), _uploading: true, _uploadError: false }
           : img
       );
-      onChange(variantIndex, updated);
+      onChange(variantIndex, working);
+
+      try {
+        const url = await uploadImage(file);
+        working = working.map((img, i) => (i === imgIdx ? { ...img, url, _uploading: false } : img));
+      } catch {
+        working = working.map((img, i) => (i === imgIdx ? { ...img, _uploading: false, _uploadError: true } : img));
+      }
+      onChange(variantIndex, working);
     };
     input.click();
   };
@@ -288,7 +340,10 @@ const VariantImages: React.FC<{
     setDragOverIdx(null);
   };
 
-  const filledCount = images.filter((img) => img.url).length;
+  // A slot is "occupied" while it holds a finished URL, an in-flight upload,
+  // or a failed upload awaiting retry — otherwise the empty-state drop zone
+  // replaces the list mid-upload and the 5-image cap ignores pending slots.
+  const filledCount = images.filter((img) => img.url || img._uploading || img._uploadError).length;
   const canAdd = filledCount < 5;
 
   return (
@@ -405,7 +460,11 @@ const VariantImages: React.FC<{
                     placeholder="filename or URL"
                     className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs font-mono text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:bg-white"
                   />
-                  {img._file && (
+                  {img._uploading ? (
+                    <p className="text-[10px] text-blue-500 mt-0.5 font-semibold">Uploading…</p>
+                  ) : img._uploadError ? (
+                    <p className="text-[10px] text-red-500 mt-0.5 font-semibold">Upload failed — click ↻ to retry</p>
+                  ) : img._file && (
                     <p className="text-[10px] text-slate-400 mt-0.5 truncate pl-0.5">
                       📎 {img._file.name}
                       <span className="ml-1 text-slate-300">·</span>
@@ -978,18 +1037,46 @@ const ProductManagement: React.FC = () => {
   const updateVariant = (i: number, field: keyof Variant, value: string | number) => {
     setForm((prev) => {
       const variants = [...prev.variants];
-      variants[i] = {
-        ...variants[i],
-        [field]: ["sizeId", "colorId", "quantity"].includes(field as string) ? Number(value) : value,
-      };
+      const newValue = ["sizeId", "colorId", "quantity"].includes(field as string) ? Number(value) : value;
+      variants[i] = { ...variants[i], [field]: newValue };
+
+      // Joining an existing colour (another size already has that colorId with
+      // images set) — inherit its images. Images never vary by size here, so a
+      // newly added size under an existing colour should show that colour's
+      // photos immediately instead of starting blank.
+      if (field === "colorId" && newValue) {
+        const sibling = variants.find(
+          (v, idx) => idx !== i && v.colorId === newValue && (v.images ?? []).some((img) => img.url)
+        );
+        if (sibling) {
+          variants[i] = { ...variants[i], images: sibling.images };
+        } else {
+          // New colour with no images yet. If the old colour still has other
+          // rows, this row's images belong to that group — don't drag them
+          // into the new colour. A row that was its colour's ONLY row is a
+          // rename (wrong colour picked), so its images follow it.
+          const oldColorId = prev.variants[i].colorId;
+          const oldColorHasOtherRows =
+            oldColorId && prev.variants.some((v, idx) => idx !== i && v.colorId === oldColorId);
+          if (oldColorHasOtherRows) {
+            variants[i] = { ...variants[i], images: [{ url: "", postOrder: 1 }] };
+          }
+        }
+      }
+
       return { ...prev, variants };
     });
   };
 
-  const updateVariantImages = (variantIndex: number, images: VariantImageLocal[]) => {
+  // Images are keyed to a colour, not a single size row — writing to every
+  // variant index that currently shares this colour keeps them all in sync
+  // from one upload instead of requiring a re-upload per size.
+  const updateColorImages = (indices: number[], images: VariantImageLocal[]) => {
     setForm((prev) => {
       const variants = [...prev.variants];
-      variants[variantIndex] = { ...variants[variantIndex], images };
+      indices.forEach((idx) => {
+        variants[idx] = { ...variants[idx], images };
+      });
       return { ...prev, variants };
     });
   };
@@ -999,6 +1086,21 @@ const ProductManagement: React.FC = () => {
 
   const removeVariant = (i: number) =>
     setForm((prev) => ({ ...prev, variants: prev.variants.filter((_, idx) => idx !== i) }));
+
+  // Group variant rows by colour for rendering — every size sharing a colour
+  // shows one image uploader instead of one per size. Recomputed from
+  // form.variants on every render so it self-heals when colours are changed
+  // or rows are added/removed; colorId 0 (not yet picked) never groups with
+  // another unset row.
+  const colorGroups = useMemo(() => {
+    const map = new Map<string, { key: string; colorId: number; indices: number[] }>();
+    form.variants.forEach((v, i) => {
+      const key = v.colorId ? `c-${v.colorId}` : `new-${i}`;
+      if (!map.has(key)) map.set(key, { key, colorId: v.colorId, indices: [] });
+      map.get(key)!.indices.push(i);
+    });
+    return [...map.values()];
+  }, [form.variants]);
 
   // ── Barcode generator ──
   const generateBarcode = useCallback(
@@ -1077,6 +1179,24 @@ const ProductManagement: React.FC = () => {
         return setStatus({ type: "error", msg: `Duplicate variant: ${sizeLabel} / ${colorName} appears twice.` });
       }
       variantKeys.add(key);
+    }
+
+    const stillUploading = form.variants.some((v) =>
+      (v.images ?? []).some((img) => (img as VariantImageLocal)._uploading)
+    );
+    if (stillUploading) {
+      setFormStep(3);
+      return setStatus({ type: "error", msg: "Please wait for image uploads to finish before saving." });
+    }
+
+    // A failed slot has an empty url and would be silently dropped from the
+    // payload — the product would save looking fine but missing that image.
+    const hasFailedUpload = form.variants.some((v) =>
+      (v.images ?? []).some((img) => (img as VariantImageLocal)._uploadError)
+    );
+    if (hasFailedUpload) {
+      setFormStep(3);
+      return setStatus({ type: "error", msg: "An image failed to upload — retry (↻) or remove it before saving." });
     }
 
     setLoading(true);
@@ -1475,8 +1595,8 @@ const ProductManagement: React.FC = () => {
                   <Fld label="Gender" req>
                     <select name="gender" value={form.gender} onChange={handleChange} className={selectCls}>
                       <option value="">Select gender…</option>
-                      {["Men", "Women", "Unisex", "Kids"].map((g) => (
-                        <option key={g} value={g}>{g}</option>
+                      {GENDER_OPTIONS.map(({ value, label }) => (
+                        <option key={value} value={value}>{label}</option>
                       ))}
                     </select>
                   </Fld>
@@ -1576,11 +1696,11 @@ const ProductManagement: React.FC = () => {
               </div>
               )}
 
-              {/* ── 4. Variants + Barcode + Per-Variant Images ── */}
+              {/* ── 4. Variants + Barcode + Per-Colour Images ── */}
               {formStep === 3 && (
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <SH icon="🎨" title="Variants & Images" desc="Size + colour + up to 5 images per variant" />
+                  <SH icon="🎨" title="Variants & Images" desc="Upload once per colour — shared across every size" />
                   <button
                     type="button"
                     onClick={generateAllBarcodes}
@@ -1593,88 +1713,113 @@ const ProductManagement: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col gap-4">
-                  {form.variants.map((variant, i) => (
-                    <div key={i} className="border border-slate-200 rounded-xl overflow-hidden">
-                      {/* Variant header */}
-                      <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Variant #{i + 1}</span>
-                        {form.variants.length > 1 && (
-                          <button type="button" onClick={() => removeVariant(i)}
-                            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition-colors">
-                            <TrashIcon /> Remove
-                          </button>
-                        )}
-                      </div>
+                  {colorGroups.map((group) => {
+                    const colorObj = colors.find((c) => (c as any).colorId === group.colorId);
+                    const colorName = colorObj ? (colorObj as any).name : "New colour";
+                    const canonicalImages = (form.variants[group.indices[0]]?.images ??
+                      [{ url: "", postOrder: 1 }]) as VariantImageLocal[];
 
-                      <div className="p-4 grid grid-cols-2 gap-4">
-                        {/* Size */}
-                        <Fld label="Size" req>
-                          <select value={variant.sizeId} onChange={(e) => updateVariant(i, "sizeId", e.target.value)} className={selectCls}>
-                            <option value={0}>Select size…</option>
-                            {sizes.map((s) => {
-                              const id = (s as any).sizeId;
-                              const label = (s as any).label;
-                              return <option key={id} value={id}>{label}</option>;
-                            })}
-                          </select>
-                        </Fld>
+                    return (
+                      <div key={group.key} className="border border-slate-200 rounded-xl overflow-hidden">
+                        {/* Colour group header */}
+                        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                            {colorName} · {group.indices.length} size{group.indices.length > 1 ? "s" : ""}
+                          </span>
+                        </div>
 
-                        {/* Colour */}
-                        <Fld label="Colour" req>
-                          <select value={variant.colorId} onChange={(e) => updateVariant(i, "colorId", e.target.value)} className={selectCls}>
-                            <option value={0}>Select colour…</option>
-                            {colors.map((c) => {
-                              const id = (c as any).colorId;
-                              const name = (c as any).name;
-                              return <option key={id} value={id}>{name}</option>;
-                            })}
-                          </select>
-                        </Fld>
-
-                        {/* Quantity */}
-                        <Fld label="Quantity">
-                          <input type="number" value={variant.quantity}
-                            onChange={(e) => updateVariant(i, "quantity", e.target.value)}
-                            placeholder="0" min={0} className={inputCls} />
-                        </Fld>
-
-                        {/* Barcode */}
-                        <Fld label="Barcode (CODE128)" hint="Click ⚡ to auto-generate (needs product name + size + colour)">
-                          <div className="flex items-center gap-2">
-                            <input value={variant.barcode}
-                              onChange={(e) => updateVariant(i, "barcode", e.target.value)}
-                              placeholder="e.g. HOODIE-BLU-XL" className={`${inputCls} font-mono`} />
-                            <button
-                              type="button"
-                              onClick={() => generateBarcode(i)}
-                              disabled={!canGenerateBarcode(variant)}
-                              title={canGenerateBarcode(variant) ? "Auto-generate barcode" : "Set product name, size and colour first"}
-                              className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors whitespace-nowrap"
-                            >
-                              <BarcodeIcon />⚡
-                            </button>
-                          </div>
-                        </Fld>
-
-                        {/* ── Per-Variant Images (file upload) ── */}
-                        <VariantImages
-                          variantIndex={i}
-                          images={(variant.images ?? [{ url: "", postOrder: 1 }]) as VariantImageLocal[]}
-                          onChange={updateVariantImages}
-                        />
-                      </div>
-
-                      {/* Barcode preview */}
-                      {variant.barcode && (
-                        <div className="px-4 pb-4">
-                          <BarcodePreview
-                            value={variant.barcode}
-                            id={`barcode-${i}-${variant.barcode.replace(/[^A-Z0-9]/g, "")}`}
+                        {/* One image uploader for the whole colour — shared by every size below */}
+                        <div className="p-4 border-b border-slate-100">
+                          <VariantImages
+                            variantIndex={group.indices[0]}
+                            images={canonicalImages}
+                            onChange={(_, images) => updateColorImages(group.indices, images)}
                           />
                         </div>
-                      )}
-                    </div>
-                  ))}
+
+                        {/* Per-size rows */}
+                        <div className="divide-y divide-slate-100">
+                          {group.indices.map((i) => {
+                            const variant = form.variants[i];
+                            return (
+                              <div key={i} className="p-4">
+                                <div className="flex items-center justify-between mb-3">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Size row #{i + 1}</span>
+                                  {form.variants.length > 1 && (
+                                    <button type="button" onClick={() => removeVariant(i)}
+                                      className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition-colors">
+                                      <TrashIcon /> Remove
+                                    </button>
+                                  )}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                  {/* Size */}
+                                  <Fld label="Size" req>
+                                    <select value={variant.sizeId} onChange={(e) => updateVariant(i, "sizeId", e.target.value)} className={selectCls}>
+                                      <option value={0}>Select size…</option>
+                                      {sizes.map((s) => {
+                                        const id = (s as any).sizeId;
+                                        const label = (s as any).label;
+                                        return <option key={id} value={id}>{label}</option>;
+                                      })}
+                                    </select>
+                                  </Fld>
+
+                                  {/* Colour */}
+                                  <Fld label="Colour" req>
+                                    <select value={variant.colorId} onChange={(e) => updateVariant(i, "colorId", e.target.value)} className={selectCls}>
+                                      <option value={0}>Select colour…</option>
+                                      {colors.map((c) => {
+                                        const id = (c as any).colorId;
+                                        const name = (c as any).name;
+                                        return <option key={id} value={id}>{name}</option>;
+                                      })}
+                                    </select>
+                                  </Fld>
+
+                                  {/* Quantity */}
+                                  <Fld label="Quantity">
+                                    <input type="number" value={variant.quantity}
+                                      onChange={(e) => updateVariant(i, "quantity", e.target.value)}
+                                      placeholder="0" min={0} className={inputCls} />
+                                  </Fld>
+
+                                  {/* Barcode */}
+                                  <Fld label="Barcode (CODE128)" hint="Click ⚡ to auto-generate (needs product name + size + colour)">
+                                    <div className="flex items-center gap-2">
+                                      <input value={variant.barcode}
+                                        onChange={(e) => updateVariant(i, "barcode", e.target.value)}
+                                        placeholder="e.g. HOODIE-BLU-XL" className={`${inputCls} font-mono`} />
+                                      <button
+                                        type="button"
+                                        onClick={() => generateBarcode(i)}
+                                        disabled={!canGenerateBarcode(variant)}
+                                        title={canGenerateBarcode(variant) ? "Auto-generate barcode" : "Set product name, size and colour first"}
+                                        className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors whitespace-nowrap"
+                                      >
+                                        <BarcodeIcon />⚡
+                                      </button>
+                                    </div>
+                                  </Fld>
+                                </div>
+
+                                {/* Barcode preview */}
+                                {variant.barcode && (
+                                  <div className="mt-2">
+                                    <BarcodePreview
+                                      value={variant.barcode}
+                                      id={`barcode-${i}-${variant.barcode.replace(/[^A-Z0-9]/g, "")}`}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
 
                   <button type="button" onClick={addVariant}
                     className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-slate-300 rounded-xl text-sm text-slate-500 hover:border-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all">
@@ -1796,8 +1941,8 @@ const ProductManagement: React.FC = () => {
               className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 outline-none cursor-pointer hover:border-slate-300 focus:border-blue-400 transition-colors"
             >
               <option value="">All Genders</option>
-              {["Men", "Women", "Unisex", "Kids"].map((g) => (
-                <option key={g} value={g}>{g}</option>
+              {GENDER_OPTIONS.map(({ value, label }) => (
+                <option key={value} value={value}>{label}</option>
               ))}
             </select>
             <select
@@ -1974,11 +2119,10 @@ const ProductManagement: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold
-                          ${product.gender === "Men" ? "bg-blue-100 text-blue-700"
-                            : product.gender === "Women" ? "bg-pink-100 text-pink-700"
-                            : product.gender === "Kids" ? "bg-yellow-100 text-yellow-700"
+                          ${product.gender === "MALE" ? "bg-blue-100 text-blue-700"
+                            : product.gender === "FEMALE" ? "bg-pink-100 text-pink-700"
                             : "bg-purple-100 text-purple-700"}`}>
-                          {product.gender}
+                          {genderLabel(product.gender)}
                         </span>
                       </td>
                       <td className="px-4 py-3">

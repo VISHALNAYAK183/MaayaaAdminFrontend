@@ -1,14 +1,27 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { API_BASE, ADMIN_BASE } from "../../api/client";
+import { ADMIN_BASE, CLIENT_API_BASE, CLIENT_BASE } from "../../api/client";
 
 // ─── IMAGE UPLOAD HELPER ─────────────────────────────────────────────────────
+// Posts to the CUSTOMER backend — the storefront serves /uploads/ from that
+// host, so uploading to the admin backend would render nothing on the site.
+// Stores the host-relative "/uploads/<file>" so the value survives deploys
+// instead of baking a localhost origin into the database.
 const uploadImage = async (file: File): Promise<string> => {
   const fd = new FormData();
   fd.append("file", file);
-  const res = await fetch(`${ADMIN_BASE}/upload`, { method: "POST", body: fd });
+  const res = await fetch(`${CLIENT_BASE}/upload`, { method: "POST", body: fd });
   if (!res.ok) throw new Error("Upload failed");
   const json = await res.json();
-  return json.url.startsWith("http") ? json.url : `${API_BASE}${json.url}`;
+  return json.url as string;
+};
+
+// Resolves a stored image reference for display in the admin. New uploads are
+// host-relative "/uploads/<file>" on the customer backend; older rows hold
+// absolute URLs or storefront-bundled /assets/ paths and pass through as-is.
+const resolveCmsImage = (url?: string | null): string | null => {
+  if (!url) return null;
+  if (url.startsWith("/uploads/")) return `${CLIENT_API_BASE}${url}`;
+  return url;
 };
 import {
   getAllSections,
@@ -34,7 +47,6 @@ const SECTION_TYPES = [
   "PROMO", "CATEGORIES", "TRENDING",
   "REVIEWS", "WHY_MAAYAA", "WHY_SHOPWITH_MAAYAA",
 ];
-const GENDERS = ["M", "F", "U"];
 const STATUSES = ["ACTIVE", "INACTIVE", "DRAFT"];
 
 const SECTION_LABEL: Record<string, string> = {
@@ -59,9 +71,9 @@ const HERO_IMAGE_BASE = "/assets/images/hero/";
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
 const GENDER_TABS: { key: string; label: string }[] = [
-  { key: "M", label: "Men" },
-  { key: "F", label: "Women" },
-  { key: "U", label: "Unisex" },
+  { key: "MALE", label: "Men" },
+  { key: "FEMALE", label: "Women" },
+  { key: "OTHER", label: "Unisex" },
 ];
 
 // ─── ROOT ────────────────────────────────────────────────────────────────────
@@ -69,7 +81,7 @@ const HomeCMS = () => {
   const [sections, setSections] = useState<SectionWithItems[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
-  const [activeGender, setActiveGender] = useState("M");
+  const [activeGender, setActiveGender] = useState("MALE");
 
   const load = async () => {
     try {
@@ -818,7 +830,7 @@ const ItemCard = ({ item, tall, onUpdate, onDelete }: ItemCardProps) => {
         {/* Image — not clickable */}
         <div className="relative overflow-hidden bg-gray-50" style={{ height: cardH }}>
           {item.image ? (
-            <img src={item.image} alt="" className="w-full h-full object-cover" />
+            <img src={resolveCmsImage(item.image) ?? undefined} alt="" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center gap-1">
               <ImagePlaceholderIcon />
@@ -853,7 +865,7 @@ const ItemCard = ({ item, tall, onUpdate, onDelete }: ItemCardProps) => {
         onClick={() => fileRef.current?.click()}
       >
         {item.image ? (
-          <img src={item.image} alt="" className="w-full h-full object-cover" />
+          <img src={resolveCmsImage(item.image) ?? undefined} alt="" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <ImagePlaceholderIcon />
@@ -1021,7 +1033,7 @@ const ProductPickerModal = ({ onSelect, onClose, existingProductIds }: ProductPi
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[10px] text-gray-400">#{p.productId}</span>
                         <span className="text-[10px] text-gray-300">·</span>
-                        <span className="text-[10px] text-gray-400">{p.gender}</span>
+                        <span className="text-[10px] text-gray-400">{GENDER_TABS.find((t) => t.key === p.gender)?.label ?? p.gender}</span>
                         {p.categoryId && (
                           <>
                             <span className="text-[10px] text-gray-300">·</span>
@@ -1174,7 +1186,7 @@ const AddItemCard = ({
     return (
       <div className="flex flex-col gap-2 bg-gray-50 border border-gray-200 rounded-xl p-3 shrink-0" style={{ width: 160 }}>
         {form.image && (
-          <img src={form.image} alt="" className="w-full h-20 object-cover rounded-lg" />
+          <img src={resolveCmsImage(form.image) ?? undefined} alt="" className="w-full h-20 object-cover rounded-lg" />
         )}
         <input placeholder="Link" value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })}
           className="text-[11px] border border-gray-200 rounded-md px-2 py-1.5 focus:outline-none" />
@@ -1239,7 +1251,7 @@ const SectionModal = ({ initial, onClose, onSave }: ModalProps) => {
     title: initial?.title ?? "",
     subtitle: initial?.subtitle ?? "",
     position: initial?.position?.toString() ?? "1",
-    gender: initial?.gender ?? "U",
+    gender: initial?.gender ?? "OTHER",
     status: initial?.status ?? "ACTIVE",
   });
   const [saving, setSaving] = useState(false);
@@ -1310,15 +1322,15 @@ const SectionModal = ({ initial, onClose, onSave }: ModalProps) => {
             <div>
               <Label>Gender</Label>
               <div className="flex gap-1 mt-2">
-                {GENDERS.map((g) => (
-                  <button key={g} type="button"
-                    onClick={() => setForm({ ...form, gender: g })}
+                {GENDER_TABS.map(({ key, label }) => (
+                  <button key={key} type="button"
+                    onClick={() => setForm({ ...form, gender: key })}
                     className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${
-                      form.gender === g
+                      form.gender === key
                         ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900"
                         : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                     }`}
-                  >{g}</button>
+                  >{label}</button>
                 ))}
               </div>
             </div>
