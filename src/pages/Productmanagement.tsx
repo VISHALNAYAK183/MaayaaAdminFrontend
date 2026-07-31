@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { API_BASE, CLIENT_API_BASE, CLIENT_BASE } from "../api/client";
+import { ADMIN_BASE, API_BASE, CLIENT_API_BASE } from "../api/client";
 import JsBarcode from "jsbarcode";
 import {
   getAdminProducts,
@@ -90,15 +90,16 @@ interface VariantImageLocal extends VariantImage {
 }
 
 // ─── IMAGE UPLOAD HELPER ─────────────────────────────────────────────────────
-// Posts the raw file to the CUSTOMER backend so it lands in the folder the
-// storefront serves /uploads/ from — the admin backend serves a different
-// folder, so uploading there would render nothing on the storefront. Stores
-// the host-relative "/uploads/<file>" verbatim (the frontend prefixes its own
-// IMAGE_BASE_URL), keeping the value portable across environments.
+// Posts to the ADMIN backend's /api/admin/upload (field name "image"). In
+// production both backends point app.upload.dir at the same shared folder, so
+// a file uploaded here is served by api.maayaawear.com/uploads/ too — which is
+// where the storefront resolves images from. Stores the host-relative
+// "/uploads/<file>" verbatim (each frontend prefixes its own image base),
+// keeping DB values portable across environments and the future S3 move.
 const uploadImage = async (file: File): Promise<string> => {
   const fd = new FormData();
-  fd.append("file", file);
-  const res = await fetch(`${CLIENT_BASE}/upload`, { method: "POST", body: fd });
+  fd.append("image", file);
+  const res = await fetch(`${ADMIN_BASE}/upload`, { method: "POST", body: fd });
   if (!res.ok) throw new Error("Image upload failed");
   const json = await res.json();
   return json.url as string;
