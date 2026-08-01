@@ -90,7 +90,7 @@ interface VariantImageLocal extends VariantImage {
 }
 
 // ─── IMAGE UPLOAD HELPER ─────────────────────────────────────────────────────
-// Posts to the ADMIN backend's /api/admin/upload (field name "image"). In
+// Posts to the ADMIN backend's /api/admin/upload (field name "file"). In
 // production both backends point app.upload.dir at the same shared folder, so
 // a file uploaded here is served by api.maayaawear.com/uploads/ too — which is
 // where the storefront resolves images from. Stores the host-relative
@@ -98,7 +98,7 @@ interface VariantImageLocal extends VariantImage {
 // keeping DB values portable across environments and the future S3 move.
 const uploadImage = async (file: File): Promise<string> => {
   const fd = new FormData();
-  fd.append("image", file);
+  fd.append("file", file);
   const res = await fetch(`${ADMIN_BASE}/upload`, { method: "POST", body: fd });
   if (!res.ok) throw new Error("Image upload failed");
   const json = await res.json();
