@@ -5,8 +5,6 @@ on:
     branches:
       - main
 
-  workflow_dispatch:
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -36,35 +34,25 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Verify AWS account
-        run: |
-          aws sts get-caller-identity
+        run: aws sts get-caller-identity
 
       - name: Deploy to Admin S3
         run: |
           echo "Deploying Admin Frontend to S3..."
-          aws s3 sync dist/ s3://${{ secrets.ADMIN_S3_BUCKET }} --delete
-
+          aws s3 sync dist/ s3://${{ secrets.ADMIN_S3_BUCKET }}/ --delete
 
       - name: Verify Admin CloudFront distribution
         run: |
-          echo "Testing Admin CloudFront distribution..."
-
           aws cloudfront get-distribution \
             --id ${{ secrets.ADMIN_CLOUDFRONT_DISTRIBUTION_ID }} \
-            --output json
-
+            --query "Distribution.{Id:Id,Domain:DomainName,Status:Status}" \
+            --output table
 
       - name: Invalidate Admin CloudFront cache
         run: |
-          echo "Invalidating Admin CloudFront cache..."
-
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.ADMIN_CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
 
-
       - name: Deployment completed
-        run: |
-          echo "========================================="
-          echo "Admin Frontend deployment successful!"
-          echo "========================================="
+        run: echo "Admin Frontend deployment completed successfully!"
