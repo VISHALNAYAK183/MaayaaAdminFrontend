@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { useSidebar } from "../context/SidebarContext";
 import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
+import UserMenu from "../components/auth/UserMenu";
 
 const AppHeader: React.FC = () => {
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
@@ -64,6 +65,7 @@ const AppHeader: React.FC = () => {
 
         <div className="flex items-center gap-2 2xsm:gap-3">
           <ThemeToggleButton />
+          <UserMenu />
         </div>
       </div>
     </header>

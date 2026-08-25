@@ -1,4 +1,3 @@
-import axios from "axios";
 import { ApiResponse } from "../types/api";
 
 export interface Coupon {
@@ -25,42 +24,42 @@ export interface User {
 
 // Re-exported so existing importers of ADMIN_BASE from this module keep working.
 export { ADMIN_BASE } from "./client";
-import { ADMIN_BASE } from "./client";
+import { ADMIN_BASE, apiClient } from "./client";
 
 // Get all coupons
 export const getCoupons = () => {
-  return axios.get<Coupon[]>(`${ADMIN_BASE}/coupons`);
+  return apiClient.get<Coupon[]>(`${ADMIN_BASE}/coupons`);
 };
 
 // Get single coupon by ID
 export const getCoupon = (id: number) => {
-  return axios.get<Coupon>(`${ADMIN_BASE}/coupons/${id}`);
+  return apiClient.get<Coupon>(`${ADMIN_BASE}/coupons/${id}`);
 };
 
 // Create new coupon
 export const addCoupon = (data: Coupon) => {
-  return axios.post<ApiResponse<Coupon>>(`${ADMIN_BASE}/coupons`, data);
+  return apiClient.post<ApiResponse<Coupon>>(`${ADMIN_BASE}/coupons`, data);
 };
 
 // Update coupon
 export const updateCoupon = (id: number, data: Coupon) => {
-  return axios.put<ApiResponse<Coupon>>(`${ADMIN_BASE}/coupons/${id}`, data);
+  return apiClient.put<ApiResponse<Coupon>>(`${ADMIN_BASE}/coupons/${id}`, data);
 };
 
 // Delete coupon
 export const deleteCoupon = (id: number) => {
-  return axios.delete<ApiResponse<null>>(`${ADMIN_BASE}/coupons/${id}`);
+  return apiClient.delete<ApiResponse<null>>(`${ADMIN_BASE}/coupons/${id}`);
 };
 
 // Remove a specific user from a coupon
 // PUT /api/admin/coupons/{couponId}/users/{userId}/remove
 export const removeUserFromCoupon = (couponId: number, userId: number) => {
-  return axios.put<ApiResponse<null>>(
+  return apiClient.put<ApiResponse<null>>(
     `${ADMIN_BASE}/coupons/${couponId}/users/${userId}/remove`
   );
 };
 
 // Get all users
 export const getUsers = () => {
-  return axios.get<User[]>(`${ADMIN_BASE}/users`);
+  return apiClient.get<User[]>(`${ADMIN_BASE}/users`);
 };

@@ -1,5 +1,4 @@
-import axios from "axios";
-import { ADMIN_BASE } from "./client";
+import { ADMIN_BASE, apiClient } from "./client";
 
 /* ================================
    INTERFACES
@@ -55,32 +54,32 @@ export interface AddItemPayload {
 ================================ */
 
 export const getAllSections = () =>
-  axios.get<HomeSection[]>(`${ADMIN_BASE}/home-cms/section`);
+  apiClient.get<HomeSection[]>(`${ADMIN_BASE}/home-cms/section`);
 
 export const getSectionById = (id: number) =>
-  axios.get<HomeSection>(`${ADMIN_BASE}/home-cms/section/${id}`);
+  apiClient.get<HomeSection>(`${ADMIN_BASE}/home-cms/section/${id}`);
 
 export const addHomeSection = (data: AddSectionPayload) =>
-  axios.post<HomeSection>(`${ADMIN_BASE}/home-cms/section`, data);
+  apiClient.post<HomeSection>(`${ADMIN_BASE}/home-cms/section`, data);
 
 export const updateHomeSection = (id: number, data: AddSectionPayload) =>
-  axios.put(`${ADMIN_BASE}/home-cms/section/${id}`, data);
+  apiClient.put(`${ADMIN_BASE}/home-cms/section/${id}`, data);
 
 export const deleteHomeSection = (id: number) =>
-  axios.delete(`${ADMIN_BASE}/home-cms/section/${id}`);
+  apiClient.delete(`${ADMIN_BASE}/home-cms/section/${id}`);
 
 /* ================================
    ITEM API METHODS
 ================================ */
 
 export const getSectionItems = (sectionId: number) =>
-  axios.get<SectionItem[]>(`${ADMIN_BASE}/home-cms/section/${sectionId}/item`);
+  apiClient.get<SectionItem[]>(`${ADMIN_BASE}/home-cms/section/${sectionId}/item`);
 
 export const addSectionItem = (sectionId: number, data: AddItemPayload) =>
-  axios.post<SectionItem>(`${ADMIN_BASE}/home-cms/section/${sectionId}/item`, data);
+  apiClient.post<SectionItem>(`${ADMIN_BASE}/home-cms/section/${sectionId}/item`, data);
 
 export const updateSectionItem = (itemId: number, data: AddItemPayload) =>
-  axios.put(`${ADMIN_BASE}/home-cms/item/${itemId}`, data);
+  apiClient.put(`${ADMIN_BASE}/home-cms/item/${itemId}`, data);
 
 export const deleteSectionItem = (itemId: number) =>
-  axios.delete(`${ADMIN_BASE}/home-cms/item/${itemId}`);
+  apiClient.delete(`${ADMIN_BASE}/home-cms/item/${itemId}`);

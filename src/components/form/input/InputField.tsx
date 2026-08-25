@@ -16,6 +16,13 @@ interface InputProps {
   success?: boolean;
   error?: boolean;
   hint?: string;
+  // Passthroughs the auth forms need: password managers key off autoComplete,
+  // and the TOTP field needs a numeric keypad on mobile.
+  autoComplete?: string;
+  autoFocus?: boolean;
+  required?: boolean;
+  maxLength?: number;
+  inputMode?: "text" | "numeric" | "tel";
 }
 
 const Input: FC<InputProps> = ({
@@ -33,6 +40,11 @@ const Input: FC<InputProps> = ({
   success = false,
   error = false,
   hint,
+  autoComplete,
+  autoFocus,
+  required,
+  maxLength,
+  inputMode,
 }) => {
   let inputClasses = ` h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3  dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 ${className}`;
 
@@ -59,6 +71,11 @@ const Input: FC<InputProps> = ({
         max={max}
         step={step}
         disabled={disabled}
+        autoComplete={autoComplete}
+        autoFocus={autoFocus}
+        required={required}
+        maxLength={maxLength}
+        inputMode={inputMode}
         className={inputClasses}
       />
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { ADMIN_BASE, API_BASE, CLIENT_API_BASE } from "../api/client";
+import { ADMIN_BASE, API_BASE, CLIENT_API_BASE, http } from "../api/client";
 import JsBarcode from "jsbarcode";
 import {
   getAdminProducts,
@@ -99,10 +99,12 @@ interface VariantImageLocal extends VariantImage {
 const uploadImage = async (file: File): Promise<string> => {
   const fd = new FormData();
   fd.append("file", file);
-  const res = await fetch(`${ADMIN_BASE}/upload`, { method: "POST", body: fd });
-  if (!res.ok) throw new Error("Image upload failed");
-  const json = await res.json();
-  return json.url as string;
+  const { url } = await http.upload<{ url: string }>(
+    `${ADMIN_BASE}/upload`,
+    fd,
+    "upload image"
+  );
+  return url;
 };
 
 // ─── Gender options ───────────────────────────────────────────────────────────
