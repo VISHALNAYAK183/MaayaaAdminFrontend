@@ -1,3 +1,4 @@
+import { useReadOnly } from "../hooks/useReadOnly";
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   getReviewDashboard,
@@ -126,6 +127,7 @@ function Pagination({
 }
 
 const ReviewDashboard: React.FC = () => {
+  const readOnly = useReadOnly();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [dashboardData, setDashboardData] = useState<ReviewDashboardData | null>(null);
@@ -515,7 +517,8 @@ const ReviewDashboard: React.FC = () => {
                       {review.description && (
                         <p className="text-sm text-gray-600 dark:text-gray-300">{review.description}</p>
                       )}
-                      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                      {!readOnly && (
+<div className="mt-3 flex flex-wrap items-center gap-1.5">
                         <button
                           onClick={() => handleModerate(review.reviewId, 'APPROVED')}
                           disabled={busy}
@@ -538,6 +541,7 @@ const ReviewDashboard: React.FC = () => {
                           Flag
                         </button>
                       </div>
+)}
                     </div>
                     {review.image && (
                       <img
@@ -744,7 +748,8 @@ const ReviewDashboard: React.FC = () => {
                             <p className="text-sm text-gray-600 dark:text-gray-300">{review.description}</p>
                           )}
 
-                          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                          {!readOnly && (
+<div className="mt-3 flex flex-wrap items-center gap-1.5">
                             <button
                               onClick={() => handleModerate(review.reviewId, 'APPROVED')}
                               disabled={busy}
@@ -767,6 +772,7 @@ const ReviewDashboard: React.FC = () => {
                               Flag
                             </button>
                           </div>
+)}
                         </div>
                         {review.image && (
                           <img

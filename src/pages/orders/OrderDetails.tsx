@@ -1,3 +1,4 @@
+import { useReadOnly } from "../../hooks/useReadOnly";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
@@ -28,6 +29,7 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 export default function OrderDetails() {
+  const readOnly = useReadOnly();
   const { orderId } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState<any>(null);
@@ -329,8 +331,14 @@ export default function OrderDetails() {
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
             <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Actions</h2>
 
+            {readOnly && (
+              <p className="text-sm text-gray-400 text-center py-2">
+                Your role has read-only access.
+              </p>
+            )}
+
             {/* REQUESTED — Approve / Reject */}
-            {status === "REQUESTED" && (
+            {!readOnly && status === "REQUESTED" && (
               <div className="flex flex-col gap-2">
                 <button
                   onClick={handleApprove}
@@ -350,12 +358,12 @@ export default function OrderDetails() {
             )}
 
             {/* PLACED — Ship */}
-            {status === "PLACED" && (
+            {!readOnly && status === "PLACED" && (
               <ShipOrderModal orderId={order.orderId} onSuccess={load} />
             )}
 
             {/* SHIPPED / OUT_FOR_DELIVERY — Update status */}
-            {["SHIPPED", "OUT_FOR_DELIVERY"].includes(status) && (
+            {!readOnly && ["SHIPPED", "OUT_FOR_DELIVERY"].includes(status) && (
               <UpdateStatusModal
                 key={status}
                 orderId={order.orderId}
@@ -364,7 +372,7 @@ export default function OrderDetails() {
               />
             )}
 
-            {["DELIVERED", "REJECTED"].includes(status) && (
+            {!readOnly && ["DELIVERED", "REJECTED"].includes(status) && (
               <p className="text-sm text-gray-400 text-center py-2">No further actions available.</p>
             )}
 

@@ -1,6 +1,7 @@
 import axios from "axios";
 import {
   getAccessToken,
+  getCurrentRole,
   notifyUnauthorized,
 } from "./authToken";
 
@@ -70,6 +71,28 @@ export function isSessionDead(status: number): boolean {
   return status === 401 || status === 403;
 }
 
+/**
+ * Refuses writes for a read-only role before they leave the browser.
+ *
+ * This is the layer that cannot have gaps: the UI hides write controls per
+ * page, but any control that gets missed - or added later - fails here with a
+ * clear message instead of a bare 403 from the server. Not a security measure;
+ * SecurityConfig is what actually enforces this. It exists so a viewer never
+ * sees an unexplained error.
+ */
+export class ReadOnlyError extends Error {
+  constructor() {
+    super("Your role has read-only access, so this change wasn't saved.");
+    this.name = "ReadOnlyError";
+  }
+}
+
+function assertWritable(method: string): void {
+  const verb = method.toUpperCase();
+  if (verb === "GET" || verb === "HEAD" || verb === "OPTIONS") return;
+  if (getCurrentRole() === "VIEWER") throw new ReadOnlyError();
+}
+
 /** Authorization header for the ACCESS token, or {} when signed out. */
 export function authHeaders(): Record<string, string> {
   const token = getAccessToken();
@@ -79,6 +102,7 @@ export function authHeaders(): Record<string, string> {
 /* ── axios wiring ────────────────────────────────────────────────────────── */
 
 apiClient.interceptors.request.use((config) => {
+  assertWritable(config.method ?? "get");
   const token = getAccessToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
@@ -134,32 +158,36 @@ export const http = {
   get: <T>(url: string, action = "fetch") =>
     fetch(url, { headers: authHeaders() }).then((r) => unwrap<T>(r, action)),
   post: <T>(url: string, body: unknown, action = "create") =>
+    (assertWritable("POST"),
     fetch(url, {
       method: "POST",
       headers: jsonHeaders(),
       body: JSON.stringify(body),
-    }).then((r) => unwrap<T>(r, action)),
+    }).then((r) => unwrap<T>(r, action))),
   put: <T>(url: string, body: unknown, action = "update") =>
+    (assertWritable("PUT"),
     fetch(url, {
       method: "PUT",
       headers: jsonHeaders(),
       body: JSON.stringify(body),
-    }).then((r) => unwrap<T>(r, action)),
+    }).then((r) => unwrap<T>(r, action))),
   del: (url: string, action = "delete") =>
+    (assertWritable("DELETE"),
     fetch(url, { method: "DELETE", headers: authHeaders() }).then(async (r) => {
       if (!r.ok) {
         if (isSessionDead(r.status)) notifyUnauthorized();
         throw new ApiError(`Failed to ${action}: ${r.status}`, r.status);
       }
       return true;
-    }),
+    })),
   /**
    * Multipart upload. Never sets Content-Type — the browser has to generate it
    * so the multipart boundary matches the body, and setting it by hand breaks
    * the upload.
    */
   upload: <T>(url: string, form: FormData, action = "upload") =>
+    (assertWritable("POST"),
     fetch(url, { method: "POST", headers: authHeaders(), body: form }).then((r) =>
       unwrap<T>(r, action)
-    ),
+    )),
 };

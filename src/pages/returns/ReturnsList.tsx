@@ -1,3 +1,4 @@
+import { useReadOnly } from "../../hooks/useReadOnly";
 import { useEffect, useRef, useState } from "react";
 import {
   getAdminReturns,
@@ -40,6 +41,7 @@ const formatDate = (iso: string | null) => {
 };
 
 export default function ReturnsList() {
+  const readOnly = useReadOnly();
   const [returns, setReturns] = useState<AdminReturn[]>([]);
   const [tab, setTab] = useState<typeof TABS[number]>("ALL");
   const [page, setPage] = useState(0);
@@ -109,6 +111,9 @@ export default function ReturnsList() {
   const renderActions = (r: AdminReturn) => {
     const busy = actionLoading === r.returnId;
     const btn = "text-xs px-2.5 py-1.5 rounded-lg font-medium disabled:opacity-50 transition-colors";
+
+    // Nothing here is readable-only, so a viewer gets no actions at all.
+    if (readOnly) return null;
 
     if (r.returnStatus === "REQUESTED") {
       return (

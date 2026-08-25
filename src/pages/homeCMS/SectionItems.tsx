@@ -1,8 +1,10 @@
+import { useReadOnly } from "../../hooks/useReadOnly";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { getSectionItems, SectionItem } from "../../api/homeCms";
 
 const SectionItems = () => {
+  const readOnly = useReadOnly();
   const { sectionId } = useParams();
   const navigate = useNavigate();
   const [items, setItems] = useState<SectionItem[]>([]);
@@ -39,12 +41,14 @@ const SectionItems = () => {
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">Items</h1>
           </div>
         </div>
+        {!readOnly && (
         <button
           onClick={() => navigate(`/home-cms/section/${sectionId}/items/add`)}
           className="flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-700 transition-colors"
         >
           <span className="text-lg leading-none">+</span> Add Item
         </button>
+        )}
       </div>
 
       <div className="px-8 py-8 max-w-6xl mx-auto">
@@ -63,6 +67,7 @@ const SectionItems = () => {
               />
             ))}
             {/* + Add tile */}
+            {!readOnly && (
             <button
               onClick={() => navigate(`/home-cms/section/${sectionId}/items/add`)}
               className="aspect-[4/3] rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-gray-400 hover:text-gray-500 hover:bg-white transition-all"
@@ -70,6 +75,7 @@ const SectionItems = () => {
               <span className="text-3xl font-light">+</span>
               <span className="text-xs font-medium">Add Item</span>
             </button>
+            )}
           </div>
         )}
       </div>

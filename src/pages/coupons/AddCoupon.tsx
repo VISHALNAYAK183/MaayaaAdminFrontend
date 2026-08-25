@@ -1,3 +1,4 @@
+import { useReadOnly } from "../../hooks/useReadOnly";
 import React, { useState, useRef, useEffect } from "react";
 import {
   addCoupon,
@@ -207,6 +208,7 @@ interface UsersPanelProps {
 }
 
 const UsersPanel: React.FC<UsersPanelProps> = ({ coupon, users, onClose, onUserRemoved }) => {
+  const readOnly = useReadOnly();
   const [removingId, setRemovingId] = useState<number | null>(null);
   const [localUserIds, setLocalUserIds] = useState<number[]>(coupon.userIds || []);
 
@@ -290,6 +292,7 @@ const UsersPanel: React.FC<UsersPanelProps> = ({ coupon, users, onClose, onUserR
                       {user.phone && <p className="text-xs text-slate-400 mt-0.5">{user.phone}</p>}
                     </div>
                     <span className="text-[11px] font-mono bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded shrink-0">#{user.userId}</span>
+                    {!readOnly && (
                     <button onClick={() => handleRemove(user.userId)} disabled={isRemoving} title="Remove user from coupon"
                       className="w-8 h-8 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0">
                       {isRemoving ? (
@@ -303,6 +306,7 @@ const UsersPanel: React.FC<UsersPanelProps> = ({ coupon, users, onClose, onUserR
                         </svg>
                       )}
                     </button>
+                    )}
                   </li>
                 );
               })}
@@ -352,6 +356,7 @@ const UsersPanel: React.FC<UsersPanelProps> = ({ coupon, users, onClose, onUserR
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const CouponManagement = () => {
+  const readOnly = useReadOnly();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
@@ -515,6 +520,7 @@ const CouponManagement = () => {
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Coupon Management</h1>
           <p className="text-sm text-slate-400 mt-0.5">Manage your discount coupons</p>
         </div>
+        {!readOnly && (
         <button
           onClick={() => { setLockedUserIds([]); setShowForm(true); }}
           className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors"
@@ -522,6 +528,7 @@ const CouponManagement = () => {
           <span className="text-xl leading-none">+</span>
           <span className="text-sm font-semibold">New Coupon</span>
         </button>
+        )}
       </div>
 
       {/* ── Status Banner ── */}
@@ -851,6 +858,7 @@ const CouponManagement = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
+                          {!readOnly && (<>
                           <button onClick={() => handleEdit(coupon)}
                             className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -863,6 +871,7 @@ const CouponManagement = () => {
                               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
+                          </>)}
                         </div>
                       </td>
                     </tr>

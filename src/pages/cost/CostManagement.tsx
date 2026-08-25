@@ -1,3 +1,4 @@
+import { useReadOnly } from "../../hooks/useReadOnly";
 import { useEffect, useMemo, useState } from "react";
 import {
   getAllProductCosts,
@@ -14,6 +15,7 @@ import { getProducts } from "../../api/Adminproduct";
 type ProductLite = { productId: number; name: string; discountedPrice?: number };
 
 export default function CostManagement() {
+  const readOnly = useReadOnly();
   const [costs, setCosts] = useState<ProductCostSummary[]>([]);
   const [products, setProducts] = useState<ProductLite[]>([]);
   const [loading, setLoading] = useState(false);
@@ -166,12 +168,14 @@ export default function CostManagement() {
                       {p.discountedPrice != null && ` · ₹${Number(p.discountedPrice).toLocaleString()}`}
                     </span>
                   </div>
+                  {!readOnly && (
                   <button
                     onClick={() => setAdding(p)}
                     className="shrink-0 text-xs px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium"
                   >
                     Add costs
                   </button>
+                  )}
                 </div>
               ))
             )}
@@ -209,6 +213,7 @@ function ManageCostModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const readOnly = useReadOnly();
   const [busy, setBusy] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<Record<number, number>>({});
   const active = (summary.breakdown ?? []).filter((b) => b.status === "1");
@@ -296,6 +301,7 @@ function ManageCostModal({
                     />
                   </td>
                   <td className="py-2 px-3">
+                    {!readOnly && (
                     <button
                       onClick={() => save(item)}
                       disabled={!dirty || isBusy}
@@ -303,8 +309,10 @@ function ManageCostModal({
                     >
                       Save
                     </button>
+                    )}
                   </td>
                   <td className="py-2 px-3">
+                    {!readOnly && (
                     <button
                       onClick={() => del(item)}
                       disabled={isBusy}
@@ -312,6 +320,7 @@ function ManageCostModal({
                     >
                       Delete
                     </button>
+                    )}
                   </td>
                 </tr>
               );

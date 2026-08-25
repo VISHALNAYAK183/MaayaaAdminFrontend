@@ -1,3 +1,4 @@
+import { useReadOnly } from "../../hooks/useReadOnly";
 import { useEffect, useState } from "react";
 import { getOrders, approveOrder, rejectOrder } from "../../api/adminApi";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +24,7 @@ const STATUS_STYLE: Record<string, string> = {
 type ModalState = { orderId: number; type: "ship" | "updateStatus"; currentStatus: string };
 
 export default function OrdersList() {
+  const readOnly = useReadOnly();
   const [orders, setOrders] = useState<any[]>([]);
   const [tab, setTab] = useState("PENDING");
   const [page, setPage] = useState(0);
@@ -104,6 +106,19 @@ export default function OrdersList() {
 
   const renderActions = (o: any) => {
     const busy = actionLoading === o.order_id;
+
+    // A viewer keeps the read-only "View" link and loses every action that
+    // changes an order.
+    if (readOnly) {
+      return (
+        <button
+          onClick={() => navigate(`/orders/${o.order_id}`)}
+          className="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 px-1 transition-colors"
+        >
+          View &rarr;
+        </button>
+      );
+    }
 
     if (o.status === "REQUESTED") {
       return (

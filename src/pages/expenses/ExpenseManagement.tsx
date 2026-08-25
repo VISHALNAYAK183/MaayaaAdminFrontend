@@ -1,3 +1,4 @@
+import { useReadOnly } from "../../hooks/useReadOnly";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   listExpenses,
@@ -86,6 +87,7 @@ const emptyForm = (): FormState => ({
 });
 
 export default function ExpenseManagement() {
+  const readOnly = useReadOnly();
   const [rows, setRows] = useState<Expense[]>([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -276,12 +278,14 @@ export default function ExpenseManagement() {
             Home / Finance / Operating Expenses
           </p>
         </div>
+        {!readOnly && (
         <button
           onClick={openAdd}
           className="px-4 py-2 bg-gray-900 hover:bg-gray-700 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 text-sm font-semibold rounded-lg"
         >
           + Add expense
         </button>
+        )}
       </div>
 
       {/* Totals strip — page-scoped. Period totals live on the GST report page. */}
@@ -411,8 +415,10 @@ export default function ExpenseManagement() {
                   </td>
                   <td className="py-3 px-4 text-right">
                     <div className="flex justify-end gap-1.5">
+                      {!readOnly && (<>
                       <button onClick={() => openEdit(r)} className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded transition-colors">Edit</button>
                       <button onClick={() => handleDelete(r.expenseId)} className="text-xs font-medium text-red-600 hover:text-red-800 px-2 py-1 rounded transition-colors">Delete</button>
+                      </>)}
                     </div>
                   </td>
                 </tr>

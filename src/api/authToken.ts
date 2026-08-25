@@ -82,12 +82,28 @@ export function setAccessToken(token: string): void {
 
 export function clearAccessToken(): void {
   accessToken = null;
+  currentRole = null;
   hydrated = true;
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {
     /* nothing to clear */
   }
+}
+
+/* ── Current role ────────────────────────────────────────────────────────────
+ * Mirrored here so the transport layer can refuse writes for a read-only role
+ * without importing React. AuthContext owns the value; this is a cache of it.
+ */
+
+let currentRole: string | null = null;
+
+export function setCurrentRole(role: string | null): void {
+  currentRole = role;
+}
+
+export function getCurrentRole(): string | null {
+  return currentRole;
 }
 
 /* ── Unauthorized broadcast ──────────────────────────────────────────────────

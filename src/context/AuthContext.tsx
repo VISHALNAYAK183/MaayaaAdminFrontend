@@ -21,6 +21,7 @@ import {
   getAccessToken,
   onUnauthorized,
   setAccessToken,
+  setCurrentRole,
 } from "../api/authToken";
 
 /**
@@ -127,6 +128,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }),
     []
   );
+
+  // The transport layer refuses writes for read-only roles and cannot import
+  // React, so mirror the role there whenever it changes.
+  useEffect(() => {
+    setCurrentRole(role);
+  }, [role]);
 
   const signIn = useCallback(async (identifier: string, password: string) => {
     setNotice(null);

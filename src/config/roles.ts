@@ -40,6 +40,11 @@ const EVERYONE: Role[] = [...ROLES];
 const PATH_ROLES: { prefix: string; roles: Role[] }[] = [
   { prefix: "/admin-users", roles: ["ADMIN"] },
 
+  // Pages that exist only to create or edit. There is nothing for a viewer to
+  // read here, so the route is closed rather than the form being blanked out.
+  { prefix: "/home-cms/add-section", roles: ["ADMIN", "CONTENT"] },
+  { prefix: "/home-cms/edit", roles: ["ADMIN", "CONTENT"] },
+
   { prefix: "/products", roles: ["ADMIN", "CATALOG", "VIEWER"] },
   { prefix: "/categories", roles: ["ADMIN", "CATALOG", "VIEWER"] },
   { prefix: "/collections", roles: ["ADMIN", "CATALOG", "VIEWER"] },
@@ -64,12 +69,25 @@ const PATH_ROLES: { prefix: string; roles: Role[] }[] = [
   { prefix: "/", roles: EVERYONE },
 ];
 
+/**
+ * Write-only routes whose path has a dynamic segment in the middle, so a plain
+ * prefix cannot reach them (e.g. /home-cms/section/12/items/add).
+ */
+const WRITE_ONLY_PATTERNS: RegExp[] = [
+  /\/items\/add$/,
+  /\/items\/edit\//,
+];
+
 export function isRole(value: string | null | undefined): value is Role {
   return !!value && (ROLES as readonly string[]).includes(value);
 }
 
 /** Which roles may open this path. Unknown paths are treated as open. */
 export function rolesForPath(pathname: string): Role[] {
+  if (WRITE_ONLY_PATTERNS.some((re) => re.test(pathname))) {
+    return ["ADMIN", "CONTENT"];
+  }
+
   const match = PATH_ROLES.filter(
     (entry) => pathname === entry.prefix || pathname.startsWith(entry.prefix)
   ).sort((a, b) => b.prefix.length - a.prefix.length)[0];

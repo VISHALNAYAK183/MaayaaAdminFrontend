@@ -1,3 +1,4 @@
+import { useReadOnly } from "../../hooks/useReadOnly";
 import { useEffect, useRef, useState } from "react";
 import {
   getStockManagement,
@@ -16,6 +17,7 @@ import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 const PAGE_SIZE = 20;
 
 export default function StockManagement() {
+  const readOnly = useReadOnly();
   const [rows, setRows] = useState<StockRow[]>([]);
   const [summary, setSummary] = useState<StockSummary>({ total: 0, low: 0, out: 0 });
   const [sizes, setSizes] = useState<Record<number, string>>({});
@@ -245,6 +247,7 @@ export default function StockManagement() {
                       )}
                     </td>
                     <td className="py-3 px-5">
+                      {!readOnly && (
                       <button
                         onClick={() => handleSave(row)}
                         disabled={!dirty || isBusy}
@@ -252,6 +255,7 @@ export default function StockManagement() {
                       >
                         {isBusy ? "…" : "Save"}
                       </button>
+                      )}
                     </td>
                   </tr>
                 );

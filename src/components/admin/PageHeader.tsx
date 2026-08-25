@@ -1,4 +1,5 @@
 import React from "react";
+import { useReadOnly } from "../../hooks/useReadOnly";
 
 interface Props {
   breadcrumbs?: string[];
@@ -14,7 +15,10 @@ export const PageHeader: React.FC<Props> = ({
   subtitle,
   actionLabel,
   onAction,
-}) => (
+}) => {
+  const readOnly = useReadOnly();
+
+  return (
   <div className="flex items-start justify-between mb-6">
     <div>
       {breadcrumbs && breadcrumbs.length > 0 && (
@@ -33,7 +37,7 @@ export const PageHeader: React.FC<Props> = ({
       <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{title}</h1>
       {subtitle && <p className="text-sm text-slate-400 mt-0.5">{subtitle}</p>}
     </div>
-    {actionLabel && onAction && (
+    {!readOnly && actionLabel && onAction && (
       <button
         onClick={onAction}
         className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors"
@@ -44,3 +48,4 @@ export const PageHeader: React.FC<Props> = ({
     )}
   </div>
 );
+};

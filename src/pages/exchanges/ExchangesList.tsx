@@ -1,3 +1,4 @@
+import { useReadOnly } from "../../hooks/useReadOnly";
 import { useEffect, useRef, useState } from "react";
 import {
   getAdminExchanges,
@@ -66,6 +67,7 @@ const QC_LABEL: Record<QcAction, string> = {
 };
 
 export default function ExchangesList() {
+  const readOnly = useReadOnly();
   const [exchanges, setExchanges] = useState<AdminExchange[]>([]);
   const [tab, setTab] = useState<string>("ALL");
   const [page, setPage] = useState(0);
@@ -165,6 +167,8 @@ export default function ExchangesList() {
   const renderActions = (e: AdminExchange) => {
     const busy = actionLoading === e.exchangeId;
     const btn = "text-xs px-2.5 py-1.5 rounded-lg font-medium disabled:opacity-50 transition-colors";
+
+    if (readOnly) return null;
 
     if (e.exchangeStatus === "REQUESTED") {
       return (

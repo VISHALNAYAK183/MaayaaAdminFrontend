@@ -1,3 +1,4 @@
+import { useReadOnly } from "../../hooks/useReadOnly";
 import React, { useEffect } from "react";
 import { SpinnerIcon, CheckIcon } from "./icons";
 
@@ -44,6 +45,8 @@ export const FormModal: React.FC<Props> = ({
 
   if (!open) return null;
 
+  const readOnly = useReadOnly();
+
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
@@ -76,6 +79,7 @@ export const FormModal: React.FC<Props> = ({
             >
               Cancel
             </button>
+            {!readOnly && (
             <button
               type="submit"
               disabled={loading}
@@ -93,6 +97,7 @@ export const FormModal: React.FC<Props> = ({
                 </>
               )}
             </button>
+            )}
           </div>
         </form>
       </div>

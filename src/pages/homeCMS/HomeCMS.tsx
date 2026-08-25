@@ -1,3 +1,4 @@
+import { useReadOnly } from "../../hooks/useReadOnly";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { ADMIN_BASE, CLIENT_API_BASE, CLIENT_BASE, http } from "../../api/client";
 
@@ -82,6 +83,7 @@ const GENDER_TABS: { key: string; label: string }[] = [
 
 // ─── ROOT ────────────────────────────────────────────────────────────────────
 const HomeCMS = () => {
+  const readOnly = useReadOnly();
   const [sections, setSections] = useState<SectionWithItems[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
@@ -174,6 +176,7 @@ const HomeCMS = () => {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Home CMS</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Home / Home CMS</p>
         </div>
+        {!readOnly && (
         <button
           onClick={() => setAddOpen(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
@@ -183,6 +186,7 @@ const HomeCMS = () => {
           </svg>
           Add Section
         </button>
+        )}
       </div>
 
       {/* Gender Tabs */}
@@ -271,6 +275,7 @@ interface BlockProps {
 }
 
 const SectionBlock = ({ section, onDelete, onUpdate, onAddItem, onUpdateItem, onDeleteItem }: BlockProps) => {
+  const readOnly = useReadOnly();
   const hasMeta = HAS_META.has(section.type);
   const isTall = TALL_TYPES.has(section.type);
   const isTableSection = TABLE_SECTION_TYPES.has(section.type);
@@ -307,6 +312,7 @@ const SectionBlock = ({ section, onDelete, onUpdate, onAddItem, onUpdateItem, on
             {section.status === "Y" ? "Active" : section.status === "I" ? "Inactive" : section.status === "D" ? "Draft" : "—"}
           </span>
 
+          {!readOnly && (<>
           <button
             onClick={() => setEditModal(true)}
             className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -321,6 +327,7 @@ const SectionBlock = ({ section, onDelete, onUpdate, onAddItem, onUpdateItem, on
           >
             <TrashIcon />
           </button>
+          </>)}
         </div>
       </div>
 
