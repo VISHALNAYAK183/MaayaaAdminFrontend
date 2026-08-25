@@ -30,6 +30,7 @@ import ReviewDashboard from "./pages/ReviewDashboard";
 import AnalyticsDashboard from "./pages/analytics/AnalyticsDashboard";
 import ExpenseManagement from "./pages/expenses/ExpenseManagement";
 import GstReport from "./pages/gst/GstReport";
+import AdminUserManagement from "./pages/adminUsers/AdminUserManagement";
 
 export default function App() {
   return (
@@ -68,6 +69,9 @@ export default function App() {
               <Route path="/analytics" element={<AnalyticsDashboard />} />
               <Route path="/expenses" element={<ExpenseManagement />} />
               <Route path="/gst-report" element={<GstReport />} />
+
+              {/* Settings */}
+              <Route path="/admin-users" element={<AdminUserManagement />} />
 
               {/* Content */}
               <Route path="/home-cms" element={<HomeCMS />} />

@@ -7,6 +7,7 @@ import {
   DollarLineIcon,
   GridIcon,
   HorizontaLDots,
+  LockIcon,
   PageIcon,
   ShootingStarIcon,
 } from "../icons";
@@ -69,6 +70,14 @@ const contentItems: NavItem[] = [
   },
 ];
 
+const settingsItems: NavItem[] = [
+  {
+    icon: <LockIcon />,
+    name: "Settings",
+    subItems: [{ name: "Admin Users", path: "/admin-users" }],
+  },
+];
+
 const dashboardItems: NavItem[] = [
   {
     icon: <GridIcon />,
@@ -77,7 +86,13 @@ const dashboardItems: NavItem[] = [
   },
 ];
 
-type MenuType = "dashboard" | "catalog" | "sales" | "engagement" | "content";
+type MenuType =
+  | "dashboard"
+  | "catalog"
+  | "sales"
+  | "engagement"
+  | "content"
+  | "settings";
 
 const MENU_GROUPS: { type: MenuType; label: string; items: NavItem[] }[] = [
   { type: "dashboard", label: "Overview", items: dashboardItems },
@@ -85,6 +100,7 @@ const MENU_GROUPS: { type: MenuType; label: string; items: NavItem[] }[] = [
   { type: "catalog", label: "Catalog", items: catalogItems },
   { type: "sales", label: "Sales", items: salesItems },
   { type: "engagement", label: "Engagement", items: engagementItems },
+  { type: "settings", label: "Settings", items: settingsItems },
 ];
 
 const AppSidebar: React.FC = () => {
