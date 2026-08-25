@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { ADMIN_BASE, CLIENT_API_BASE, CLIENT_BASE } from "../../api/client";
+import { ADMIN_BASE, CLIENT_API_BASE, CLIENT_BASE, http } from "../../api/client";
 
 // ─── IMAGE UPLOAD HELPER ─────────────────────────────────────────────────────
 // Posts to the CUSTOMER backend — the storefront serves /uploads/ from that
@@ -9,6 +9,10 @@ import { ADMIN_BASE, CLIENT_API_BASE, CLIENT_BASE } from "../../api/client";
 const uploadImage = async (file: File): Promise<string> => {
   const fd = new FormData();
   fd.append("file", file);
+  // Left as a bare fetch on purpose: this is the storefront host, not admin-api.
+  // Our ACCESS token was issued by admin-api and must not be sent to a
+  // different service. If the storefront starts requiring admin auth, wire it
+  // up deliberately rather than inheriting a header by accident.
   const res = await fetch(`${CLIENT_BASE}/upload`, { method: "POST", body: fd });
   if (!res.ok) throw new Error("Upload failed");
   const json = await res.json();
@@ -933,9 +937,11 @@ const ProductPickerModal = ({ onSelect, onClose, existingProductIds }: ProductPi
         setLoading(true);
         const params = new URLSearchParams({ limit: String(limit), offset: String((page - 1) * limit) });
         if (debouncedSearch) params.append("name", debouncedSearch);
-        const res = await fetch(`${ADMIN_BASE}/products?${params}`);
-        const json = await res.json();
-        setProducts(Array.isArray(json.data) ? json.data : []);
+        const data = await http.get<any[]>(
+          `${ADMIN_BASE}/products?${params}`,
+          "load products"
+        );
+        setProducts(Array.isArray(data) ? data : []);
       } catch { setProducts([]); }
       finally { setLoading(false); }
     };

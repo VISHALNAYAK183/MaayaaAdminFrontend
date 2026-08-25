@@ -1,5 +1,4 @@
-import axios from "axios";
-import { API_BASE } from "./client";
+import { apiClient, API_BASE } from "./client";
 
 const API_BASE_URL = `${API_BASE}/api`;
 
@@ -62,13 +61,13 @@ export interface ReviewDashboard {
 }
 
 export const getReviews = (params: ReviewListParams = {}) =>
-  axios.get<PageResp<Review>>(`${API_BASE_URL}/reviews`, { params });
+  apiClient.get<PageResp<Review>>(`${API_BASE_URL}/reviews`, { params });
 
 export const getReviewDashboard = () =>
-  axios.get<ReviewDashboard>(`${API_BASE_URL}/reviews/dashboard`);
+  apiClient.get<ReviewDashboard>(`${API_BASE_URL}/reviews/dashboard`);
 
 export const getPendingReviews = () =>
-  axios.get<Review[]>(`${API_BASE_URL}/reviews/pending`);
+  apiClient.get<Review[]>(`${API_BASE_URL}/reviews/pending`);
 
 export const moderateReview = (reviewId: number, status: ReviewStatus) =>
-  axios.put(`${API_BASE_URL}/reviews/${reviewId}/moderate`, { status });
+  apiClient.put(`${API_BASE_URL}/reviews/${reviewId}/moderate`, { status });
