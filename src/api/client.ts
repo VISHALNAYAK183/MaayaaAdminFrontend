@@ -88,11 +88,20 @@ apiClient.interceptors.response.use(
   (res) => res,
   (error) => {
     const status = error?.response?.status;
+    const url: string = error?.config?.url ?? "";
+
     // The auth endpoints handle their own failures — a bad password must not
     // look like an expired session.
-    const url: string = error?.config?.url ?? "";
     const isAuthCall = url.includes("/api/admin/auth/");
-    if (!isAuthCall && typeof status === "number" && isSessionDead(status)) {
+
+    // /me is a best-effort role refresh, and it must never sign anyone out.
+    // The backend answers 403 (not 404) for unmapped paths, so a frontend
+    // deployed ahead of its backend would otherwise eject every user the
+    // moment they signed in. A genuinely dead token gets caught by the next
+    // real request anyway.
+    const isMeCall = url.endsWith("/api/admin/me");
+
+    if (!isAuthCall && !isMeCall && typeof status === "number" && isSessionDead(status)) {
       notifyUnauthorized();
     }
     return Promise.reject(error);

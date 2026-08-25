@@ -12,19 +12,54 @@ import {
   deleteAdminUser,
   getAdminUsers,
   resetAdminMfa,
+  updateAdminRole,
   updateAdminStatus,
   type AdminUser,
 } from "../../api/adminUsers";
+import { ROLES, ROLE_DESCRIPTIONS, ROLE_LABELS, type Role } from "../../config/roles";
 
 const MIN_PASSWORD = 12; // mirrors AdminUserService.MIN_PASSWORD_LENGTH
 
 const fmt = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "—";
 
+function RoleSelect({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: Role;
+  onChange: (r: Role) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div>
+      <Label htmlFor="role">Role</Label>
+      <select
+        id="role"
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value as Role)}
+        className="h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+      >
+        {ROLES.map((r) => (
+          <option key={r} value={r}>
+            {ROLE_LABELS[r]}
+          </option>
+        ))}
+      </select>
+      <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+        {ROLE_DESCRIPTIONS[value]}
+      </p>
+    </div>
+  );
+}
+
 type Dialog =
   | { kind: "none" }
   | { kind: "add" }
   | { kind: "password"; user: AdminUser }
+  | { kind: "role"; user: AdminUser }
   | { kind: "confirm"; user: AdminUser; action: "delete" | "resetMfa" | "deactivate" | "activate" };
 
 export default function AdminUserManagement() {
@@ -42,6 +77,7 @@ export default function AdminUserManagement() {
   const [newUsername, setNewUsername] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [newRole, setNewRole] = useState<Role>("VIEWER");
   // password form
   const [currentPassword, setCurrentPassword] = useState("");
   const [replacementPassword, setReplacementPassword] = useState("");
@@ -69,6 +105,7 @@ export default function AdminUserManagement() {
     setNewUsername("");
     setNewEmail("");
     setNewPassword("");
+    setNewRole("VIEWER");
     setCurrentPassword("");
     setReplacementPassword("");
   };
@@ -86,6 +123,7 @@ export default function AdminUserManagement() {
         username: newUsername.trim(),
         email: newEmail.trim(),
         password: newPassword,
+        role: newRole,
       });
       closeDialog();
       announce(`${newUsername.trim()} added. They'll set up two-factor on first sign-in.`);
@@ -111,6 +149,22 @@ export default function AdminUserManagement() {
       announce("Password updated. Existing sessions stay signed in.");
     } catch (err) {
       setFormError(adminUserError(err, "Couldn't change that password"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submitRole = async () => {
+    if (dialog.kind !== "role") return;
+    setFormError(null);
+    setBusy(true);
+    try {
+      await updateAdminRole(dialog.user.id, newRole);
+      closeDialog();
+      announce(`${dialog.user.username} is now ${ROLE_LABELS[newRole]}.`);
+      load();
+    } catch (err) {
+      setFormError(adminUserError(err, "Couldn't change that role"));
     } finally {
       setBusy(false);
     }
@@ -188,6 +242,7 @@ export default function AdminUserManagement() {
               <thead className="border-b border-gray-200 dark:border-gray-800">
                 <tr className="text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   <th className="px-5 py-3">User</th>
+                  <th className="px-5 py-3">Role</th>
                   <th className="px-5 py-3">Status</th>
                   <th className="px-5 py-3">Two-factor</th>
                   <th className="px-5 py-3">Last sign-in</th>
@@ -210,6 +265,11 @@ export default function AdminUserManagement() {
                           )}
                         </div>
                         <div className="text-gray-500 dark:text-gray-400">{u.email}</div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="font-medium text-gray-700 dark:text-gray-300">
+                          {ROLE_LABELS[u.role as Role] ?? u.role}
+                        </div>
                       </td>
                       <td className="px-5 py-4">
                         <span
@@ -238,6 +298,15 @@ export default function AdminUserManagement() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex flex-wrap justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              setNewRole((u.role as Role) ?? "VIEWER");
+                              setDialog({ kind: "role", user: u });
+                            }}
+                            className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                          >
+                            Role
+                          </button>
                           <button
                             onClick={() => setDialog({ kind: "password", user: u })}
                             className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -331,6 +400,7 @@ export default function AdminUserManagement() {
               hint={`At least ${MIN_PASSWORD} characters. Share it over something private, not email.`}
             />
           </div>
+          <RoleSelect value={newRole} onChange={setNewRole} disabled={busy} />
         </div>
         <div className="mt-6 flex justify-end gap-3">
           <button
@@ -419,6 +489,47 @@ export default function AdminUserManagement() {
                 className="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
               >
                 {busy ? "Saving…" : "Update password"}
+              </button>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      {/* ── Change role ───────────────────────────────────────────────────── */}
+      <Modal isOpen={dialog.kind === "role"} onClose={closeDialog} className="max-w-md p-6">
+        {dialog.kind === "role" && (
+          <>
+            <h4 className="text-lg font-medium text-gray-800 dark:text-white/90">
+              Change role
+            </h4>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              For <span className="font-medium">{dialog.user.username}</span>.
+            </p>
+            {formError && (
+              <div className="mt-4 rounded-lg border border-error-500/30 bg-error-50 px-3 py-2 text-sm text-error-600 dark:bg-error-500/10 dark:text-error-400">
+                {formError}
+              </div>
+            )}
+            <div className="mt-5">
+              <RoleSelect value={newRole} onChange={setNewRole} disabled={busy} />
+            </div>
+            <p className="mt-4 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+              Takes effect immediately — access is resolved from the account on every
+              request, not from the token they signed in with.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={closeDialog}
+                className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitRole}
+                disabled={busy || newRole === dialog.user.role}
+                className="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
+              >
+                {busy ? "Saving…" : "Update role"}
               </button>
             </div>
           </>

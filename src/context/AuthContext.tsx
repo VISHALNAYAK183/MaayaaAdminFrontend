@@ -14,6 +14,7 @@ import {
   verifyMfa as verifyMfaRequest,
   type MfaSetupResponse,
 } from "../api/authApi";
+import { getCurrentAdmin } from "../api/adminUsers";
 import {
   clearAccessToken,
   decodeJwt,
@@ -90,6 +91,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setRole(payload?.role ?? null);
     setStatus("signedIn");
   }, []);
+
+  /**
+   * The token's role claim is frozen at sign-in, but the backend resolves
+   * access from the account on every request. Re-read the real role so the nav
+   * matches what the server will actually allow. A failure here is harmless:
+   * the claim stays in place and the server remains the authority.
+   */
+  useEffect(() => {
+    if (status !== "signedIn") return;
+    let cancelled = false;
+    getCurrentAdmin()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setRole(data.role);
+        setUsername(data.username);
+      })
+      .catch(() => {
+        /* keep the claim from the token */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
 
   // The transport layer saw a dead session on a protected call.
   useEffect(

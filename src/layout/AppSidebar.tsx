@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 
 import {
@@ -12,6 +12,8 @@ import {
   ShootingStarIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
+import { useAuth } from "../context/AuthContext";
+import { canAccess } from "../config/roles";
 
 type NavItem = {
   name: string;
@@ -103,9 +105,28 @@ const MENU_GROUPS: { type: MenuType; label: string; items: NavItem[] }[] = [
   { type: "settings", label: "Settings", items: settingsItems },
 ];
 
+/**
+ * Drops nav entries the signed-in role cannot open, and any group left empty.
+ * Cosmetic only - the backend is what actually refuses the calls.
+ */
+const visibleGroups = (role: string | null) =>
+  MENU_GROUPS.map((group) => ({
+    ...group,
+    items: group.items
+      .map((item) => ({
+        ...item,
+        subItems: item.subItems?.filter((sub) => canAccess(role, sub.path)),
+      }))
+      .filter((item) =>
+        item.subItems ? item.subItems.length > 0 : canAccess(role, item.path ?? "/")
+      ),
+  })).filter((group) => group.items.length > 0);
+
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { role } = useAuth();
   const location = useLocation();
+  const menuGroups = useMemo(() => visibleGroups(role), [role]);
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: MenuType;
@@ -124,7 +145,7 @@ const AppSidebar: React.FC = () => {
 
   useEffect(() => {
     let submenuMatched = false;
-    MENU_GROUPS.forEach(({ type, items }) => {
+    menuGroups.forEach(({ type, items }) => {
       items.forEach((nav, index) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
@@ -139,7 +160,7 @@ const AppSidebar: React.FC = () => {
     if (!submenuMatched) {
       setOpenSubmenu(null);
     }
-  }, [location, isActive]);
+  }, [location, isActive, menuGroups]);
 
   useEffect(() => {
     if (openSubmenu !== null) {
@@ -294,7 +315,7 @@ const AppSidebar: React.FC = () => {
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
         <nav className="mb-6">
           <div className="flex flex-col gap-4">
-            {MENU_GROUPS.map(({ type, label, items }) => (
+            {menuGroups.map(({ type, label, items }) => (
               <div key={type}>
                 <h2
                   className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
