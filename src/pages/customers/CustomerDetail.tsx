@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   assignCoupon,
+  createCouponForCustomer,
   getAssignableCoupons,
   getCustomer,
   sendPasswordReset,
@@ -9,6 +10,7 @@ import {
   type AssignableCoupon,
   type BasketLine,
   type CustomerDetail as Customer,
+  type NewCouponForCustomer,
 } from "../../api/customersApi";
 import { useReadOnly } from "../../hooks/useReadOnly";
 
@@ -112,6 +114,30 @@ export default function CustomerDetailPage() {
   const [coupons, setCoupons] = useState<AssignableCoupon[]>([]);
   const [couponId, setCouponId] = useState<string>("");
   const [maxUsage, setMaxUsage] = useState(1);
+
+  // The Coupons card does one of two things: hand over an existing coupon, or
+  // make a new one for this customer alone. Same card, one toggle, so the page
+  // does not grow a second half that is empty most of the time.
+  const [creating, setCreating] = useState(false);
+  const [draft, setDraft] = useState<NewCouponForCustomer>(() => {
+    const today = new Date();
+    const inAMonth = new Date();
+    inAMonth.setMonth(inAMonth.getMonth() + 1);
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    return {
+      code: "",
+      discountType: "P",
+      value: 10,
+      validFrom: iso(today),
+      validTill: iso(inAMonth),
+      usageLimit: 1,
+    };
+  });
+
+  const draftField = <K extends keyof NewCouponForCustomer>(
+    key: K,
+    value: NewCouponForCustomer[K]
+  ) => setDraft((d) => ({ ...d, [key]: value }));
 
   const load = useCallback(() => {
     setLoading(true);
@@ -380,9 +406,112 @@ export default function CustomerDetailPage() {
 
           {!readOnly && (
             <div className="mt-4 border-t border-gray-100 pt-3 dark:border-gray-700">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Assign a coupon
-              </p>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  {creating ? "Create a coupon for them" : "Assign a coupon"}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setCreating((v) => !v)}
+                  className="text-xs font-medium text-brand-500 hover:underline"
+                >
+                  {creating ? "Assign existing instead" : "Create new"}
+                </button>
+              </div>
+
+              {creating ? (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    <input
+                      value={draft.code}
+                      onChange={(e) => draftField("code", e.target.value.toUpperCase().trim())}
+                      placeholder="CODE"
+                      className="min-w-[8rem] flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm uppercase dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                    />
+                    <select
+                      value={draft.discountType}
+                      onChange={(e) => draftField("discountType", e.target.value as "P" | "F")}
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                    >
+                      <option value="P">% off</option>
+                      <option value="F">₹ off</option>
+                    </select>
+                    <input
+                      type="number"
+                      min={1}
+                      value={draft.value}
+                      onChange={(e) => draftField("value", Number(e.target.value) || 0)}
+                      title="Discount amount"
+                      className="w-24 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      value={draft.minPurchase ?? ""}
+                      onChange={(e) =>
+                        draftField("minPurchase", e.target.value === "" ? undefined : Number(e.target.value))
+                      }
+                      placeholder="Min purchase"
+                      className="w-32 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      value={draft.maxDiscount ?? ""}
+                      onChange={(e) =>
+                        draftField("maxDiscount", e.target.value === "" ? undefined : Number(e.target.value))
+                      }
+                      placeholder="Max discount"
+                      title="Cap on a percentage discount"
+                      className="w-32 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                    />
+                    <input
+                      type="number"
+                      min={1}
+                      value={draft.usageLimit ?? 1}
+                      onChange={(e) => draftField("usageLimit", Math.max(1, Number(e.target.value) || 1))}
+                      title="How many times they may use it"
+                      className="w-24 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="date"
+                      value={draft.validFrom}
+                      onChange={(e) => draftField("validFrom", e.target.value)}
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                    />
+                    <span className="text-xs text-gray-400">to</span>
+                    <input
+                      type="date"
+                      value={draft.validTill}
+                      onChange={(e) => draftField("validTill", e.target.value)}
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                    />
+                    <button
+                      disabled={busy || !draft.code || draft.value <= 0 || draft.validTill < draft.validFrom}
+                      onClick={() =>
+                        run(() => createCouponForCustomer(customer.userId, draft)).then(() => {
+                          setCreating(false);
+                          setDraft((d) => ({ ...d, code: "" }));
+                        })
+                      }
+                      className="ml-auto rounded-lg bg-brand-500 px-3 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-40"
+                    >
+                      Create &amp; assign
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-gray-400">
+                    Created for this customer only - nobody else can use the code.
+                  </p>
+                </div>
+              ) : (
+              <>
               <div className="flex flex-wrap items-center gap-2">
                 <select
                   value={couponId}
@@ -418,8 +547,11 @@ export default function CustomerDetailPage() {
               </div>
               {coupons.length === 0 && (
                 <p className="mt-2 text-xs text-gray-400">
-                  Every live coupon is already assigned to this customer.
+                  Every live coupon is already assigned to this customer - use
+                  "Create new" to make one just for them.
                 </p>
+              )}
+              </>
               )}
             </div>
           )}

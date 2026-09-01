@@ -137,6 +137,33 @@ export const assignCoupon = (userId: number, couponId: number, maxUsage: number)
   );
 
 /**
+ * Creates a coupon already assigned to this customer.
+ *
+ * One call, not create-then-assign: POST /admin/coupons takes userIds and
+ * writes the coupon and its user links in the same transaction, so there is no
+ * window where a coupon exists that nobody can use.
+ */
+export interface NewCouponForCustomer {
+  code: string;
+  discountType: "P" | "F";
+  value: number;
+  minPurchase?: number;
+  maxDiscount?: number;
+  usageLimit?: number;
+  validFrom: string;
+  validTill: string;
+}
+
+export const createCouponForCustomer = (
+  userId: number,
+  body: NewCouponForCustomer
+) =>
+  apiClient.post<{ status: string; message: string }>(`${ADMIN_BASE}/coupons`, {
+    ...body,
+    userIds: [userId],
+  });
+
+/**
  * Emails the customer a reset code. There is no "read the password" call and
  * there never can be — the column holds a bcrypt hash.
  */
