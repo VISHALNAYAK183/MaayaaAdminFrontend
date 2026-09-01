@@ -53,6 +53,9 @@ const PATH_ROLES: { prefix: string; roles: Role[] }[] = [
   { prefix: "/stock", roles: ["ADMIN", "CATALOG", "VIEWER"] },
 
   { prefix: "/orders", roles: ["ADMIN", "SALES", "VIEWER"] },
+  // Customer records carry personal data, so they sit with Sales rather than
+  // being open to every signed-in role. Mirrors SecurityConfig's SALES group.
+  { prefix: "/customers", roles: ["ADMIN", "SALES", "VIEWER"] },
   { prefix: "/returns", roles: ["ADMIN", "SALES", "VIEWER"] },
   { prefix: "/exchanges", roles: ["ADMIN", "SALES", "VIEWER"] },
   { prefix: "/coupons", roles: ["ADMIN", "SALES", "VIEWER"] },

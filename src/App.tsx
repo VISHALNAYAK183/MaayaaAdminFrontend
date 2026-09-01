@@ -9,6 +9,8 @@ import MfaSetup from "./pages/AuthPages/MfaSetup";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import OrdersList from "./pages/orders/OrdersList";
+import CustomerList from "./pages/customers/CustomerList";
+import CustomerDetailPage from "./pages/customers/CustomerDetail";
 import OrderDetails from "./pages/orders/OrderDetails";
 import ReturnsList from "./pages/returns/ReturnsList";
 import ExchangesList from "./pages/exchanges/ExchangesList";
@@ -60,6 +62,8 @@ export default function App() {
               {/* Sales */}
               <Route path="/orders" element={<OrdersList />} />
               <Route path="/orders/:orderId" element={<OrderDetails />} />
+              <Route path="/customers" element={<CustomerList />} />
+              <Route path="/customers/:userId" element={<CustomerDetailPage />} />
               <Route path="/returns" element={<ReturnsList />} />
               <Route path="/exchanges" element={<ExchangesList />} />
               <Route path="/coupons/add" element={<AddCoupon />} />
