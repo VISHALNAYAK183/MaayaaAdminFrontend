@@ -337,22 +337,26 @@ export default function OrderDetails() {
               </p>
             )}
 
-            {/* REQUESTED — Approve / Reject */}
+            {/* REQUESTED — the confirmation call */}
             {!readOnly && status === "REQUESTED" && (
               <div className="flex flex-col gap-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  This is a cash order over the confirmation threshold. Call the customer before
+                  dispatching it — their number is on the order list.
+                </p>
                 <button
                   onClick={handleApprove}
                   disabled={actionLoading}
                   className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
                 >
-                  {actionLoading ? "Processing…" : "Approve Order"}
+                  {actionLoading ? "Processing…" : "Confirmed on call"}
                 </button>
                 <button
                   onClick={handleReject}
                   disabled={actionLoading}
                   className="w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
                 >
-                  Reject Order
+                  Could not confirm — cancel
                 </button>
               </div>
             )}

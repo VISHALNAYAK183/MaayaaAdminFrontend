@@ -9,6 +9,9 @@ const TABS = ["PENDING", "REQUESTED", "PLACED", "SHIPPED", "OUT_FOR_DELIVERY", "
 
 const TAB_LABEL: Record<string, string> = {
   PENDING:          "All Pending",
+  // REQUESTED now means one thing only: a cash order over the confirmation
+  // threshold, waiting on a phone call. It is not a general approval queue.
+  REQUESTED:        "Awaiting Call",
   OUT_FOR_DELIVERY: "Out for Delivery",
 };
 
@@ -126,16 +129,18 @@ export default function OrdersList() {
           <button
             onClick={() => handleApprove(o.order_id)}
             disabled={busy}
+            title="Customer confirmed the order on the call — release it for dispatch"
             className="text-xs px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium disabled:opacity-50 transition-colors"
           >
-            {busy ? "…" : "Approve"}
+            {busy ? "…" : "Confirmed"}
           </button>
           <button
             onClick={() => handleReject(o.order_id)}
             disabled={busy}
+            title="Could not confirm — cancels the order and puts the stock back"
             className="text-xs px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg font-medium disabled:opacity-50 transition-colors"
           >
-            Reject
+            Not confirmed
           </button>
           <button
             onClick={() => navigate(`/orders/${o.order_id}`)}
@@ -280,7 +285,7 @@ export default function OrdersList() {
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
-              {["Order ID", "Amount", "Status", "Actions"].map((h) => (
+              {["Order ID", "Customer", "Amount", "Status", "Actions"].map((h) => (
                 <th
                   key={h}
                   className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide py-3 px-5"
@@ -294,7 +299,7 @@ export default function OrdersList() {
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
-                  {Array.from({ length: 4 }).map((__, j) => (
+                  {Array.from({ length: 5 }).map((__, j) => (
                     <td key={j} className="py-4 px-5">
                       <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                     </td>
@@ -303,7 +308,7 @@ export default function OrdersList() {
               ))
             ) : orders.length === 0 ? (
               <tr>
-                <td colSpan={4} className="py-16 text-center text-gray-400 text-sm">
+                <td colSpan={5} className="py-16 text-center text-gray-400 text-sm">
                   No {(TAB_LABEL[tab] ?? tab.replace(/_/g, " ")).toLowerCase()} orders
                 </td>
               </tr>
@@ -312,6 +317,17 @@ export default function OrdersList() {
                 <tr key={o.order_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
                   <td className="py-4 px-5 text-sm font-mono text-gray-700 dark:text-gray-300">
                     #{o.order_id}
+                  </td>
+                  <td className="py-4 px-5 text-sm text-gray-700 dark:text-gray-300">
+                    <div>{o.customer_name ?? "—"}</div>
+                    {o.customer_phone && (
+                      <a
+                        href={`tel:${o.customer_phone}`}
+                        className="text-xs font-mono text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                      >
+                        {o.customer_phone}
+                      </a>
+                    )}
                   </td>
                   <td className="py-4 px-5 text-sm font-semibold text-gray-900 dark:text-white">
                     ₹{Number(o.amount ?? 0).toLocaleString()}
