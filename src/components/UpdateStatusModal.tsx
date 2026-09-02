@@ -4,7 +4,8 @@ import { updateOrderStatus } from "../api/adminApi";
 interface Props {
   orderId: number;
   currentStatus: string;
-  onSuccess: () => void;
+  /** Carries the order's new state, so the caller can update its row at once. */
+  onSuccess: (updated?: { orderId: number; status: string }) => void;
 }
 
 const NEXT: Record<string, string[]> = {
@@ -32,12 +33,12 @@ export default function UpdateStatusModal({ orderId, currentStatus, onSuccess }:
     setError("");
     setLoading(true);
     try {
-      await updateOrderStatus(orderId, {
+      const res = await updateOrderStatus(orderId, {
         status,
         description: STATUS_LABEL[status] ?? status,
         location: location.trim() || undefined,
       });
-      onSuccess();
+      onSuccess(res.data);
     } catch {
       setError("Failed to update status. Please try again.");
     } finally {

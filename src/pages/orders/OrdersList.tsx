@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import ShipOrderModal from "../../components/ShipOrderModal";
 import UpdateStatusModal from "../../components/UpdateStatusModal";
 import CancelOrderModal from "../../components/CancelOrderModal";
+import TrackingUpdateModal from "../../components/TrackingUpdateModal";
 
 const TABS = ["PENDING", "REQUESTED", "PLACED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED", "REJECTED"];
 
@@ -32,7 +33,9 @@ const STATUS_STYLE: Record<string, string> = {
   REJECTED:         "bg-red-50 text-red-700 border-red-200",
 };
 
-type ModalState = { orderId: number; type: "ship" | "updateStatus" | "cancel"; currentStatus: string };
+type ModalType = "ship" | "updateStatus" | "cancel" | "trackingUpdate";
+
+type ModalState = { orderId: number; type: ModalType; currentStatus: string };
 
 export default function OrdersList() {
   const readOnly = useReadOnly();
@@ -48,6 +51,21 @@ export default function OrdersList() {
 
   useEffect(() => { setPage(0); }, [tab, sortKey]);
   useEffect(() => { fetchOrders(); }, [tab, page, sortKey]);
+
+  // Somebody else ships an order, or you do it in another tab: this list had
+  // no way of hearing about it and went on showing the row where it was.
+  // Coming back to the tab is the moment you expect it to be current.
+  useEffect(() => {
+    const revalidate = () => {
+      if (document.visibilityState === "visible") fetchOrders();
+    };
+    window.addEventListener("focus", revalidate);
+    document.addEventListener("visibilitychange", revalidate);
+    return () => {
+      window.removeEventListener("focus", revalidate);
+      document.removeEventListener("visibilitychange", revalidate);
+    };
+  });
 
   const sortArgs = (): { sortBy?: "newest" | "price"; direction: "asc" | "desc" } => {
     if (sortKey === "newest")     return { sortBy: "newest",  direction: "desc" };
@@ -110,11 +128,23 @@ export default function OrdersList() {
     }
   };
 
-  const openModal = (
-    orderId: number,
-    type: "ship" | "updateStatus" | "cancel",
-    currentStatus: string
-  ) => setModal({ orderId, type, currentStatus });
+  const openModal = (orderId: number, type: ModalType, currentStatus: string) =>
+    setModal({ orderId, type, currentStatus });
+
+  // Patch the row we just changed from the write's own response, then refetch.
+  // The refetch is what removes it from a tab it no longer belongs to; this is
+  // so the row is never left reading its old status if that second call is
+  // slow or fails.
+  const applyAndRefresh = (updated?: { orderId: number; status: string }) => {
+    if (updated) {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.order_id === updated.orderId ? { ...o, status: updated.status } : o
+        )
+      );
+    }
+    fetchOrders();
+  };
 
   // Offered on PLACED and after. A REQUESTED order is called off with "Not
   // confirmed", which does the same work; a delivered one is a return, which
@@ -205,6 +235,13 @@ export default function OrdersList() {
           >
             Update Status
           </button>
+          <button
+            onClick={() => openModal(o.order_id, "trackingUpdate", o.status)}
+            title="Tell the customer where the parcel is, without moving it on"
+            className="text-xs px-2.5 py-1.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg font-medium transition-colors"
+          >
+            Add update
+          </button>
           {cancelButton(o)}
           <button
             onClick={() => navigate(`/orders/${o.order_id}`)}
@@ -244,6 +281,8 @@ export default function OrdersList() {
                   ? "Ship Order"
                   : modal.type === "cancel"
                   ? "Cancel Order"
+                  : modal.type === "trackingUpdate"
+                  ? "Tracking Update"
                   : "Update Status"}{" "}
                 — #{modal.orderId}
               </h3>
@@ -260,7 +299,7 @@ export default function OrdersList() {
             {modal.type === "ship" ? (
               <ShipOrderModal
                 orderId={modal.orderId}
-                onSuccess={() => { closeModal(); fetchOrders(); }}
+                onSuccess={(updated) => { closeModal(); applyAndRefresh(updated); }}
               />
             ) : modal.type === "cancel" ? (
               <CancelOrderModal
@@ -268,12 +307,17 @@ export default function OrdersList() {
                 currentStatus={modal.currentStatus}
                 onSuccess={() => { closeModal(); fetchOrders(); }}
               />
+            ) : modal.type === "trackingUpdate" ? (
+              <TrackingUpdateModal
+                orderId={modal.orderId}
+                onSuccess={closeModal}
+              />
             ) : (
               <UpdateStatusModal
                 key={modal.currentStatus}
                 orderId={modal.orderId}
                 currentStatus={modal.currentStatus}
-                onSuccess={() => { closeModal(); fetchOrders(); }}
+                onSuccess={(updated) => { closeModal(); applyAndRefresh(updated); }}
               />
             )}
           </div>

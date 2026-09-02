@@ -13,6 +13,7 @@ import { CLIENT_API_BASE } from "../../api/client";
 import ShipOrderModal from "../../components/ShipOrderModal";
 import UpdateStatusModal from "../../components/UpdateStatusModal";
 import CancelOrderModal from "../../components/CancelOrderModal";
+import TrackingUpdateModal from "../../components/TrackingUpdateModal";
 
 const resolveImg = (url: string | undefined | null) => {
   if (!url) return null;
@@ -118,6 +119,21 @@ export default function OrderDetails() {
   };
 
   useEffect(() => { load(); }, [orderId]);
+
+  // This page fetched once and never again, so an order changed elsewhere —
+  // another tab, a colleague, the customer cancelling — went on reading
+  // whatever it said when it was opened.
+  useEffect(() => {
+    const revalidate = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    window.addEventListener("focus", revalidate);
+    document.addEventListener("visibilitychange", revalidate);
+    return () => {
+      window.removeEventListener("focus", revalidate);
+      document.removeEventListener("visibilitychange", revalidate);
+    };
+  });
 
   const handleApprove = async () => {
     if (!window.confirm("Approve this order?")) return;
@@ -472,14 +488,23 @@ export default function OrderDetails() {
               <ShipOrderModal orderId={order.orderId} onSuccess={load} />
             )}
 
-            {/* SHIPPED / OUT_FOR_DELIVERY — Update status */}
+            {/* SHIPPED / OUT_FOR_DELIVERY — advance the status, or just say
+                where the parcel has got to */}
             {!readOnly && ["SHIPPED", "OUT_FOR_DELIVERY"].includes(status) && (
-              <UpdateStatusModal
-                key={status}
-                orderId={order.orderId}
-                currentStatus={status}
-                onSuccess={load}
-              />
+              <>
+                <UpdateStatusModal
+                  key={status}
+                  orderId={order.orderId}
+                  currentStatus={status}
+                  onSuccess={load}
+                />
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                    Tracking Update
+                  </p>
+                  <TrackingUpdateModal orderId={order.orderId} onSuccess={load} />
+                </div>
+              </>
             )}
 
             {/* Cancel — everything between placement and delivery. A REQUESTED

@@ -46,6 +46,13 @@ export const downloadInvoicePdf = (invoiceId: number) =>
 export const getOrderDetails = (orderId: number) =>
   apiClient.get(`${ADMIN_BASE}/orders/${orderId}`);
 
+/** Responses from the order write endpoints carry the order's new state. */
+export interface OrderStateResponse {
+  orderId: number;
+  status: string;
+  message: string;
+}
+
 export const shipOrder = (
   orderId: number,
   data: {
@@ -54,7 +61,21 @@ export const shipOrder = (
     trackingUrl?: string;
     estimatedDeliveryDate: string;
   }
-) => apiClient.post(`${ADMIN_BASE}/orders/${orderId}/ship`, data);
+) => apiClient.post<OrderStateResponse>(`${ADMIN_BASE}/orders/${orderId}/ship`, data);
+
+/**
+ * A line on the parcel's timeline that does not move the order on — where it
+ * has got to, that it is held up, that delivery was attempted. The customer
+ * reads the description on their order page.
+ */
+export const addShipmentEvent = (
+  orderId: number,
+  data: {
+    kind: "IN_TRANSIT" | "DELAYED" | "DELIVERY_ATTEMPTED";
+    description?: string;
+    location?: string;
+  }
+) => apiClient.post(`${ADMIN_BASE}/orders/${orderId}/shipment-events`, data);
 
 export const updateOrderStatus = (
   orderId: number,
@@ -63,7 +84,7 @@ export const updateOrderStatus = (
     description?: string;
     location?: string;
   }
-) => apiClient.put(`${ADMIN_BASE}/orders/${orderId}/status`, data);
+) => apiClient.put<OrderStateResponse>(`${ADMIN_BASE}/orders/${orderId}/status`, data);
 
 export const approveOrder = (orderId: number) =>
   apiClient.put(`${ADMIN_BASE}/orders/${orderId}/approve`);

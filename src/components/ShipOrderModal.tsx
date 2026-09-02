@@ -3,7 +3,8 @@ import { shipOrder } from "../api/adminApi";
 
 interface Props {
   orderId: number;
-  onSuccess: () => void;
+  /** Carries the order's new state, so the caller can update its row at once. */
+  onSuccess: (updated?: { orderId: number; status: string }) => void;
 }
 
 export default function ShipOrderModal({ orderId, onSuccess }: Props) {
@@ -32,8 +33,8 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
     setLoading(true);
     setError("");
     try {
-      await shipOrder(orderId, form);
-      onSuccess();
+      const res = await shipOrder(orderId, form);
+      onSuccess(res.data);
     } catch {
       setError("Failed to ship order. Please try again.");
     } finally {
