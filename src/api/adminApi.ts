@@ -1,4 +1,4 @@
-import { apiClient, clientApi, ADMIN_BASE, CLIENT_BASE, API_BASE } from "./client";
+import { apiClient, ADMIN_BASE, CLIENT_BASE, API_BASE } from "./client";
 
 // Re-exported for any caller that still references these names
 export { ADMIN_BASE, CLIENT_BASE };
@@ -38,8 +38,13 @@ export const downloadInvoicePdf = (invoiceId: number) =>
     responseType: "blob",
   });
 
+/**
+ * Order detail. Served by admin-api, which checks the caller's role. The
+ * storefront's copy of this read was open to anyone who could guess an order
+ * id, so it is gone.
+ */
 export const getOrderDetails = (orderId: number) =>
-  clientApi.get(`${CLIENT_BASE}/orders/admin/${orderId}`);
+  apiClient.get(`${ADMIN_BASE}/orders/${orderId}`);
 
 export const shipOrder = (
   orderId: number,

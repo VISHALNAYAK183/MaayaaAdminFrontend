@@ -32,16 +32,14 @@ export interface PageResp<T> {
   size: number;
 }
 
-/**
- * Storefront backend. Note it does NOT get the admin ACCESS token: that token
- * is issued by admin-api and this is a different host, so attaching it would
- * hand our session credential to a service that never asked for it. If the
- * storefront backend turns out to validate admin JWTs, add the interceptor
- * here deliberately rather than by accident.
+/*
+ * There is no axios instance for the storefront backend, deliberately. Every
+ * instance in this file carries the admin ACCESS token, and that token is
+ * issued by admin-api: sending it to a different service would hand our
+ * session credential to somewhere that never asked for it. The storefront host
+ * is used for image URLs only. If a panel screen ever needs storefront data,
+ * add the endpoint to admin-api instead of reaching across from the browser.
  */
-export const clientApi = axios.create({
-  baseURL: CLIENT_API_BASE,
-});
 
 /**
  * Error carrying the HTTP status, so callers can tell "bad request" from
