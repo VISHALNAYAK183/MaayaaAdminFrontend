@@ -7,10 +7,12 @@ import {
   rejectOrder,
   getInvoiceByOrder,
   downloadInvoicePdf,
+  retryRefund,
 } from "../../api/adminApi";
 import { CLIENT_API_BASE } from "../../api/client";
 import ShipOrderModal from "../../components/ShipOrderModal";
 import UpdateStatusModal from "../../components/UpdateStatusModal";
+import CancelOrderModal from "../../components/CancelOrderModal";
 
 const resolveImg = (url: string | undefined | null) => {
   if (!url) return null;
@@ -25,7 +27,15 @@ const STATUS_STYLE: Record<string, string> = {
   SHIPPED:          "bg-purple-50 text-purple-700 border-purple-200",
   OUT_FOR_DELIVERY: "bg-orange-50 text-orange-700 border-orange-200",
   DELIVERED:        "bg-emerald-50 text-emerald-700 border-emerald-200",
+  CANCELLED:        "bg-slate-100 text-slate-700 border-slate-300",
   REJECTED:         "bg-red-50 text-red-700 border-red-200",
+};
+
+const REFUND_STYLE: Record<string, string> = {
+  COMPLETED:  "bg-emerald-50 text-emerald-700 border-emerald-200",
+  PROCESSING: "bg-blue-50 text-blue-700 border-blue-200",
+  PENDING:    "bg-amber-50 text-amber-700 border-amber-200",
+  FAILED:     "bg-red-50 text-red-700 border-red-200",
 };
 
 export default function OrderDetails() {
@@ -122,6 +132,29 @@ export default function OrderDetails() {
     }
   };
 
+  const handleRetryRefund = async (refundId: number, amount: number) => {
+    // The gateway call carries no idempotency key, so this asks for a second
+    // refund rather than resuming the first. Worth saying out loud before
+    // somebody presses it twice.
+    const ok = window.confirm(
+      `Ask the gateway again for ₹${Number(amount ?? 0).toLocaleString()}?\n\n` +
+        "Only do this if the first attempt was refused. If it actually went " +
+        "through and was recorded wrong, this sends the money twice."
+    );
+    if (!ok) return;
+    setActionLoading(true);
+    try {
+      const res = await retryRefund(Number(orderId), refundId);
+      alert(res.data?.message ?? "Refund retried.");
+      await load();
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      alert(e?.response?.data?.message ?? "Could not retry the refund. Please try again.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleReject = async () => {
     if (!window.confirm("Reject this order? This cannot be undone.")) return;
     setActionLoading(true);
@@ -156,7 +189,7 @@ export default function OrderDetails() {
     );
   }
 
-  const { order, products = [], shipment, timeline = [] } = data;
+  const { order, products = [], shipment, timeline = [], refunds = [] } = data;
   const status: string = order.status ?? "";
 
   const sortedTimeline = [...timeline].sort(
@@ -207,20 +240,38 @@ export default function OrderDetails() {
               {products.length === 0 ? (
                 <p className="px-6 py-8 text-sm text-center text-gray-400">No products</p>
               ) : (
-                products.map((p: any) => (
-                  <div key={p.productId} className="px-6 py-4 flex items-center gap-4">
+                products.map((p: any) => {
+                  // A line the customer cancelled is not in the parcel and is
+                  // not in the total. Showing it like the rest is how the wrong
+                  // thing gets packed.
+                  const cancelled = String(p.itemStatus ?? "").toUpperCase() === "CANCELLED";
+                  return (
+                  <div
+                    key={p.orderItemId ?? p.productId}
+                    className={`px-6 py-4 flex items-center gap-4 ${cancelled ? "opacity-60" : ""}`}
+                  >
                     <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 shrink-0 overflow-hidden">
                       {resolveImg(p.imageUrl) && <img src={resolveImg(p.imageUrl)!} alt={p.name} className="w-full h-full object-cover" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{p.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Qty: {p.quantity}</p>
+                      <p className={`text-sm font-medium text-gray-900 dark:text-white truncate ${cancelled ? "line-through" : ""}`}>
+                        {p.name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Qty: {p.quantity}</p>
+                        {cancelled && (
+                          <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border bg-slate-100 text-slate-700 border-slate-300">
+                            Cancelled
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white shrink-0">
+                    <p className={`text-sm font-semibold text-gray-900 dark:text-white shrink-0 ${cancelled ? "line-through" : ""}`}>
                       ₹{Number(p.price ?? 0).toLocaleString()}
                     </p>
                   </div>
-                ))
+                  );
+                })
               )}
             </div>
             {order.amount != null && (
@@ -230,6 +281,61 @@ export default function OrderDetails() {
               </div>
             )}
           </div>
+
+          {/* Refunds — a failed one used to exist only in the database */}
+          {refunds.length > 0 && (
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Refunds</h2>
+              </div>
+              <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                {refunds.map((r: any) => {
+                  const st = String(r.status ?? "").toUpperCase();
+                  return (
+                    <div key={r.refundId} className="px-6 py-4 flex items-start gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                            ₹{Number(r.amount ?? 0).toLocaleString()}
+                          </span>
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${REFUND_STYLE[st] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                            {st}
+                          </span>
+                          {r.method && (
+                            <span className="text-[11px] text-gray-500 dark:text-gray-400">{r.method}</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {st === "COMPLETED"
+                            ? `Sent ${fmtDateTime(r.refundedAt)}`
+                            : `Raised ${fmtDateTime(r.createdAt)}`}
+                        </p>
+                        {r.gatewayRefundId && (
+                          <p className="text-[11px] font-mono text-gray-500 dark:text-gray-400 mt-0.5 break-all">
+                            {r.gatewayRefundId}
+                          </p>
+                        )}
+                        {r.failureReason && (
+                          <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                            {r.failureReason}
+                          </p>
+                        )}
+                      </div>
+                      {!readOnly && st !== "COMPLETED" && (
+                        <button
+                          onClick={() => handleRetryRefund(r.refundId, r.amount)}
+                          disabled={actionLoading}
+                          className="text-xs px-2.5 py-1.5 bg-gray-900 hover:bg-gray-700 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-lg font-medium disabled:opacity-50 transition-colors shrink-0"
+                        >
+                          Retry
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Shipment + timeline */}
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
@@ -376,7 +482,24 @@ export default function OrderDetails() {
               />
             )}
 
-            {!readOnly && ["DELIVERED", "REJECTED"].includes(status) && (
+            {/* Cancel — everything between placement and delivery. A REQUESTED
+                order is called off above with "Could not confirm"; a delivered
+                one is a return. */}
+            {!readOnly && ["PLACED", "SHIPPED", "OUT_FOR_DELIVERY"].includes(status) && (
+              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                  Cancel Order
+                </p>
+                <CancelOrderModal
+                  key={status}
+                  orderId={order.orderId}
+                  currentStatus={status}
+                  onSuccess={load}
+                />
+              </div>
+            )}
+
+            {!readOnly && ["DELIVERED", "REJECTED", "CANCELLED"].includes(status) && (
               <p className="text-sm text-gray-400 text-center py-2">No further actions available.</p>
             )}
 

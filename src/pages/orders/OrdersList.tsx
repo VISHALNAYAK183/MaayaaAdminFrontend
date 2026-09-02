@@ -4,11 +4,16 @@ import { getOrders, approveOrder, rejectOrder } from "../../api/adminApi";
 import { useNavigate } from "react-router-dom";
 import ShipOrderModal from "../../components/ShipOrderModal";
 import UpdateStatusModal from "../../components/UpdateStatusModal";
+import CancelOrderModal from "../../components/CancelOrderModal";
 
-const TABS = ["PENDING", "REQUESTED", "PLACED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "REJECTED"];
+const TABS = ["PENDING", "REQUESTED", "PLACED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED", "REJECTED"];
 
 const TAB_LABEL: Record<string, string> = {
   PENDING:          "All Pending",
+  // Cancellations had no tab at all, so an order a customer cancelled
+  // overnight was not under any of them — the only way to learn about it was
+  // the customer writing in about their refund.
+  CANCELLED:        "Cancelled",
   // REQUESTED now means one thing only: a cash order over the confirmation
   // threshold, waiting on a phone call. It is not a general approval queue.
   REQUESTED:        "Awaiting Call",
@@ -21,10 +26,13 @@ const STATUS_STYLE: Record<string, string> = {
   SHIPPED:          "bg-purple-50 text-purple-700 border-purple-200",
   OUT_FOR_DELIVERY: "bg-orange-50 text-orange-700 border-orange-200",
   DELIVERED:        "bg-emerald-50 text-emerald-700 border-emerald-200",
+  // Distinct from REJECTED: that one is a call we never confirmed, this one
+  // is an order that existed and was undone.
+  CANCELLED:        "bg-slate-100 text-slate-700 border-slate-300",
   REJECTED:         "bg-red-50 text-red-700 border-red-200",
 };
 
-type ModalState = { orderId: number; type: "ship" | "updateStatus"; currentStatus: string };
+type ModalState = { orderId: number; type: "ship" | "updateStatus" | "cancel"; currentStatus: string };
 
 export default function OrdersList() {
   const readOnly = useReadOnly();
@@ -102,8 +110,24 @@ export default function OrdersList() {
     }
   };
 
-  const openModal = (orderId: number, type: "ship" | "updateStatus", currentStatus: string) =>
-    setModal({ orderId, type, currentStatus });
+  const openModal = (
+    orderId: number,
+    type: "ship" | "updateStatus" | "cancel",
+    currentStatus: string
+  ) => setModal({ orderId, type, currentStatus });
+
+  // Offered on PLACED and after. A REQUESTED order is called off with "Not
+  // confirmed", which does the same work; a delivered one is a return, which
+  // has its own flow.
+  const cancelButton = (o: any) => (
+    <button
+      onClick={() => openModal(o.order_id, "cancel", o.status)}
+      title="Cancel the order: stock back, coupon released, prepaid money refunded"
+      className="text-xs px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg font-medium transition-colors"
+    >
+      Cancel
+    </button>
+  );
 
   const closeModal = () => setModal(null);
 
@@ -161,6 +185,7 @@ export default function OrdersList() {
           >
             Ship
           </button>
+          {cancelButton(o)}
           <button
             onClick={() => navigate(`/orders/${o.order_id}`)}
             className="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 px-1 transition-colors"
@@ -180,6 +205,7 @@ export default function OrdersList() {
           >
             Update Status
           </button>
+          {cancelButton(o)}
           <button
             onClick={() => navigate(`/orders/${o.order_id}`)}
             className="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 px-1 transition-colors"
@@ -214,7 +240,12 @@ export default function OrdersList() {
           >
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                {modal.type === "ship" ? "Ship Order" : "Update Status"} — #{modal.orderId}
+                {modal.type === "ship"
+                  ? "Ship Order"
+                  : modal.type === "cancel"
+                  ? "Cancel Order"
+                  : "Update Status"}{" "}
+                — #{modal.orderId}
               </h3>
               <button
                 onClick={closeModal}
@@ -229,6 +260,12 @@ export default function OrdersList() {
             {modal.type === "ship" ? (
               <ShipOrderModal
                 orderId={modal.orderId}
+                onSuccess={() => { closeModal(); fetchOrders(); }}
+              />
+            ) : modal.type === "cancel" ? (
+              <CancelOrderModal
+                orderId={modal.orderId}
+                currentStatus={modal.currentStatus}
                 onSuccess={() => { closeModal(); fetchOrders(); }}
               />
             ) : (

@@ -70,3 +70,25 @@ export const approveOrder = (orderId: number) =>
 
 export const rejectOrder = (orderId: number) =>
   apiClient.put(`${ADMIN_BASE}/orders/${orderId}/reject`);
+
+/**
+ * Cancel an order: stock back, coupon released, prepaid money returned, and
+ * the reason written onto the customer's timeline — so keep it readable.
+ */
+export const cancelOrder = (orderId: number, reason: string) =>
+  apiClient.put<{
+    orderId: number;
+    status: string;
+    refundAmount: number;
+    reason: string;
+    message: string;
+  }>(`${ADMIN_BASE}/orders/${orderId}/cancel`, { reason });
+
+/** Ask the gateway again for a refund it refused. */
+export const retryRefund = (orderId: number, refundId: number) =>
+  apiClient.post<{
+    refundId: number;
+    status: string;
+    refundAmount: number;
+    message: string;
+  }>(`${ADMIN_BASE}/orders/${orderId}/refunds/${refundId}/retry`);
