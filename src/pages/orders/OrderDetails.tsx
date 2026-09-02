@@ -14,6 +14,7 @@ import ShipOrderModal from "../../components/ShipOrderModal";
 import UpdateStatusModal from "../../components/UpdateStatusModal";
 import CancelOrderModal from "../../components/CancelOrderModal";
 import TrackingUpdateModal from "../../components/TrackingUpdateModal";
+import type { OrderDetail, OrderProduct, RefundRow, ShipmentEventRow } from "../../types/order";
 
 const resolveImg = (url: string | undefined | null) => {
   if (!url) return null;
@@ -43,7 +44,7 @@ export default function OrderDetails() {
   const readOnly = useReadOnly();
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [invoiceLoading, setInvoiceLoading] = useState(false);
@@ -136,6 +137,7 @@ export default function OrderDetails() {
   });
 
   const handleApprove = async () => {
+    if (!data) return;
     if (!window.confirm("Approve this order?")) return;
     setActionLoading(true);
     try {
@@ -148,7 +150,7 @@ export default function OrderDetails() {
     }
   };
 
-  const handleRetryRefund = async (refundId: number, amount: number) => {
+  const handleRetryRefund = async (refundId: number, amount: number | null) => {
     // The gateway call carries no idempotency key, so this asks for a second
     // refund rather than resuming the first. Worth saying out loud before
     // somebody presses it twice.
@@ -172,6 +174,7 @@ export default function OrderDetails() {
   };
 
   const handleReject = async () => {
+    if (!data) return;
     if (!window.confirm("Reject this order? This cannot be undone.")) return;
     setActionLoading(true);
     try {
@@ -209,7 +212,7 @@ export default function OrderDetails() {
   const status: string = order.status ?? "";
 
   const sortedTimeline = [...timeline].sort(
-    (a: any, b: any) =>
+    (a: ShipmentEventRow, b: ShipmentEventRow) =>
       new Date(a.event_time ?? a.eventTime ?? 0).getTime() -
       new Date(b.event_time ?? b.eventTime ?? 0).getTime()
   );
@@ -256,7 +259,7 @@ export default function OrderDetails() {
               {products.length === 0 ? (
                 <p className="px-6 py-8 text-sm text-center text-gray-400">No products</p>
               ) : (
-                products.map((p: any) => {
+                products.map((p: OrderProduct) => {
                   // A line the customer cancelled is not in the parcel and is
                   // not in the total. Showing it like the rest is how the wrong
                   // thing gets packed.
@@ -267,7 +270,7 @@ export default function OrderDetails() {
                     className={`px-6 py-4 flex items-center gap-4 ${cancelled ? "opacity-60" : ""}`}
                   >
                     <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 shrink-0 overflow-hidden">
-                      {resolveImg(p.imageUrl) && <img src={resolveImg(p.imageUrl)!} alt={p.name} className="w-full h-full object-cover" />}
+                      {resolveImg(p.imageUrl) && <img src={resolveImg(p.imageUrl)!} alt={p.name ?? ""} className="w-full h-full object-cover" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-medium text-gray-900 dark:text-white truncate ${cancelled ? "line-through" : ""}`}>
@@ -305,7 +308,7 @@ export default function OrderDetails() {
                 <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Refunds</h2>
               </div>
               <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                {refunds.map((r: any) => {
+                {refunds.map((r: RefundRow) => {
                   const st = String(r.status ?? "").toUpperCase();
                   return (
                     <div key={r.refundId} className="px-6 py-4 flex items-start gap-4">
@@ -405,7 +408,7 @@ export default function OrderDetails() {
                 </p>
               ) : (
                 <ol className="space-y-0">
-                  {sortedTimeline.map((evt: any, idx: number) => {
+                  {sortedTimeline.map((evt: ShipmentEventRow, idx: number) => {
                     const isLast = idx === sortedTimeline.length - 1;
                     return (
                       <li key={`${evt.status}-${idx}`} className="flex gap-4">

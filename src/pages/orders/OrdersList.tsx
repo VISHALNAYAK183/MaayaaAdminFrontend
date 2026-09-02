@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import ShipOrderModal from "../../components/ShipOrderModal";
 import UpdateStatusModal from "../../components/UpdateStatusModal";
 import CancelOrderModal from "../../components/CancelOrderModal";
+import type { AdminOrderRow } from "../../types/order";
 import TrackingUpdateModal from "../../components/TrackingUpdateModal";
 
 const TABS = ["PENDING", "REQUESTED", "PLACED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED", "REJECTED"];
@@ -39,7 +40,7 @@ type ModalState = { orderId: number; type: ModalType; currentStatus: string };
 
 export default function OrdersList() {
   const readOnly = useReadOnly();
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<AdminOrderRow[]>([]);
   const [tab, setTab] = useState("PENDING");
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -78,23 +79,13 @@ export default function OrdersList() {
     setLoading(true);
     try {
       const { sortBy, direction } = sortArgs();
-      if (tab === "PENDING") {
-        const [reqRes, placedRes] = await Promise.all([
-          getOrders("REQUESTED", 0, 100, sortBy, direction),
-          getOrders("PLACED", 0, 100, sortBy, direction),
-        ]);
-        const req = reqRes.data as any;
-        const placed = placedRes.data as any;
-        const reqOrders = Array.isArray(req) ? req : (req.content ?? []);
-        const placedOrders = Array.isArray(placed) ? placed : (placed.content ?? []);
-        setOrders([...reqOrders, ...placedOrders].sort((a, b) => b.order_id - a.order_id));
-        setTotalPages(1);
-      } else {
-        const res = await getOrders(tab, page, 20, sortBy, direction);
-        const body = res.data as any;
-        setOrders(Array.isArray(body) ? body : (body.content ?? []));
-        setTotalPages(body.total_pages ?? 1);
-      }
+      // All Pending is one server-side query now. It used to be two fetches of
+      // 100 merged in the browser and called a single page, so a shop with more
+      // than 100 pending orders simply could not see the rest of them.
+      const res = await getOrders(tab, page, 20, sortBy, direction);
+      const body = res.data as any;
+      setOrders(Array.isArray(body) ? body : (body.content ?? []));
+      setTotalPages(body.total_pages ?? 1);
     } catch {
       setOrders([]);
     } finally {
@@ -149,7 +140,7 @@ export default function OrdersList() {
   // Offered on PLACED and after. A REQUESTED order is called off with "Not
   // confirmed", which does the same work; a delivered one is a return, which
   // has its own flow.
-  const cancelButton = (o: any) => (
+  const cancelButton = (o: AdminOrderRow) => (
     <button
       onClick={() => openModal(o.order_id, "cancel", o.status)}
       title="Cancel the order: stock back, coupon released, prepaid money refunded"
@@ -161,7 +152,7 @@ export default function OrdersList() {
 
   const closeModal = () => setModal(null);
 
-  const renderActions = (o: any) => {
+  const renderActions = (o: AdminOrderRow) => {
     const busy = actionLoading === o.order_id;
 
     // A viewer keeps the read-only "View" link and loses every action that
@@ -429,8 +420,7 @@ export default function OrdersList() {
           </tbody>
         </table>
 
-        {/* Pagination — hidden on PENDING tab since it's a merged fetch */}
-        {tab !== "PENDING" && totalPages > 1 && (
+        {totalPages > 1 && (
           <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <p className="text-xs text-gray-400">Page {page + 1} of {totalPages}</p>
             <div className="flex gap-1.5">
