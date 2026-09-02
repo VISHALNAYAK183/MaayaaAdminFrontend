@@ -16,7 +16,6 @@ const SectionItems = () => {
       setItems(res.data);
       localStorage.setItem("sectionItems", JSON.stringify(res.data));
     } catch (err) {
-      console.error(err);
       alert("Failed to load section items");
     } finally {
       setLoading(false);
