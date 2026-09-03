@@ -151,13 +151,15 @@ export default function OrderDetails() {
   };
 
   const handleRetryRefund = async (refundId: number, amount: number | null) => {
-    // The gateway call carries no idempotency key, so this asks for a second
-    // refund rather than resuming the first. Worth saying out loud before
-    // somebody presses it twice.
+    // The server now asks Razorpay what it has already refunded before sending
+    // anything: a refund that went through but was recorded as failed is
+    // adopted rather than made a second time, and anything that would take the
+    // total past what was captured is refused. So this no longer needs to warn
+    // about paying twice — it says what will happen instead.
     const ok = window.confirm(
-      `Ask the gateway again for ₹${Number(amount ?? 0).toLocaleString()}?\n\n` +
-        "Only do this if the first attempt was refused. If it actually went " +
-        "through and was recorded wrong, this sends the money twice."
+      `Retry the ₹${Number(amount ?? 0).toLocaleString()} refund?\n\n` +
+        "Razorpay is checked first. If the earlier attempt actually went through, " +
+        "the record is corrected and nothing is sent again."
     );
     if (!ok) return;
     setActionLoading(true);
