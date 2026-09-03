@@ -282,6 +282,34 @@ export default function ReturnsList() {
                 <p className="text-gray-500 dark:text-gray-400 mt-1">
                   Refund: ₹{Number(selected.refundAmount ?? 0).toLocaleString()}
                 </p>
+
+                {/* Where this money is going. A bank refund is paid by hand, so
+                    whoever does it needs the destination on the screen rather
+                    than in the database. */}
+                {selected.refundMode === "STORE_CREDIT" && (
+                  <p className="mt-1 inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Store credit — issued instantly on completion
+                  </p>
+                )}
+                {selected.refundMode === "ORIGINAL" && (
+                  <p className="mt-1 inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                    Back to the original payment
+                  </p>
+                )}
+                {selected.refundMode === "BANK" && (
+                  <div className="mt-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-[12px] text-amber-900">
+                    <p className="font-semibold mb-0.5">Pay this out by hand</p>
+                    {selected.refundUpi ? (
+                      <p>UPI: <span className="font-mono">{selected.refundUpi}</span></p>
+                    ) : (
+                      <>
+                        <p>{selected.refundAccountName ?? "—"}</p>
+                        <p className="font-mono">{selected.refundAccountNumber ?? "—"}</p>
+                        <p className="font-mono">{selected.refundIfsc ?? "—"}</p>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

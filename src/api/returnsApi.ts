@@ -31,6 +31,13 @@ export type AdminReturn = {
   approvedAt: string | null;
   rejectedAt: string | null;
   completedAt: string | null;
+  // How the customer asked to be paid back, and where to send it when that is
+  // a manual payout.
+  refundMode: "ORIGINAL" | "STORE_CREDIT" | "BANK" | null;
+  refundUpi: string | null;
+  refundAccountName: string | null;
+  refundAccountNumber: string | null;
+  refundIfsc: string | null;
   refundStatus: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | null;
   refundMethod: string | null;
   refundTransactionId: string | null;
