@@ -62,6 +62,19 @@ export const approveReturn = (returnId: number) =>
 export const rejectReturn = (returnId: number) =>
   apiClient.put(`${ADMIN_BASE}/returns/${returnId}/reject`);
 
+/**
+ * The two steps between approving a return and refunding it. The endpoints
+ * have always existed; the screen never called them, so an approved return
+ * could not reach INSPECTED and approveRefund refused every time.
+ */
+export const markPickedUp = (returnId: number) =>
+  apiClient.put(`${ADMIN_BASE}/returns/${returnId}/picked-up`);
+
+export const markInspected = (returnId: number, pass: boolean, comment?: string) =>
+  apiClient.put(`${ADMIN_BASE}/returns/${returnId}/inspect`, null, {
+    params: { pass, ...(comment ? { comment } : {}) },
+  });
+
 export const approveRefund = (returnId: number) =>
   apiClient.put(`${ADMIN_BASE}/returns/${returnId}/refund/approve`);
 

@@ -4,6 +4,8 @@ import {
   getAdminReturns,
   approveReturn,
   rejectReturn,
+  markPickedUp,
+  markInspected,
   approveRefund,
   rejectRefund,
   completeRefund,
@@ -18,6 +20,10 @@ const TABS: Array<AdminReturnStatus | "ALL"> = [
   "ALL",
   "REQUESTED",
   "APPROVED",
+  // The two middle states had no tab either, so a return in transit or on the
+  // QC bench could only be found under ALL.
+  "PICKED_UP",
+  "INSPECTED",
   "REFUND_APPROVED",
   "REFUNDED",
   "REJECTED",
@@ -26,12 +32,22 @@ const TABS: Array<AdminReturnStatus | "ALL"> = [
 const STATUS_STYLE: Record<string, string> = {
   REQUESTED:       "bg-yellow-50 text-yellow-700 border-yellow-200",
   APPROVED:        "bg-blue-50 text-blue-700 border-blue-200",
+  PICKED_UP:       "bg-indigo-50 text-indigo-700 border-indigo-200",
+  INSPECTED:       "bg-cyan-50 text-cyan-700 border-cyan-200",
   REFUND_APPROVED: "bg-purple-50 text-purple-700 border-purple-200",
   REFUNDED:        "bg-emerald-50 text-emerald-700 border-emerald-200",
   REJECTED:        "bg-red-50 text-red-700 border-red-200",
 };
 
-type Action = "approve" | "reject" | "refundApprove" | "refundReject" | "refundComplete";
+type Action =
+  | "approve"
+  | "reject"
+  | "pickedUp"
+  | "qcPass"
+  | "qcFail"
+  | "refundApprove"
+  | "refundReject"
+  | "refundComplete";
 
 const formatDate = (iso: string | null) => {
   if (!iso) return "—";
@@ -96,6 +112,15 @@ export default function ReturnsList() {
     try {
       if (action === "approve")            await approveReturn(returnId);
       else if (action === "reject")        await rejectReturn(returnId);
+      else if (action === "pickedUp")      await markPickedUp(returnId);
+      else if (action === "qcPass")        await markInspected(returnId, true);
+      else if (action === "qcFail") {
+        // The note becomes the disposition message the customer is held to,
+        // so it is worth asking for rather than defaulting.
+        const why = window.prompt("What failed inspection? The customer sees this.");
+        if (why === null) { setActionLoading(null); return; }
+        await markInspected(returnId, false, why.trim() || undefined);
+      }
       else if (action === "refundApprove") await approveRefund(returnId);
       else if (action === "refundReject")  await rejectRefund(returnId);
       else if (action === "refundComplete") await completeRefund(returnId);
@@ -136,7 +161,45 @@ export default function ReturnsList() {
       );
     }
 
+    // Approved, waiting on the courier. The refund cannot be approved from
+    // here — the server wants the item back and inspected first, which is what
+    // these two steps are. They had endpoints and no buttons, so every approved
+    // return used to stop dead at this row.
     if (r.returnStatus === "APPROVED") {
+      return (
+        <button
+          onClick={() => runAction(r.returnId, "pickedUp", "Mark this item as collected from the customer?")}
+          disabled={busy}
+          className={`${btn} bg-blue-600 hover:bg-blue-700 text-white`}
+        >
+          {busy ? "…" : "Mark picked up"}
+        </button>
+      );
+    }
+
+    // Back with us: warehouse QC decides whether the money goes back.
+    if (r.returnStatus === "PICKED_UP") {
+      return (
+        <div className="flex gap-1.5 flex-wrap">
+          <button
+            onClick={() => runAction(r.returnId, "qcPass", "Item passed inspection? The refund can be approved next.")}
+            disabled={busy}
+            className={`${btn} bg-emerald-600 hover:bg-emerald-700 text-white`}
+          >
+            {busy ? "…" : "QC passed"}
+          </button>
+          <button
+            onClick={() => runAction(r.returnId, "qcFail", "Item failed inspection? This rejects the return — no refund.")}
+            disabled={busy}
+            className={`${btn} bg-red-50 hover:bg-red-100 text-red-700 border border-red-200`}
+          >
+            QC failed
+          </button>
+        </div>
+      );
+    }
+
+    if (r.returnStatus === "INSPECTED") {
       return (
         <div className="flex gap-1.5 flex-wrap">
           <button
@@ -147,7 +210,7 @@ export default function ReturnsList() {
             {busy ? "…" : "Approve Refund"}
           </button>
           <button
-            onClick={() => runAction(r.returnId, "refundReject", "Reject refund? Used when returned item fails inspection.")}
+            onClick={() => runAction(r.returnId, "refundReject", "Reject refund? Used when the returned item fails inspection.")}
             disabled={busy}
             className={`${btn} bg-red-50 hover:bg-red-100 text-red-700 border border-red-200`}
           >
