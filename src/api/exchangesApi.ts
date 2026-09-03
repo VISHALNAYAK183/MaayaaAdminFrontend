@@ -55,6 +55,29 @@ export type AdminExchange = {
   userName: string | null;
   userEmail: string | null;
   userPhone: string | null;
+
+  /** When the courier collected the original item. */
+  pickedUpAt: string | null;
+
+  // The replacement parcel, once it has gone out.
+  replacementCarrier: string | null;
+  replacementTrackingNumber: string | null;
+  replacementTrackingUrl: string | null;
+  replacementEstimatedDeliveryDate: string | null;
+  replacementShippedAt: string | null;
+  replacementDeliveredAt: string | null;
+
+  // Where a failed item goes, and the deadline the customer is on.
+  dispositionStatus: string | null;
+  dispositionDeadline: string | null;
+  dispositionNote: string | null;
+};
+
+export type ShipReplacementPayload = {
+  carrier?: string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  estimatedDeliveryDate?: string;
 };
 
 /**
@@ -89,8 +112,16 @@ export const warehouseQcPass = (id: number, comment: string) =>
 export const warehouseQcFail = (id: number, comment: string) =>
   apiClient.put(`${ADMIN_BASE}/exchanges/${id}/warehouse-qc/fail`, { comment });
 
-export const shipReplacement = (id: number) =>
-  apiClient.put(`${ADMIN_BASE}/exchanges/${id}/ship-replacement`);
+/** The courier has collected the original item from the customer. */
+export const markExchangePickedUp = (id: number) =>
+  apiClient.put(`${ADMIN_BASE}/exchanges/${id}/picked-up`);
+
+/**
+ * Send the replacement, with what the customer needs to follow it. This used
+ * to take no body at all and only flipped a status.
+ */
+export const shipReplacement = (id: number, payload: ShipReplacementPayload) =>
+  apiClient.put(`${ADMIN_BASE}/exchanges/${id}/ship-replacement`, payload);
 
 export const completeExchange = (id: number) =>
   apiClient.put(`${ADMIN_BASE}/exchanges/${id}/complete`);

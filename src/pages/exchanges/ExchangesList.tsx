@@ -7,6 +7,7 @@ import {
   warehouseQcPass,
   warehouseQcFail,
   shipReplacement,
+  markExchangePickedUp,
   completeExchange,
   AdminExchange,
   ExchangeStatus,
@@ -19,9 +20,14 @@ const PAGE_SIZE = 20;
 const TABS: Array<{ key: string; label: string; match: ExchangeStatus[] | null }> = [
   { key: "ALL",          label: "All",          match: null },
   { key: "PENDING_QC",   label: "Pending QC",   match: ["REQUESTED"] },
-  { key: "PICKUP",       label: "Pickup",       match: ["STOCK_RESERVED", "PICKUP_PENDING", "PICKED_UP", "WAREHOUSE_QC_PENDING"] },
+  // NO_STOCK belongs with pickup, not with closed. The server treats it as an
+  // exchange still in flight — the item comes back and is inspected, and only
+  // then is the refund issued. Filed under Closed it had no tab that showed it
+  // and no buttons when it did, so the refund could never be reached: the
+  // "no stock, so refund instead" half of the flow was unreachable.
+  { key: "PICKUP",       label: "Pickup",       match: ["STOCK_RESERVED", "NO_STOCK", "PICKUP_PENDING", "PICKED_UP", "WAREHOUSE_QC_PENDING"] },
   { key: "REPLACEMENT",  label: "Replacement",  match: ["WAREHOUSE_QC_PASSED", "REPLACEMENT_SHIPPED"] },
-  { key: "CLOSED",       label: "Closed",       match: ["COMPLETED", "REFUND_INITIATED", "REJECTED", "ONLINE_QC_REJECTED", "NO_STOCK", "WAREHOUSE_QC_FAILED"] },
+  { key: "CLOSED",       label: "Closed",       match: ["COMPLETED", "REFUND_INITIATED", "REJECTED", "ONLINE_QC_REJECTED", "WAREHOUSE_QC_FAILED"] },
 ];
 
 const STATUS_STYLE: Record<ExchangeStatus, string> = {
@@ -80,6 +86,16 @@ export default function ExchangesList() {
   // QC comment dialog state
   const [qcDialog, setQcDialog] = useState<{ id: number; action: QcAction } | null>(null);
   const [qcComment, setQcComment] = useState("");
+
+  // Shipping a replacement now takes the same four details the order's own
+  // parcel goes out with, so the customer can actually follow it.
+  const [shipDialog, setShipDialog] = useState<number | null>(null);
+  const [shipForm, setShipForm] = useState({
+    carrier: "",
+    trackingNumber: "",
+    trackingUrl: "",
+    estimatedDeliveryDate: "",
+  });
 
   // Out-of-order response guard.
   const fetchSeq = useRef(0);
@@ -148,12 +164,32 @@ export default function ExchangesList() {
     }
   };
 
-  const runSimple = async (id: number, action: "ship" | "complete", confirmText: string) => {
+  const submitShip = async () => {
+    if (shipDialog == null) return;
+    setActionLoading(shipDialog);
+    try {
+      await shipReplacement(shipDialog, {
+        carrier: shipForm.carrier.trim() || undefined,
+        trackingNumber: shipForm.trackingNumber.trim() || undefined,
+        trackingUrl: shipForm.trackingUrl.trim() || undefined,
+        estimatedDeliveryDate: shipForm.estimatedDeliveryDate || undefined,
+      });
+      setShipDialog(null);
+      await fetchExchanges();
+      setSelected(null);
+    } catch (e: any) {
+      alert(e?.response?.data?.message || "Action failed");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const runSimple = async (id: number, action: "pickedUp" | "complete", confirmText: string) => {
     if (!window.confirm(confirmText)) return;
     setActionLoading(id);
     try {
-      if (action === "ship") await shipReplacement(id);
-      else                   await completeExchange(id);
+      if (action === "pickedUp") await markExchangePickedUp(id);
+      else                       await completeExchange(id);
       await fetchExchanges();
       setSelected(null);
     } catch (e: any) {
@@ -193,18 +229,35 @@ export default function ExchangesList() {
 
     if (
       e.exchangeStatus === "STOCK_RESERVED" ||
+      e.exchangeStatus === "NO_STOCK" ||
       e.exchangeStatus === "PICKUP_PENDING" ||
       e.exchangeStatus === "PICKED_UP" ||
       e.exchangeStatus === "WAREHOUSE_QC_PENDING"
     ) {
       return (
         <div className="flex gap-1.5 flex-wrap">
+          {/* The collection had nowhere to be recorded, so the customer heard
+              nothing between "approved" and "checked". */}
+          {!e.pickedUpAt && (
+            <button
+              onClick={() => runSimple(e.exchangeId, "pickedUp", "Mark this item as collected from the customer?")}
+              disabled={busy}
+              className={`${btn} bg-blue-600 hover:bg-blue-700 text-white`}
+            >
+              {busy ? "…" : "Mark picked up"}
+            </button>
+          )}
           <button
             onClick={() => openQcDialog(e.exchangeId, "warehousePass")}
             disabled={busy}
             className={`${btn} bg-emerald-600 hover:bg-emerald-700 text-white`}
+            title={
+              e.exchangeStatus === "NO_STOCK"
+                ? "There is no replacement to send, so passing inspection issues the refund"
+                : "Passing inspection releases the replacement to be shipped"
+            }
           >
-            {busy ? "…" : "Warehouse QC Pass"}
+            {busy ? "…" : e.exchangeStatus === "NO_STOCK" ? "QC Pass — refund" : "Warehouse QC Pass"}
           </button>
           <button
             onClick={() => openQcDialog(e.exchangeId, "warehouseFail")}
@@ -220,7 +273,10 @@ export default function ExchangesList() {
     if (e.exchangeStatus === "WAREHOUSE_QC_PASSED") {
       return (
         <button
-          onClick={() => runSimple(e.exchangeId, "ship", "Mark replacement as shipped?")}
+          onClick={() => {
+            setShipForm({ carrier: "", trackingNumber: "", trackingUrl: "", estimatedDeliveryDate: "" });
+            setShipDialog(e.exchangeId);
+          }}
           disabled={busy}
           className={`${btn} bg-blue-600 hover:bg-blue-700 text-white`}
         >
@@ -303,6 +359,73 @@ export default function ExchangesList() {
       )}
 
       {/* Detail modal */}
+      {/* Despatching a replacement. The same four fields the order's own parcel
+          ships with — all optional, because a courier is sometimes booked
+          before the number comes back, and a replacement that has gone out
+          should not be blocked on paperwork. */}
+      {shipDialog != null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setShipDialog(null)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl p-6 w-full max-w-md mx-4"
+            onClick={(ev) => ev.stopPropagation()}
+          >
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
+              Ship replacement
+            </h3>
+            <p className="text-xs text-gray-500 mb-4">
+              The customer sees these on their order page, and gets them by email.
+            </p>
+            <div className="space-y-2.5">
+              <input
+                value={shipForm.carrier}
+                onChange={(ev) => setShipForm({ ...shipForm, carrier: ev.target.value })}
+                placeholder="Carrier, e.g. Delhivery"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white"
+              />
+              <input
+                value={shipForm.trackingNumber}
+                onChange={(ev) => setShipForm({ ...shipForm, trackingNumber: ev.target.value })}
+                placeholder="Tracking number"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white"
+              />
+              <input
+                value={shipForm.trackingUrl}
+                onChange={(ev) => setShipForm({ ...shipForm, trackingUrl: ev.target.value })}
+                placeholder="Tracking link"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white"
+              />
+              <label className="block text-xs text-gray-500">
+                Expected delivery
+                <input
+                  type="date"
+                  value={shipForm.estimatedDeliveryDate}
+                  onChange={(ev) => setShipForm({ ...shipForm, estimatedDeliveryDate: ev.target.value })}
+                  className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white"
+                />
+              </label>
+            </div>
+            <div className="flex justify-end gap-2 mt-5">
+              <button
+                onClick={() => setShipDialog(null)}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitShip}
+                disabled={actionLoading === shipDialog}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+              >
+                {actionLoading === shipDialog ? "…" : "Ship replacement"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {selected && !qcDialog && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm"
@@ -371,6 +494,43 @@ export default function ExchangesList() {
               </dd>
               <dt className="text-gray-500">Requested</dt>
               <dd className="text-gray-900 dark:text-white">{formatDate(selected.requestedAt)}</dd>
+
+              {selected.pickedUpAt && (
+                <>
+                  <dt className="text-gray-500">Picked up</dt>
+                  <dd className="text-gray-900 dark:text-white">{formatDate(selected.pickedUpAt)}</dd>
+                </>
+              )}
+
+              {/* The replacement parcel, once it exists. */}
+              {selected.replacementShippedAt && (
+                <>
+                  <dt className="text-gray-500">Replacement sent</dt>
+                  <dd className="text-gray-900 dark:text-white">
+                    {formatDate(selected.replacementShippedAt)}
+                  </dd>
+                  <dt className="text-gray-500">Carrier</dt>
+                  <dd className="text-gray-900 dark:text-white">
+                    {[selected.replacementCarrier, selected.replacementTrackingNumber]
+                      .filter(Boolean)
+                      .join(" · ") || "—"}
+                  </dd>
+                </>
+              )}
+
+              {/* A failed item is held for a week. Whoever picks up the phone
+                  needs to know the clock is running. */}
+              {selected.dispositionStatus && (
+                <>
+                  <dt className="text-gray-500">Held item</dt>
+                  <dd className="text-gray-900 dark:text-white">
+                    {selected.dispositionStatus.replace(/_/g, " ").toLowerCase()}
+                    {selected.dispositionDeadline
+                      ? ` · until ${formatDate(selected.dispositionDeadline)}`
+                      : ""}
+                  </dd>
+                </>
+              )}
 
               {selected.onlineQcStatus && (
                 <>
