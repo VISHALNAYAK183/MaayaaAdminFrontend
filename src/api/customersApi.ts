@@ -167,6 +167,33 @@ export const createCouponForCustomer = (
  * Emails the customer a reset code. There is no "read the password" call and
  * there never can be — the column holds a bcrypt hash.
  */
+/** A customer's store credit — the balance and every movement behind it. */
+export interface CreditEntry {
+  type: string;
+  amount: number | null;
+  remaining: number | null;
+  expiresAt: string | null;
+  orderId: number | null;
+  returnId: number | null;
+  note: string | null;
+  createdAt: string | null;
+}
+
+export const getCustomerCredit = (userId: number) =>
+  apiClient.get<{ balance: number; entries: CreditEntry[] }>(
+    `${ADMIN_BASE}/customers/${userId}/credit`,
+  );
+
+/**
+ * Move money into or out of a balance. ADMIN only — it is on its own path for
+ * that reason — and the reason is written onto the ledger row.
+ */
+export const adjustCustomerCredit = (userId: number, amount: number, reason: string) =>
+  apiClient.post<{ message: string; balance: number }>(
+    `${ADMIN_BASE}/credit/${userId}/adjust`,
+    { amount, reason },
+  );
+
 export const sendPasswordReset = (userId: number) =>
   apiClient.post<{ status: string; message: string }>(
     `${BASE}/${userId}/password-reset`,

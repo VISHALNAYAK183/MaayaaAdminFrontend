@@ -11,6 +11,9 @@ import {
   type BasketLine,
   type CustomerDetail as Customer,
   type NewCouponForCustomer,
+  getCustomerCredit,
+  adjustCustomerCredit,
+  type CreditEntry,
 } from "../../api/customersApi";
 import { useReadOnly } from "../../hooks/useReadOnly";
 
@@ -111,6 +114,57 @@ export default function CustomerDetailPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const loadCredit = useCallback(async () => {
+    try {
+      const res = await getCustomerCredit(Number(userId));
+      setCredit({
+        balance: Number(res.data?.balance ?? 0),
+        entries: Array.isArray(res.data?.entries) ? res.data.entries : [],
+      });
+    } catch {
+      // A customer with no ledger rows is the normal case, not an error.
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    loadCredit();
+  }, [loadCredit]);
+
+  /**
+   * Move money into or out of the balance. The reason is not optional: it is
+   * the line the next person reads when they wonder why the number changed.
+   */
+  const handleAdjustCredit = async () => {
+    const raw = window.prompt(
+      "Adjust store credit. Use a minus sign to take credit away, e.g. -250"
+    );
+    if (raw === null) return;
+
+    const amount = Number(raw.trim());
+    if (!Number.isFinite(amount) || amount === 0) {
+      alert("Enter an amount, positive to add or negative to remove.");
+      return;
+    }
+
+    const reason = window.prompt("Why? The customer and the next admin both read this.");
+    if (reason === null) return;
+    if (!reason.trim()) {
+      alert("An adjustment needs a reason.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const res = await adjustCustomerCredit(Number(userId), amount, reason.trim());
+      setNotice(res.data?.message ?? "Balance adjusted");
+      await loadCredit();
+    } catch (e: any) {
+      alert(e?.response?.data?.message || "Could not adjust the balance.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const [coupons, setCoupons] = useState<AssignableCoupon[]>([]);
   const [couponId, setCouponId] = useState<string>("");
   const [maxUsage, setMaxUsage] = useState(1);
@@ -119,6 +173,10 @@ export default function CustomerDetailPage() {
   // make a new one for this customer alone. Same card, one toggle, so the page
   // does not grow a second half that is empty most of the time.
   const [creating, setCreating] = useState(false);
+  const [credit, setCredit] = useState<{ balance: number; entries: CreditEntry[] }>({
+    balance: 0,
+    entries: [],
+  });
   const [draft, setDraft] = useState<NewCouponForCustomer>(() => {
     const today = new Date();
     const inAMonth = new Date();
@@ -364,6 +422,60 @@ export default function CustomerDetailPage() {
                   {a.phone && <p className="mt-1 text-xs text-gray-400">{a.phone}</p>}
                 </li>
               ))}
+            </ul>
+          )}
+        </Card>
+
+        {/* Store credit — a balance, and every movement behind it */}
+        <Card title="Store credit" subtitle={`₹${Number(credit.balance).toLocaleString("en-IN")} available`}>
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              ₹{Number(credit.balance).toLocaleString("en-IN")}
+            </p>
+            {!readOnly && (
+              <button
+                onClick={handleAdjustCredit}
+                disabled={busy}
+                className="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+              >
+                Adjust
+              </button>
+            )}
+          </div>
+
+          {credit.entries.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No store credit has ever been issued to this customer.
+            </p>
+          ) : (
+            <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+              {credit.entries.slice(0, 8).map((e, i) => {
+                const isIn = e.type === "CREDIT" || e.type === "REVERSAL";
+                return (
+                  <li key={i} className="flex items-start justify-between gap-3 py-2">
+                    <div className="min-w-0">
+                      <p className="text-sm text-gray-800 dark:text-white/90">
+                        {e.note || (isIn ? "Credit added" : "Spent")}
+                      </p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        {e.createdAt ? new Date(e.createdAt).toLocaleDateString("en-IN") : "—"}
+                        {isIn && e.expiresAt
+                          ? ` · expires ${new Date(e.expiresAt).toLocaleDateString("en-IN")}`
+                          : ""}
+                        {e.orderId ? ` · OD${e.orderId}` : ""}
+                        {isIn && e.remaining != null ? ` · ₹${Number(e.remaining)} left` : ""}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-sm font-semibold shrink-0 ${
+                        isIn ? "text-emerald-600" : "text-gray-500"
+                      }`}
+                    >
+                      {isIn ? "+" : "−"}₹{Number(e.amount ?? 0).toLocaleString("en-IN")}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Card>
