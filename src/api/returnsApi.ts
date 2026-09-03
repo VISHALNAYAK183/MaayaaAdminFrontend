@@ -42,6 +42,10 @@ export type AdminReturn = {
   // approved. True while they have not answered and there is no card to fall
   // back on, which is when the payout has to wait.
   awaitingRefundChoice: boolean;
+  /** What the customer photographed, and the verdict on it. */
+  photos: string[] | null;
+  onlineQcStatus: string | null;
+  onlineQcComment: string | null;
   refundStatus: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | null;
   refundMethod: string | null;
   refundTransactionId: string | null;
@@ -67,11 +71,12 @@ export const getAdminReturns = (
     },
   });
 
-export const approveReturn = (returnId: number) =>
-  apiClient.put(`${ADMIN_BASE}/returns/${returnId}/approve`);
+export const approveReturn = (returnId: number, comment?: string) =>
+  apiClient.put(`${ADMIN_BASE}/returns/${returnId}/approve`, { comment });
 
-export const rejectReturn = (returnId: number) =>
-  apiClient.put(`${ADMIN_BASE}/returns/${returnId}/reject`);
+/** The comment is what the customer is told, so a rejection should carry one. */
+export const rejectReturn = (returnId: number, comment?: string) =>
+  apiClient.put(`${ADMIN_BASE}/returns/${returnId}/reject`, { comment });
 
 /**
  * The two steps between approving a return and refunding it. The endpoints

@@ -1,3 +1,4 @@
+import { CLIENT_API_BASE } from "../../api/client";
 import { useReadOnly } from "../../hooks/useReadOnly";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -13,6 +14,16 @@ import {
   AdminReturnStatus,
 } from "../../api/returnsApi";
 import Pagination from "../../components/ui/Pagination";
+
+
+/**
+ * Return photos are stored by the storefront under /uploads and served by it,
+ * not by this panel. A bare path here would resolve against the admin origin
+ * and 404. Product images are already absolute, which is why they need none of
+ * this.
+ */
+const photoSrc = (url: string) =>
+  url.startsWith("http") ? url : `${CLIENT_API_BASE}${url}`;
 
 const PAGE_SIZE = 20;
 
@@ -111,7 +122,13 @@ export default function ReturnsList() {
     setActionLoading(returnId);
     try {
       if (action === "approve")            await approveReturn(returnId);
-      else if (action === "reject")        await rejectReturn(returnId);
+      else if (action === "reject") {
+        // Whatever is typed here is what the customer is told, so a rejection
+        // is worth a sentence. Approving usually has nothing to add.
+        const why = window.prompt("Why is this return being declined? The customer sees this.");
+        if (why === null) { setActionLoading(null); return; }
+        await rejectReturn(returnId, why.trim() || undefined);
+      }
       else if (action === "pickedUp")      await markPickedUp(returnId);
       else if (action === "qcPass")        await markInspected(returnId, true);
       else if (action === "qcFail") {
@@ -300,6 +317,41 @@ export default function ReturnsList() {
                 {/* Where this money is going. A bank refund is paid by hand, so
                     whoever does it needs the destination on the screen rather
                     than in the database. */}
+                {/* What the customer photographed. This is the evidence the
+                    approve/decline decision is made on, and it used to live in
+                    a WhatsApp thread. */}
+                {selected.photos && selected.photos.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-1">
+                      Customer photos
+                    </p>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {selected.photos.map((url) => (
+                        <a
+                          key={url}
+                          href={photoSrc(url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"
+                          title="Open full size"
+                        >
+                          <img
+                            src={photoSrc(url)}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {selected.onlineQcComment && (
+                  <p className="mt-2 text-[12px] text-gray-600 dark:text-gray-400">
+                    <span className="font-semibold">Checked:</span> {selected.onlineQcComment}
+                  </p>
+                )}
+
                 {selected.refundMode === null && (
                   <p className="mt-1 inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
                     {selected.awaitingRefundChoice
