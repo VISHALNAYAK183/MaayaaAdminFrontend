@@ -221,6 +221,20 @@ export default function ReturnsList() {
     }
 
     if (r.returnStatus === "REFUND_APPROVED") {
+      // A cash refund with no destination cannot be paid: the customer picks
+      // store credit or gives a UPI id from their order page, and the server
+      // refuses until they do. Better a disabled button with the reason on it
+      // than an error after the click.
+      if (r.awaitingRefundChoice) {
+        return (
+          <span
+            className="text-[11px] font-semibold px-2 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200"
+            title="Cash order. The customer has not chosen store credit or given a UPI id or bank account yet."
+          >
+            Waiting on customer
+          </span>
+        );
+      }
       return (
         <button
           onClick={() => runAction(r.returnId, "refundComplete", "Mark refund as completed? Confirm money has been disbursed.")}
@@ -286,6 +300,13 @@ export default function ReturnsList() {
                 {/* Where this money is going. A bank refund is paid by hand, so
                     whoever does it needs the destination on the screen rather
                     than in the database. */}
+                {selected.refundMode === null && (
+                  <p className="mt-1 inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                    {selected.awaitingRefundChoice
+                      ? "Waiting on the customer to choose where the money goes"
+                      : "Not chosen — will go back to the original payment"}
+                  </p>
+                )}
                 {selected.refundMode === "STORE_CREDIT" && (
                   <p className="mt-1 inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                     Store credit — issued instantly on completion

@@ -38,6 +38,10 @@ export type AdminReturn = {
   refundAccountName: string | null;
   refundAccountNumber: string | null;
   refundIfsc: string | null;
+  // The customer is asked where the money should go once the refund is
+  // approved. True while they have not answered and there is no card to fall
+  // back on, which is when the payout has to wait.
+  awaitingRefundChoice: boolean;
   refundStatus: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | null;
   refundMethod: string | null;
   refundTransactionId: string | null;
