@@ -41,6 +41,10 @@ export interface ProductResponse {
   fabricDetails: string | null;
   hsnCode?: string | null;
   gstRate?: number | null;
+  weightKg?: number | null;
+  lengthCm?: number | null;
+  breadthCm?: number | null;
+  heightCm?: number | null;
   images: ProductImage[];
   reviews: {
     stars: number;
@@ -67,6 +71,11 @@ export interface Product {
   fabricDetails: string;
   hsnCode: string;
   gstRate: number;
+  /** Packed-parcel measurements. A courier books on these. */
+  weightKg: number;
+  lengthCm: number;
+  breadthCm: number;
+  heightCm: number;
   questionsAnswers: QuestionAnswer[];
   variants: Variant[];
   images: ProductImage[];

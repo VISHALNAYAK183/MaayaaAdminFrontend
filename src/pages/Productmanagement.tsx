@@ -140,6 +140,12 @@ const blankForm = (): Omit<Product, "productId"> => ({
   hsnCode: "",
   // -1 = "not picked yet". 0 is a real, selectable rate (exempt goods).
   gstRate: -1,
+  // 0 reads as "not measured": every one of these has to be above zero,
+  // so unlike the GST rate there is no valid zero to confuse it with.
+  weightKg: 0,
+  lengthCm: 0,
+  breadthCm: 0,
+  heightCm: 0,
   questionsAnswers: [{ question: "", answer: "" }],
   variants: [blankVariant()],
   images: [],
@@ -1169,6 +1175,14 @@ const ProductManagement: React.FC = () => {
       setFormStep(1);
       return setStatus({ type: "error", msg: "Select a GST rate (0 / 5 / 12 / 18 / 28%)." });
     }
+    if (Number(form.weightKg) <= 0) {
+      setFormStep(1);
+      return setStatus({ type: "error", msg: "Packed weight is required — a courier will not take a parcel without it." });
+    }
+    if (Number(form.lengthCm) <= 0 || Number(form.breadthCm) <= 0 || Number(form.heightCm) <= 0) {
+      setFormStep(1);
+      return setStatus({ type: "error", msg: "Box length, breadth and height are all required." });
+    }
 
     // Variant uniqueness — no two variants may share the same size + colour
     const validVariants = form.variants.filter((v) => v.sizeId && v.colorId);
@@ -1217,6 +1231,10 @@ const ProductManagement: React.FC = () => {
         fabricDetails: form.fabricDetails ?? "",
         hsnCode: (form.hsnCode ?? "").trim(),
         gstRate: Number(form.gstRate),
+        weightKg: Number(form.weightKg),
+        lengthCm: Number(form.lengthCm),
+        breadthCm: Number(form.breadthCm),
+        heightCm: Number(form.heightCm),
         images: [],
         questionsAnswers: form.questionsAnswers.filter((qa) => qa.question.trim()),
         variants: form.variants
@@ -1277,6 +1295,10 @@ const ProductManagement: React.FC = () => {
       hsnCode: product.hsnCode ?? "",
       // null → force re-selection. 0 is a real rate (exempt goods).
       gstRate: product.gstRate == null ? -1 : Number(product.gstRate),
+      weightKg: Number(product.weightKg ?? 0),
+      lengthCm: Number(product.lengthCm ?? 0),
+      breadthCm: Number(product.breadthCm ?? 0),
+      heightCm: Number(product.heightCm ?? 0),
       questionsAnswers: product.questionsAnswers?.length
         ? product.questionsAnswers
         : [{ question: "", answer: "" }],
@@ -1360,6 +1382,10 @@ const ProductManagement: React.FC = () => {
       hsnCode: product.hsnCode ?? "",
       // null → force re-selection. 0 is a real rate (exempt goods).
       gstRate: product.gstRate == null ? -1 : Number(product.gstRate),
+      weightKg: Number(product.weightKg ?? 0),
+      lengthCm: Number(product.lengthCm ?? 0),
+      breadthCm: Number(product.breadthCm ?? 0),
+      heightCm: Number(product.heightCm ?? 0),
       questionsAnswers: product.questionsAnswers?.length
         ? product.questionsAnswers
         : [{ question: "", answer: "" }],
@@ -1472,6 +1498,11 @@ const ProductManagement: React.FC = () => {
       // the user racing all the way to step 4 only to be bounced back.
       if (!form.hsnCode || !form.hsnCode.trim()) return "HSN code is required for GST filing.";
       if (Number(form.gstRate) < 0 || !Number.isFinite(Number(form.gstRate))) return "Select a GST rate (0 / 5 / 12 / 18 / 28%).";
+      // Parcel measurements — the courier refuses an order without them, and
+      // finding that out at the ship button is far too late.
+      if (Number(form.weightKg) <= 0) return "Packed weight is required — a courier will not take a parcel without it.";
+      if (Number(form.lengthCm) <= 0 || Number(form.breadthCm) <= 0 || Number(form.heightCm) <= 0)
+        return "Box length, breadth and height are all required.";
       return null;
     }
     if (step === 3) {
@@ -1673,6 +1704,60 @@ const ProductManagement: React.FC = () => {
                         <option key={r} value={r}>{r}%</option>
                       ))}
                     </select>
+                  </Fld>
+
+                  {/* Parcel measurements — what a courier books on. Measured on
+                      the packed parcel: the polybag and the tag travel too. */}
+                  <div className="col-span-2">
+                    <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
+                  </div>
+                  <Fld label="Packed weight (kg)" req hint="Weigh it bagged and tagged — e.g. 0.350 for a 350 g parcel">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.001"
+                      value={Number(form.weightKg) > 0 ? String(form.weightKg) : ""}
+                      onChange={(e) => {
+                        setStatus(null);
+                        const v = e.target.value;
+                        setForm((prev) => ({ ...prev, weightKg: v === "" ? 0 : Number(v) }));
+                      }}
+                      placeholder="0.350"
+                      className={inputCls}
+                    />
+                  </Fld>
+                  <Fld label="Box size (cm)" req hint="Length × breadth × height of the packed parcel">
+                    <div className="flex items-center gap-2">
+                      {([
+                        ["lengthCm", "L"],
+                        ["breadthCm", "B"],
+                        ["heightCm", "H"],
+                      ] as const).map(([key, mark]) => (
+                        <div key={key} className="flex items-center gap-1.5 flex-1">
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={Number(form[key]) > 0 ? String(form[key]) : ""}
+                            onChange={(e) => {
+                              setStatus(null);
+                              const v = e.target.value;
+                              setForm((prev) => ({ ...prev, [key]: v === "" ? 0 : Number(v) }));
+                            }}
+                            placeholder={mark}
+                            aria-label={
+                              key === "lengthCm" ? "Length in cm"
+                                : key === "breadthCm" ? "Breadth in cm"
+                                : "Height in cm"
+                            }
+                            className={inputCls}
+                          />
+                          {key !== "heightCm" && (
+                            <span className="text-xs text-gray-400 shrink-0">×</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </Fld>
                 </div>
               </div>
