@@ -15,6 +15,30 @@ export interface AdminOrderRow {
   order_date?: string | null;
   customer_name?: string | null;
   customer_phone?: string | null;
+  pin_code?: string | null;
+  /** What the ship button would do. Not a promise — it can be overridden. */
+  suggested_route?: DeliveryRoute | null;
+}
+
+/** How a parcel leaves the building. */
+export type DeliveryRoute = "LOCAL" | "SHIPROCKET" | "MANUAL";
+
+/**
+ * GET /orders/{id}/ship-options — asked before the ship dialog opens, so it
+ * can show the route rather than demanding a tracking number for a parcel one
+ * of us is about to drive across Udupi.
+ */
+export interface ShipOptions {
+  orderId: number;
+  status: string;
+  suggestedRoute: DeliveryRoute;
+  shiprocketEnabled: boolean;
+  pinCode: string | null;
+  city: string | null;
+  state: string | null;
+  localCarrier: string;
+  /** Only set when the suggestion is LOCAL. */
+  localEta: string | null;
 }
 
 export interface OrderPage {
@@ -43,6 +67,8 @@ export interface OrderShipment {
   estimated_delivery_date: string | null;
   shipped_at: string | null;
   delivered_at: string | null;
+  /** Null on anything shipped before routing existed. */
+  delivery_route?: DeliveryRoute | null;
 }
 
 /**

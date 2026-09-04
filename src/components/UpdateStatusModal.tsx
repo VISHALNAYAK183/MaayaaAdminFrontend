@@ -1,9 +1,16 @@
 import { useState } from "react";
 import { updateOrderStatus } from "../api/adminApi";
+import type { DeliveryRoute } from "../types/order";
 
 interface Props {
   orderId: number;
   currentStatus: string;
+  /**
+   * How the parcel went out. A courier one climbs the full ladder; one we are
+   * carrying ourselves is handed over the same morning it leaves, so Out for
+   * Delivery would be a status lasting an hour that nobody would stop to tap.
+   */
+  deliveryRoute?: DeliveryRoute | null;
   /** Carries the order's new state, so the caller can update its row at once. */
   onSuccess: (updated?: { orderId: number; status: string }) => void;
 }
@@ -14,14 +21,26 @@ const NEXT: Record<string, string[]> = {
   OUT_FOR_DELIVERY: ["DELIVERED"],
 };
 
+/** Same ladder, minus the rung a parcel in our own hands never stands on. */
+const NEXT_LOCAL: Record<string, string[]> = {
+  ...NEXT,
+  SHIPPED: ["DELIVERED"],
+};
+
 const STATUS_LABEL: Record<string, string> = {
   SHIPPED:          "Shipped",
   OUT_FOR_DELIVERY: "Out for Delivery",
   DELIVERED:        "Delivered",
 };
 
-export default function UpdateStatusModal({ orderId, currentStatus, onSuccess }: Props) {
-  const allowedNext = NEXT[currentStatus] ?? [];
+export default function UpdateStatusModal({
+  orderId,
+  currentStatus,
+  deliveryRoute,
+  onSuccess,
+}: Props) {
+  const ladder = deliveryRoute === "LOCAL" ? NEXT_LOCAL : NEXT;
+  const allowedNext = ladder[currentStatus] ?? [];
   const [status, setStatus] = useState(allowedNext[0] ?? "");
   const [location, setLocation] = useState("");
   const [loading, setLoading] = useState(false);

@@ -1,4 +1,5 @@
 import { apiClient, ADMIN_BASE, CLIENT_BASE, API_BASE } from "./client";
+import type { DeliveryRoute, ShipOptions } from "../types/order";
 
 // Re-exported for any caller that still references these names
 export { ADMIN_BASE, CLIENT_BASE };
@@ -53,13 +54,22 @@ export interface OrderStateResponse {
   message: string;
 }
 
+export const getShipOptions = (orderId: number) =>
+  apiClient.get<ShipOptions>(`${ADMIN_BASE}/orders/${orderId}/ship-options`);
+
+/**
+ * Carrier and tracking number are required only on the MANUAL route — a parcel
+ * we are driving ourselves has neither, and asking for them was why local
+ * orders used to be shipped under a made-up AWB.
+ */
 export const shipOrder = (
   orderId: number,
   data: {
-    carrier: string;
-    trackingNumber: string;
+    route?: DeliveryRoute;
+    carrier?: string;
+    trackingNumber?: string;
     trackingUrl?: string;
-    estimatedDeliveryDate: string;
+    estimatedDeliveryDate?: string;
   }
 ) => apiClient.post<OrderStateResponse>(`${ADMIN_BASE}/orders/${orderId}/ship`, data);
 

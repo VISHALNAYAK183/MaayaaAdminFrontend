@@ -501,6 +501,7 @@ export default function OrderDetails() {
                   key={status}
                   orderId={order.orderId}
                   currentStatus={status}
+                  deliveryRoute={shipment?.delivery_route}
                   onSuccess={load}
                 />
                 <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">

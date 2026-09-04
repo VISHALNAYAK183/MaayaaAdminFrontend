@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import ShipOrderModal from "../../components/ShipOrderModal";
 import UpdateStatusModal from "../../components/UpdateStatusModal";
 import CancelOrderModal from "../../components/CancelOrderModal";
-import type { AdminOrderRow } from "../../types/order";
+import type { AdminOrderRow, DeliveryRoute } from "../../types/order";
 import TrackingUpdateModal from "../../components/TrackingUpdateModal";
 
 const TABS = ["PENDING", "REQUESTED", "PLACED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED", "REJECTED"];
@@ -36,7 +36,13 @@ const STATUS_STYLE: Record<string, string> = {
 
 type ModalType = "ship" | "updateStatus" | "cancel" | "trackingUpdate";
 
-type ModalState = { orderId: number; type: ModalType; currentStatus: string };
+type ModalState = {
+  orderId: number;
+  type: ModalType;
+  currentStatus: string;
+  /** How the parcel goes out. Decides whether Out for Delivery applies. */
+  route?: DeliveryRoute | null;
+};
 
 export default function OrdersList() {
   const readOnly = useReadOnly();
@@ -119,8 +125,12 @@ export default function OrdersList() {
     }
   };
 
-  const openModal = (orderId: number, type: ModalType, currentStatus: string) =>
-    setModal({ orderId, type, currentStatus });
+  const openModal = (
+    orderId: number,
+    type: ModalType,
+    currentStatus: string,
+    route?: DeliveryRoute | null,
+  ) => setModal({ orderId, type, currentStatus, route });
 
   // Patch the row we just changed from the write's own response, then refetch.
   // The refetch is what removes it from a tab it no longer belongs to; this is
@@ -201,10 +211,20 @@ export default function OrdersList() {
       return (
         <div className="flex items-center gap-1.5 flex-wrap">
           <button
-            onClick={() => openModal(o.order_id, "ship", o.status)}
-            className="text-xs px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            onClick={() => openModal(o.order_id, "ship", o.status, o.suggested_route)}
+            title={
+              o.suggested_route === "LOCAL"
+                ? "In the local zone — we deliver this one ourselves"
+                : "Goes out by courier"
+            }
+            className={
+              "text-xs px-2.5 py-1.5 text-white rounded-lg font-medium transition-colors " +
+              (o.suggested_route === "LOCAL"
+                ? "bg-emerald-600 hover:bg-emerald-700"
+                : "bg-blue-600 hover:bg-blue-700")
+            }
           >
-            Ship
+            {o.suggested_route === "LOCAL" ? "Ship — self" : "Ship"}
           </button>
           {cancelButton(o)}
           <button
@@ -221,7 +241,7 @@ export default function OrdersList() {
       return (
         <div className="flex items-center gap-1.5 flex-wrap">
           <button
-            onClick={() => openModal(o.order_id, "updateStatus", o.status)}
+            onClick={() => openModal(o.order_id, "updateStatus", o.status, o.suggested_route)}
             className="text-xs px-2.5 py-1.5 bg-gray-900 hover:bg-gray-700 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-lg font-medium transition-colors"
           >
             Update Status
@@ -308,6 +328,7 @@ export default function OrdersList() {
                 key={modal.currentStatus}
                 orderId={modal.orderId}
                 currentStatus={modal.currentStatus}
+                deliveryRoute={modal.route}
                 onSuccess={(updated) => { closeModal(); applyAndRefresh(updated); }}
               />
             )}
