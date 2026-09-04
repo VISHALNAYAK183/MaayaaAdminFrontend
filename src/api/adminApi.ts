@@ -68,6 +68,11 @@ export const shipOrder = (
     route?: DeliveryRoute;
     /** Courier route only. Omit for the cheapest that will take it. */
     courierId?: number;
+    /** Courier route only: the parcel as weighed and measured at packing. */
+    weightKg?: number;
+    lengthCm?: number;
+    breadthCm?: number;
+    heightCm?: number;
     carrier?: string;
     trackingNumber?: string;
     trackingUrl?: string;

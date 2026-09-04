@@ -52,6 +52,14 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
     estimatedDeliveryDate: "",
   });
   const [courierId, setCourierId] = useState<number | null>(null);
+  // What is going on the label. Pre-filled from the catalogue where there is
+  // something to pre-fill, corrected from the scale either way.
+  const [parcel, setParcel] = useState({
+    weightKg: "",
+    lengthCm: "",
+    breadthCm: "",
+    heightCm: "",
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -67,6 +75,18 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
         setOptions(res.data);
         setRoute(res.data.suggestedRoute);
         setCourierId(res.data.suggestedCourierId ?? null);
+
+        const guess = res.data.estimatedParcel;
+        if (guess) {
+          const box = (value: number | null) =>
+            value != null && value > 0 ? String(value) : "";
+          setParcel({
+            weightKg: box(guess.weightKg),
+            lengthCm: box(guess.lengthCm),
+            breadthCm: box(guess.breadthCm),
+            heightCm: box(guess.heightCm),
+          });
+        }
       })
       .catch((err) => {
         if (cancelled) return;
@@ -84,6 +104,19 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
   const submit = useCallback(async () => {
     if (!route) return;
 
+    if (route === "SHIPROCKET") {
+      if (!(Number(parcel.weightKg) > 0)) {
+        setError("Weigh the parcel and enter its weight.");
+        return;
+      }
+      if (!(Number(parcel.lengthCm) > 0)
+        || !(Number(parcel.breadthCm) > 0)
+        || !(Number(parcel.heightCm) > 0)) {
+        setError("Enter the parcel's length, breadth and height.");
+        return;
+      }
+    }
+
     if (route === "MANUAL") {
       if (!form.carrier.trim()) { setError("Carrier is required."); return; }
       if (!form.trackingNumber.trim()) { setError("Tracking number is required."); return; }
@@ -98,7 +131,14 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
         route === "MANUAL"
           ? { route, ...form }
           : route === "SHIPROCKET"
-          ? { route, courierId: courierId ?? undefined }
+          ? {
+              route,
+              courierId: courierId ?? undefined,
+              weightKg: Number(parcel.weightKg),
+              lengthCm: Number(parcel.lengthCm),
+              breadthCm: Number(parcel.breadthCm),
+              heightCm: Number(parcel.heightCm),
+            }
           : { route }
       );
       onSuccess(res.data);
@@ -107,7 +147,7 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [route, form, courierId, orderId, onSuccess]);
+  }, [route, form, courierId, parcel, orderId, onSuccess]);
 
   const errorBox = error && (
     <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
@@ -128,9 +168,9 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
   const destination = [options.city, options.pinCode].filter(Boolean).join(" ");
   const suggestedLocal = options.suggestedRoute === "LOCAL";
   const unmeasured = options.unmeasuredProducts ?? [];
-  // Nothing to book with: no measurements, no couriers, or the lookup failed.
-  const courierBlocked =
-    unmeasured.length > 0 || !options.couriers || options.couriers.length === 0;
+  // Only a courier list can block a booking now. A product with nothing stored
+  // against it just means an empty box to type into, not a stopped parcel.
+  const courierBlocked = !options.couriers || options.couriers.length === 0;
 
   return (
     <div className="space-y-3">
@@ -178,22 +218,66 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
           {destination && (
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Going to {destination}
-              {options.parcelWeightKg ? ` · ${options.parcelWeightKg} kg` : ""}
               {options.cod ? " · cash on delivery" : ""}
             </p>
           )}
 
-          {unmeasured.length > 0 ? (
-            <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-3 py-3 space-y-1">
-              <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                No weight or box size on {unmeasured.length === 1 ? "this product" : "these products"}
-              </p>
-              <p className="text-xs text-amber-800 dark:text-amber-300">
-                {unmeasured.join(", ")} — a courier will refuse the order without them.
-                Add them on the product, or deliver this one yourself.
-              </p>
+          <div>
+            <label className={labelClass}>
+              Weigh the parcel (kg) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="0.001"
+              value={parcel.weightKg}
+              onChange={(e) => { setError(""); setParcel((p) => ({ ...p, weightKg: e.target.value })); }}
+              placeholder="0.350"
+              className={inputClass}
+            />
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+              {options.estimatedParcel?.fromCatalogue
+                ? "Pre-filled from the products. Correct it from the scale — the courier reweighs and bills the difference."
+                : "Weigh it bagged and tagged. The courier reweighs at their hub and bills the difference."}
+            </p>
+          </div>
+
+          <div>
+            <label className={labelClass}>
+              Box size in cm <span className="text-red-500">*</span>
+            </label>
+            <div className="flex items-center gap-2">
+              {([
+                ["lengthCm", "L", "Length in cm"],
+                ["breadthCm", "B", "Breadth in cm"],
+                ["heightCm", "H", "Height in cm"],
+              ] as const).map(([key, mark, label]) => (
+                <div key={key} className="flex items-center gap-1.5 flex-1">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={parcel[key]}
+                    onChange={(e) => { setError(""); setParcel((p) => ({ ...p, [key]: e.target.value })); }}
+                    placeholder={mark}
+                    aria-label={label}
+                    className={inputClass}
+                  />
+                  {key !== "heightCm" && (
+                    <span className="text-xs text-gray-400 shrink-0">×</span>
+                  )}
+                </div>
+              ))}
             </div>
-          ) : options.courierLookupFailed ? (
+          </div>
+
+          {unmeasured.length > 0 && (
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+              Nothing saved against {unmeasured.join(", ")}, so there was nothing to pre-fill.
+            </p>
+          )}
+
+          {options.courierLookupFailed ? (
             <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-3 py-3">
               <p className="text-xs text-amber-800 dark:text-amber-300">
                 {options.courierLookupFailed}

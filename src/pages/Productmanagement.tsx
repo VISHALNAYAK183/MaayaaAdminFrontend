@@ -1175,14 +1175,6 @@ const ProductManagement: React.FC = () => {
       setFormStep(1);
       return setStatus({ type: "error", msg: "Select a GST rate (0 / 5 / 12 / 18 / 28%)." });
     }
-    if (Number(form.weightKg) <= 0) {
-      setFormStep(1);
-      return setStatus({ type: "error", msg: "Packed weight is required — a courier will not take a parcel without it." });
-    }
-    if (Number(form.lengthCm) <= 0 || Number(form.breadthCm) <= 0 || Number(form.heightCm) <= 0) {
-      setFormStep(1);
-      return setStatus({ type: "error", msg: "Box length, breadth and height are all required." });
-    }
 
     // Variant uniqueness — no two variants may share the same size + colour
     const validVariants = form.variants.filter((v) => v.sizeId && v.colorId);
@@ -1498,11 +1490,6 @@ const ProductManagement: React.FC = () => {
       // the user racing all the way to step 4 only to be bounced back.
       if (!form.hsnCode || !form.hsnCode.trim()) return "HSN code is required for GST filing.";
       if (Number(form.gstRate) < 0 || !Number.isFinite(Number(form.gstRate))) return "Select a GST rate (0 / 5 / 12 / 18 / 28%).";
-      // Parcel measurements — the courier refuses an order without them, and
-      // finding that out at the ship button is far too late.
-      if (Number(form.weightKg) <= 0) return "Packed weight is required — a courier will not take a parcel without it.";
-      if (Number(form.lengthCm) <= 0 || Number(form.breadthCm) <= 0 || Number(form.heightCm) <= 0)
-        return "Box length, breadth and height are all required.";
       return null;
     }
     if (step === 3) {
@@ -1706,12 +1693,15 @@ const ProductManagement: React.FC = () => {
                     </select>
                   </Fld>
 
-                  {/* Parcel measurements — what a courier books on. Measured on
-                      the packed parcel: the polybag and the tag travel too. */}
+                  {/* Parcel measurements, optional. The real numbers are read
+                      off the scale at packing and asked for again in the ship
+                      dialog - a courier reweighs at its hub and bills the
+                      difference, so a measured parcel beats a stored guess.
+                      Filling these in just saves typing them later. */}
                   <div className="col-span-2">
                     <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
                   </div>
-                  <Fld label="Packed weight (kg)" req hint="Weigh it bagged and tagged — e.g. 0.350 for a 350 g parcel">
+                  <Fld label="Packed weight (kg)" hint="Optional — pre-fills the ship dialog. e.g. 0.350 for a 350 g parcel">
                     <input
                       type="number"
                       min="0"
@@ -1726,7 +1716,7 @@ const ProductManagement: React.FC = () => {
                       className={inputCls}
                     />
                   </Fld>
-                  <Fld label="Box size (cm)" req hint="Length × breadth × height of the packed parcel">
+                  <Fld label="Box size (cm)" hint="Optional — length × breadth × height of the packed parcel">
                     <div className="flex items-center gap-2">
                       {([
                         ["lengthCm", "L"],

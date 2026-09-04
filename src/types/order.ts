@@ -50,7 +50,17 @@ export interface ShipOptions {
   /** Set instead of `couriers` when the aggregator could not be reached. */
   courierLookupFailed?: string;
   cod?: boolean;
-  parcelWeightKg?: number | null;
+  /** What the catalogue thinks it weighs. A pre-fill, not a decision. */
+  estimatedParcel?: EstimatedParcel;
+}
+
+export interface EstimatedParcel {
+  weightKg: number | null;
+  lengthCm: number | null;
+  breadthCm: number | null;
+  heightCm: number | null;
+  /** False when some product had nothing stored, so the numbers are partial. */
+  fromCatalogue: boolean;
 }
 
 export interface CourierOption {
