@@ -39,6 +39,26 @@ export interface ShipOptions {
   localCarrier: string;
   /** Only set when the suggestion is LOCAL. */
   localEta: string | null;
+
+  // ── Courier route only ────────────────────────────────────────────────
+  /** Products with no weight or box size. A courier refuses the order. */
+  unmeasuredProducts?: string[];
+  /** Empty when nobody will carry it; absent when the lookup itself failed. */
+  couriers?: CourierOption[];
+  /** The cheapest one that will take this parcel, cash included. */
+  suggestedCourierId?: number | null;
+  /** Set instead of `couriers` when the aggregator could not be reached. */
+  courierLookupFailed?: string;
+  cod?: boolean;
+  parcelWeightKg?: number | null;
+}
+
+export interface CourierOption {
+  courierId: number;
+  courierName: string;
+  rate: number | null;
+  estimatedDays: number | null;
+  codAvailable: boolean;
 }
 
 export interface OrderPage {

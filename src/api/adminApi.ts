@@ -66,6 +66,8 @@ export const shipOrder = (
   orderId: number,
   data: {
     route?: DeliveryRoute;
+    /** Courier route only. Omit for the cheapest that will take it. */
+    courierId?: number;
     carrier?: string;
     trackingNumber?: string;
     trackingUrl?: string;

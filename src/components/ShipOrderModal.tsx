@@ -51,6 +51,7 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
     trackingUrl: "",
     estimatedDeliveryDate: "",
   });
+  const [courierId, setCourierId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -65,6 +66,7 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
         if (cancelled) return;
         setOptions(res.data);
         setRoute(res.data.suggestedRoute);
+        setCourierId(res.data.suggestedCourierId ?? null);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -95,6 +97,8 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
         orderId,
         route === "MANUAL"
           ? { route, ...form }
+          : route === "SHIPROCKET"
+          ? { route, courierId: courierId ?? undefined }
           : { route }
       );
       onSuccess(res.data);
@@ -103,7 +107,7 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [route, form, orderId, onSuccess]);
+  }, [route, form, courierId, orderId, onSuccess]);
 
   const errorBox = error && (
     <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
@@ -123,6 +127,10 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
 
   const destination = [options.city, options.pinCode].filter(Boolean).join(" ");
   const suggestedLocal = options.suggestedRoute === "LOCAL";
+  const unmeasured = options.unmeasuredProducts ?? [];
+  // Nothing to book with: no measurements, no couriers, or the lookup failed.
+  const courierBlocked =
+    unmeasured.length > 0 || !options.couriers || options.couriers.length === 0;
 
   return (
     <div className="space-y-3">
@@ -163,6 +171,77 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
             className="w-full text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 underline underline-offset-2"
           >
             Send this one by courier instead
+          </button>
+        </>
+      ) : route === "SHIPROCKET" ? (
+        <>
+          {destination && (
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Going to {destination}
+              {options.parcelWeightKg ? ` · ${options.parcelWeightKg} kg` : ""}
+              {options.cod ? " · cash on delivery" : ""}
+            </p>
+          )}
+
+          {unmeasured.length > 0 ? (
+            <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-3 py-3 space-y-1">
+              <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                No weight or box size on {unmeasured.length === 1 ? "this product" : "these products"}
+              </p>
+              <p className="text-xs text-amber-800 dark:text-amber-300">
+                {unmeasured.join(", ")} — a courier will refuse the order without them.
+                Add them on the product, or deliver this one yourself.
+              </p>
+            </div>
+          ) : options.courierLookupFailed ? (
+            <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-3 py-3">
+              <p className="text-xs text-amber-800 dark:text-amber-300">
+                {options.courierLookupFailed}
+              </p>
+            </div>
+          ) : (
+            <div>
+              <label className={labelClass}>Courier</label>
+              <select
+                value={courierId == null ? "" : String(courierId)}
+                onChange={(e) => {
+                  setError("");
+                  setCourierId(e.target.value === "" ? null : Number(e.target.value));
+                }}
+                className={inputClass}
+              >
+                {(options.couriers ?? []).map((c) => (
+                  <option key={c.courierId} value={c.courierId}>
+                    {c.courierName}
+                    {c.rate == null ? "" : ` — ₹${c.rate}`}
+                    {c.estimatedDays == null ? "" : `, ${c.estimatedDays} days`}
+                    {c.courierId === options.suggestedCourierId ? " (cheapest)" : ""}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                Cheapest that will carry this parcel is picked for you.
+                {options.cod ? " Only couriers that collect cash are listed." : ""}
+              </p>
+            </div>
+          )}
+
+          {errorBox}
+
+          <button
+            onClick={submit}
+            disabled={loading || courierBlocked}
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
+          >
+            {loading ? "Booking…" : "Ship — book courier"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setRoute("MANUAL"); setError(""); }}
+            className="w-full text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 underline underline-offset-2"
+          >
+            Enter a tracking number by hand instead
           </button>
         </>
       ) : (
