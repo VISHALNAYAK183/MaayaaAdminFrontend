@@ -37,6 +37,14 @@ export interface ProductAnalytics {
 export type AnalyticsRange = "DAY" | "WEEK" | "MONTH" | "ALL";
 
 export interface AnalyticsProfit {
+  /**
+   * What the couriers charged over the period. Reported, NOT subtracted from
+   * netProfit - see the note in AnalyticsProfitResponseDTO. Whether this
+   * belongs in COGS depends on what ProductCost already assumes.
+   */
+  freightCharged?: number;
+  freightOnReturnedParcels?: number;
+  returnedToOriginCount?: number;
   range: AnalyticsRange;
   totalRevenue: number;
   totalCost: number;

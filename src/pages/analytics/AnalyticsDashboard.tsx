@@ -203,6 +203,58 @@ export default function AnalyticsDashboardPage() {
                 <Card key={k.label} {...k} />
               ))}
             </div>
+
+            {/* Shipping is shown apart from the figures above, and deliberately
+                so: it is NOT inside Net Profit. Courier invoices are treated as
+                already amortised per unit in product cost, so adding freight to
+                the subtraction would either count it twice or reveal that it
+                was never counted at all. Putting it beside the numbers rather
+                than inside them is what makes that answerable. */}
+            {rangeData.freightCharged != null && (
+              <div className="mt-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+                <div className="flex items-baseline justify-between flex-wrap gap-2">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                    What shipping cost
+                  </h3>
+                  <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                    Not included in Net Profit above
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Courier charges
+                    </p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      {currency(rangeData.freightCharged)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Spent on returned parcels
+                    </p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      {currency(rangeData.freightOnReturnedParcels ?? 0)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Parcels returned
+                    </p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      {number(rangeData.returnedToOriginCount ?? 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-3 max-w-2xl">
+                  Compare this with your Shiprocket invoices and with what product
+                  cost already allows for shipping. If product cost does not include
+                  it, this is missing from Net Profit and should be subtracted.
+                </p>
+              </div>
+            )}
             {Array.isArray(rangeData.expenseBreakdown) && rangeData.expenseBreakdown.length > 0 && (
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <span className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
