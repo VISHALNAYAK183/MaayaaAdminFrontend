@@ -120,6 +120,11 @@ export const cancelOrder = (orderId: number, reason: string) =>
     refundAmount: number;
     reason: string;
     message: string;
+    /**
+     * Present when the order is cancelled here but the courier booking is
+     * still live, and somebody has to go and stop it.
+     */
+    courierWarning?: string;
   }>(`${ADMIN_BASE}/orders/${orderId}/cancel`, { reason });
 
 /** Ask the gateway again for a refund it refused. */
