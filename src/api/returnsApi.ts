@@ -50,6 +50,17 @@ export type AdminReturn = {
   refundMethod: string | null;
   refundTransactionId: string | null;
   refundedAt: string | null;
+
+  /**
+   * The courier collection booked when this return was approved.
+   *
+   * booked=false is not a missing detail — it means no rider is coming and
+   * somebody has to arrange the collection. The panel says so out loud.
+   */
+  reversePickupBooked: boolean | null;
+  reversePickupAwb: string | null;
+  reversePickupCarrier: string | null;
+  reversePickupStatus: string | null;
 };
 
 export type AdminReturnStatus = AdminReturn["returnStatus"];

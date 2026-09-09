@@ -71,6 +71,17 @@ export type AdminExchange = {
   dispositionStatus: string | null;
   dispositionDeadline: string | null;
   dispositionNote: string | null;
+
+  /**
+   * The courier collection booked when this exchange passed online QC — the
+   * garment coming back, not the replacement going out.
+   *
+   * booked=false means no rider is coming and somebody has to arrange it.
+   */
+  reversePickupBooked: boolean | null;
+  reversePickupAwb: string | null;
+  reversePickupCarrier: string | null;
+  reversePickupStatus: string | null;
 };
 
 export type ShipReplacementPayload = {

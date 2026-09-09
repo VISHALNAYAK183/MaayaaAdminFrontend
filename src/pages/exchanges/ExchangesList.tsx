@@ -558,6 +558,38 @@ export default function ExchangesList() {
               )}
             </dl>
 
+            {/* The garment coming back, not the replacement going out.
+                Shown once stock is reserved, which is when the collection is
+                booked - before that there is nothing to collect. */}
+            {["STOCK_RESERVED", "PICKUP_PENDING", "PICKED_UP", "WAREHOUSE_QC_PENDING"]
+              .includes(selected.exchangeStatus) && (
+              selected.reversePickupBooked ? (
+                <div className="mt-4 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2.5">
+                  <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-1">
+                    Collection
+                  </p>
+                  <p className="text-sm text-gray-900 dark:text-white">
+                    {selected.reversePickupCarrier ?? "Courier booked"}
+                    {selected.reversePickupAwb && (
+                      <span className="text-gray-500 dark:text-gray-400">
+                        {" · "}{selected.reversePickupAwb}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 px-3 py-2.5">
+                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                    No collection booked
+                  </p>
+                  <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">
+                    No rider is coming for the item being swapped. Arrange the
+                    pickup yourself.
+                  </p>
+                </div>
+              )
+            )}
+
             <div className="mt-5 flex justify-end">{renderActions(selected)}</div>
           </div>
         </div>
