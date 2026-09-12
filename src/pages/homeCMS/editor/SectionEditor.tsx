@@ -60,9 +60,6 @@ export const PRODUCT_SECTION_TYPES = new Set(["RECOMMENDED", "FEATURED_PRODUCTS"
 const TABLE_SECTION_TYPES = new Set(["HERO", "PROMO", "REVIEWS", "WHY_MAAYAA", "CATEGORIES", "WHY_SHOPWITH_MAAYAA"]);
 const TALL_TYPES = new Set(["RECOMMENDED", "FEATURED_PRODUCTS", "TRENDING", "REVIEWS", "WHY_MAAYAA", "WHY_SHOPWITH_MAAYAA", "CATEGORIES", "PROMO"]);
 
-// Hero images are served from this base path
-const HERO_IMAGE_BASE = "/assets/images/hero/";
-
 // ─── TABS ─────────────────────────────────────────────────────────────────────
 
 // ─── SECTION BLOCK ───────────────────────────────────────────────────────────
@@ -318,14 +315,35 @@ const HeroItemCard = ({
   const [categoryPicker, setCategoryPicker] = useState(false);
   const [newImageName, setNewImageName] = useState(item.image ?? "");
   const [previewDataUrl, setPreviewDataUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
 
-  const handleEditFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  /**
+   * Uploads, then stores the URL the server gives back.
+   *
+   * This used to keep the file's NAME and nothing else, on the assumption that
+   * hero images were hand-placed in the storefront bundle under
+   * /assets/images/hero/. That directory does not exist, so every image saved
+   * here resolved against the page root and 404'd - a black hero with a broken
+   * image icon, on the live site as well as in the preview.
+   */
+  const handleEditFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    setNewImageName(f.name);
+
+    // Local preview first, so the modal shows the picture while it uploads.
     const r = new FileReader();
     r.onload = () => setPreviewDataUrl(r.result as string);
     r.readAsDataURL(f);
+
+    setUploading(true);
+    try {
+      setNewImageName(await uploadImage(f));
+    } catch {
+      alert("Image upload failed");
+      setPreviewDataUrl("");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const openEditModal = () => {
@@ -341,7 +359,7 @@ const HeroItemCard = ({
     setEditImageModal(false);
   };
 
-  const imageSrc = item.image ? `${HERO_IMAGE_BASE}${item.image}` : null;
+  const imageSrc = resolveCmsImage(item.image);
 
   return (
     <tr className="group border-b border-gray-100 last:border-0 hover:bg-gray-50/60 transition-colors">
@@ -472,8 +490,13 @@ const HeroItemCard = ({
                 {previewDataUrl ? (
                   <img src={previewDataUrl} alt="" className="w-full h-full object-cover" />
                 ) : newImageName ? (
-                  <img src={`${HERO_IMAGE_BASE}${newImageName}`} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                  <img src={resolveCmsImage(newImageName) ?? undefined} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                 ) : null}
+                {uploading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/50 border-t-white" />
+                  </div>
+                )}
                 <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-all">
                   <div className="bg-white/90 rounded-lg px-3 py-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -485,7 +508,9 @@ const HeroItemCard = ({
               {newImageName && (
                 <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 mb-4 border border-gray-100">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                  <span className="text-xs font-mono text-gray-600 truncate flex-1">{newImageName}</span>
+                  <span className="text-xs font-mono text-gray-600 truncate flex-1" title={newImageName}>
+                    {newImageName.split("/").pop()}
+                  </span>
                 </div>
               )}
 
@@ -494,7 +519,7 @@ const HeroItemCard = ({
               <div className="flex gap-2">
                 <button
                   onClick={saveImage}
-                  disabled={!newImageName.trim()}
+                  disabled={uploading || !newImageName.trim()}
                   className="flex-1 bg-gray-900 text-white py-2 rounded-lg text-xs font-semibold hover:bg-gray-800 disabled:opacity-40 transition-colors"
                 >
                   Save changes
@@ -522,18 +547,32 @@ const AddHeroItemCard = ({ onAdd, allItems }: { onAdd: (p: any) => void; allItem
   const [previewDataUrl, setPreviewDataUrl] = useState("");
   const [form, setForm] = useState({ imageName: "", link: "", position: "" });
   const [posError, setPosError] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   // Auto-suggest next available position
   const nextPos = allItems.length + 1;
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    setForm((prev) => ({ ...prev, imageName: f.name }));
+
     const r = new FileReader();
     r.onload = () => setPreviewDataUrl(r.result as string);
     r.readAsDataURL(f);
     setExpanded(true);
+
+    // See handleEditFile above: the file has to reach the server, or the row
+    // stores a name that resolves to nothing.
+    setUploading(true);
+    try {
+      const url = await uploadImage(f);
+      setForm((prev) => ({ ...prev, imageName: url }));
+    } catch {
+      alert("Image upload failed");
+      setPreviewDataUrl("");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const reset = () => {
@@ -545,6 +584,7 @@ const AddHeroItemCard = ({ onAdd, allItems }: { onAdd: (p: any) => void; allItem
   };
 
   const submit = () => {
+    if (uploading) { alert("The image is still uploading."); return; }
     if (!form.imageName.trim()) { alert("Please upload an image first"); return; }
     const pos = Number(form.position) || nextPos;
     const err = validatePosition(pos, null, allItems);
