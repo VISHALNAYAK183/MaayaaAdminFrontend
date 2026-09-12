@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import NotFound from "./pages/OtherPage/NotFound";
 import AppLayout from "./layout/AppLayout";
@@ -17,6 +18,7 @@ import ExchangesList from "./pages/exchanges/ExchangesList";
 import StockManagement from "./pages/stock/StockManagement";
 import CostManagement from "./pages/cost/CostManagement";
 import AddCoupon from "./pages/coupons/AddCoupon";
+import HomeCmsStudio from "./pages/homeCMS/HomeCmsStudio";
 import HomeCMS from "./pages/homeCMS/HomeCMS";
 import AddSection from "./pages/homeCMS/AddSection";
 import EditSection from "./pages/homeCMS/EditSection";
@@ -34,6 +36,12 @@ import ExpenseManagement from "./pages/expenses/ExpenseManagement";
 import GstReport from "./pages/gst/GstReport";
 import AdminUserManagement from "./pages/adminUsers/AdminUserManagement";
 
+// Dev rig for the CMS live-preview channel. Signed-out on purpose — it sends
+// only hard-coded payloads and talks to nothing but the storefront iframe — and
+// the route below exists only in a dev build. Goes away with the studio.
+const PreviewHarness = lazy(() => import("./pages/homeCMS/PreviewHarness"));
+const RailSandbox = lazy(() => import("./pages/homeCMS/RailSandbox"));
+
 export default function App() {
   return (
     <Router>
@@ -45,6 +53,28 @@ export default function App() {
           <Route path="/signin" element={<SignIn />} />
           <Route path="/mfa" element={<MfaVerify />} />
           <Route path="/mfa/setup" element={<MfaSetup />} />
+
+          {import.meta.env.DEV ? (
+            <Route
+              path="/cms-preview-harness"
+              element={
+                <Suspense fallback={null}>
+                  <PreviewHarness />
+                </Suspense>
+              }
+            />
+          ) : null}
+
+          {import.meta.env.DEV ? (
+            <Route
+              path="/cms-rail-sandbox"
+              element={
+                <Suspense fallback={null}>
+                  <RailSandbox />
+                </Suspense>
+              }
+            />
+          ) : null}
 
           <Route element={<RequireAuth />}>
             <Route element={<AppLayout />}>
@@ -78,7 +108,9 @@ export default function App() {
               <Route path="/admin-users" element={<AdminUserManagement />} />
 
               {/* Content */}
-              <Route path="/home-cms" element={<HomeCMS />} />
+              <Route path="/home-cms" element={<HomeCmsStudio />} />
+              {/* The pre-studio list, kept reachable while the studio beds in. */}
+              <Route path="/home-cms/classic" element={<HomeCMS />} />
               <Route path="/home-cms/add-section" element={<AddSection />} />
               <Route path="/home-cms/edit/:id" element={<EditSection />} />
               <Route

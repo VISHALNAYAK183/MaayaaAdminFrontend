@@ -45,6 +45,8 @@ const AddSection = () => {
         subtitle: form.subtitle,
         position: Number(form.position),
         gender: form.gender,
+        // Draft, not live: a section is arranged before it is shown.
+        status: "DRAFT",
       });
       alert("Section added ✅");
       navigate("/home-cms");

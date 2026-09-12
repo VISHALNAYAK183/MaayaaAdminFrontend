@@ -35,6 +35,12 @@ export interface AddSectionPayload {
   subtitle: string;
   position: number;
   gender: string;
+  /**
+   * ACTIVE | INACTIVE | DRAFT. Not optional, and not omitted: the backend
+   * reads a missing status as 'Y', so a section saved without one goes live
+   * on the storefront the moment it is created.
+   */
+  status: string;
 }
 
 export interface AddItemPayload {
@@ -62,7 +68,16 @@ export const getSectionById = (id: number) =>
 export const addHomeSection = (data: AddSectionPayload) =>
   apiClient.post<HomeSection>(`${ADMIN_BASE}/home-cms/section`, data);
 
-export const updateHomeSection = (id: number, data: AddSectionPayload) =>
+/**
+ * Status is optional here and required on create, and the asymmetry is the
+ * backend's: an update leaves the column untouched when the field is absent,
+ * while a create reads its absence as "make it live".
+ */
+export type UpdateSectionPayload = Omit<AddSectionPayload, "status"> & {
+  status?: string;
+};
+
+export const updateHomeSection = (id: number, data: UpdateSectionPayload) =>
   apiClient.put(`${ADMIN_BASE}/home-cms/section/${id}`, data);
 
 export const deleteHomeSection = (id: number) =>
