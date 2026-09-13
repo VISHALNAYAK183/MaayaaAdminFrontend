@@ -12,6 +12,7 @@ import { referencedProductIds, toPreviewPayload, viewerGenderFor } from "./previ
 import StudioPreview from "./studio/StudioPreview";
 import { DEVICES } from "./studio/devices";
 import StudioRail from "./studio/StudioRail";
+import { useIsDesktop } from "./studio/useIsDesktop";
 
 /**
  * Home CMS studio — the outline on the left, the real storefront on the right.
@@ -29,6 +30,7 @@ const StudioHeader = ({ children }: { children: React.ReactNode }) => (
 
 const HomeCmsStudio = () => {
   const readOnly = useReadOnly();
+  const isDesktop = useIsDesktop();
 
   const [gender, setGender] = useState("MALE");
   const [device, setDevice] = useState(DEVICES[0]);
@@ -169,6 +171,7 @@ const HomeCmsStudio = () => {
           </p>
         </div>
 
+        {isDesktop && (
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <div className="flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
             {GENDER_TABS.map(({ key, label }) => (
@@ -216,6 +219,7 @@ const HomeCmsStudio = () => {
             </button>
           )}
         </div>
+        )}
       </StudioHeader>
 
       {gender === "OTHER" && (
@@ -270,6 +274,22 @@ const HomeCmsStudio = () => {
         </div>
       )}
 
+      {!isDesktop ? (
+        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center dark:border-gray-700 dark:bg-gray-800/50">
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+            Home CMS needs a bigger screen
+          </p>
+          <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+            Arranging the home page means dragging sections against a full-width preview
+            of the storefront, side by side. Neither fits a phone, and the drag handles
+            rely on desktop drag events that touch screens do not send — so this opens on
+            a laptop rather than half-working here.
+          </p>
+          <p className="mt-3 text-xs text-gray-400">
+            Everything else in the panel works on this screen.
+          </p>
+        </div>
+      ) : (
       <DndProvider backend={HTML5Backend}>
       <div className="flex h-[calc(100vh-15rem)] min-h-[520px] gap-4">
         <div className="w-[340px] shrink-0 overflow-y-auto rounded-xl border border-gray-200 bg-gray-50/60 dark:border-gray-700 dark:bg-gray-900/40">
@@ -303,6 +323,7 @@ const HomeCmsStudio = () => {
         </div>
       </div>
       </DndProvider>
+      )}
 
       {/* The section editor, opened over the studio rather than replacing it —
         the preview stays visible while its section is being edited. */}

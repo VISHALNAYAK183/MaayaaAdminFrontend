@@ -286,6 +286,9 @@ export default function AnalyticsDashboardPage() {
         {topProducts.length === 0 ? (
           <p className="px-6 py-12 text-sm text-center text-gray-400">No data yet.</p>
         ) : (
+          <div className="overflow-x-auto">
+            {/* Scrolls sideways on a phone - these columns do not fit one,
+              and a squashed table is worse than one you swipe. */}
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
@@ -332,6 +335,7 @@ export default function AnalyticsDashboardPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
 
@@ -342,6 +346,9 @@ export default function AnalyticsDashboardPage() {
             <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Most Ordered Products</h2>
             <p className="text-xs text-gray-500 mt-0.5">Raw order line count</p>
           </div>
+          <div className="overflow-x-auto">
+            {/* Scrolls sideways on a phone - these columns do not fit one,
+              and a squashed table is worse than one you swipe. */}
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
@@ -369,6 +376,7 @@ export default function AnalyticsDashboardPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </section>
       )}
     </div>

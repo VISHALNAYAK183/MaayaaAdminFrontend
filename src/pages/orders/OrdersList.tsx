@@ -375,6 +375,9 @@ export default function OrdersList() {
 
       {/* Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          {/* Scrolls sideways on a phone - these columns do not fit one,
+            and a squashed table is worse than one you swipe. */}
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
@@ -440,6 +443,7 @@ export default function OrdersList() {
             )}
           </tbody>
         </table>
+        </div>
 
         {totalPages > 1 && (
           <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">

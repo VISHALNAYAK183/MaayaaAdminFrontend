@@ -617,6 +617,9 @@ export default function ExchangesList() {
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          {/* Scrolls sideways on a phone - these columns do not fit one,
+            and a squashed table is worse than one you swipe. */}
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
@@ -703,6 +706,7 @@ export default function ExchangesList() {
             )}
           </tbody>
         </table>
+        </div>
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
       <p className="mt-3 text-xs text-gray-400">
