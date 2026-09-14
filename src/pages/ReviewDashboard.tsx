@@ -144,6 +144,7 @@ const ReviewDashboard: React.FC = () => {
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsTotalPages, setReviewsTotalPages] = useState(1);
   const [reviewsTotal, setReviewsTotal] = useState(0);
+  const [reviewsFailed, setReviewsFailed] = useState(false);
 
   const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [moderatingId, setModeratingId] = useState<number | null>(null);
@@ -157,14 +158,17 @@ const ReviewDashboard: React.FC = () => {
   const [allReviewsLoading, setAllReviewsLoading] = useState(false);
   const [allReviewsTotalPages, setAllReviewsTotalPages] = useState(1);
   const [allReviewsTotal, setAllReviewsTotal] = useState(0);
+  const [allReviewsFailed, setAllReviewsFailed] = useState(false);
 
   const refreshDashboard = useCallback(async () => {
     const [dash, pending] = await Promise.all([
       getReviewDashboard(),
-      getPendingReviews().catch(() => ({ data: [] as Review[] })),
+      // null, not an empty list: a failed fetch is an unknown count, shown as
+      // "-". Answering 0 told whoever moderates that the queue was clear.
+      getPendingReviews().catch(() => null),
     ]);
     setDashboardData(dash.data);
-    setPendingCount(Array.isArray(pending.data) ? pending.data.length : 0);
+    setPendingCount(pending && Array.isArray(pending.data) ? pending.data.length : null);
   }, []);
 
   const fetchAllReviews = useCallback(async () => {
@@ -180,7 +184,10 @@ const ReviewDashboard: React.FC = () => {
       setAllReviews(res.data.content);
       setAllReviewsTotalPages(Math.max(1, res.data.totalPages));
       setAllReviewsTotal(res.data.totalElements);
+      setAllReviewsFailed(false);
     } catch {
+      // Kept apart from an empty result, which reads "No reviews match".
+      setAllReviewsFailed(true);
       setAllReviews([]);
       setAllReviewsTotalPages(1);
       setAllReviewsTotal(0);
@@ -203,7 +210,9 @@ const ReviewDashboard: React.FC = () => {
       setReviews(res.data.content);
       setReviewsTotalPages(Math.max(1, res.data.totalPages));
       setReviewsTotal(res.data.totalElements);
+      setReviewsFailed(false);
     } catch {
+      setReviewsFailed(true);
       setReviews([]);
       setReviewsTotalPages(1);
       setReviewsTotal(0);
@@ -238,9 +247,21 @@ const ReviewDashboard: React.FC = () => {
     setModeratingId(reviewId);
     try {
       await moderateReview(reviewId, status);
+    } catch (e: unknown) {
+      // axios hands back the server's JSON object here; alerting it directly
+      // showed "[object Object]".
+      const data = (e as { response?: { data?: { message?: unknown } | string } })?.response?.data;
+      const message = typeof data === 'string' ? data : data?.message;
+      alert(typeof message === 'string' && message.trim() ? message : 'Failed to moderate review');
+      setModeratingId(null);
+      return;
+    }
+    // The decision is saved at this point. If redrawing fails, the lists say so
+    // themselves - it is not a reason to report that moderation failed.
+    try {
       await Promise.all([refreshDashboard(), fetchProductReviews(), fetchAllReviews()]);
-    } catch (e: any) {
-      alert(e?.response?.data || 'Failed to moderate review');
+    } catch {
+      /* the lists show their own failure state */
     } finally {
       setModeratingId(null);
     }
@@ -479,6 +500,11 @@ const ReviewDashboard: React.FC = () => {
         <div className="p-6">
           {allReviewsLoading ? (
             <div className="text-center py-12 text-sm text-gray-400 dark:text-gray-500">Loading reviews…</div>
+          ) : allReviewsFailed ? (
+            <div className="text-center py-12 text-sm">
+              <p className="text-red-600 dark:text-red-400 font-medium">Reviews could not be loaded.</p>
+              <button onClick={() => fetchAllReviews()} className="mt-2 text-xs text-gray-500 underline hover:text-gray-700">Try again</button>
+            </div>
           ) : allReviews.length === 0 ? (
             <div className="text-center py-12 text-sm text-gray-400 dark:text-gray-500">
               No reviews match the selected filters.
@@ -713,6 +739,11 @@ const ReviewDashboard: React.FC = () => {
             <div className="flex-1 overflow-y-auto p-6">
               {reviewsLoading ? (
                 <div className="text-center py-12 text-sm text-gray-400 dark:text-gray-500">Loading reviews…</div>
+              ) : reviewsFailed ? (
+            <div className="text-center py-12 text-sm">
+                  <p className="text-red-600 dark:text-red-400 font-medium">Reviews could not be loaded.</p>
+                  <button onClick={() => fetchProductReviews()} className="mt-2 text-xs text-gray-500 underline hover:text-gray-700">Try again</button>
+                </div>
               ) : reviews.length === 0 ? (
                 <div className="text-center py-12 text-sm text-gray-400 dark:text-gray-500">
                   No reviews match the selected filters.

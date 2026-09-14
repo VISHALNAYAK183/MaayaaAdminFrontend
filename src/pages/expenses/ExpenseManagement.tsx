@@ -262,8 +262,9 @@ export default function ExpenseManagement() {
     try {
       await deleteExpense(id);
       await loadExpenses();
-    } catch {
-      alert("Failed to delete.");
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      alert(e?.response?.data?.message || e?.message || "Failed to delete.");
     }
   };
 

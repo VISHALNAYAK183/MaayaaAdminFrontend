@@ -25,12 +25,6 @@ export const OPERATING_CATEGORIES: ExpenseCategory[] = [
   "OTHER",
 ];
 
-export const COGS_LINKED_CATEGORIES: ExpenseCategory[] = [
-  "RAW_MATERIAL",
-  "PACKAGING",
-  "COURIER",
-];
-
 export const isOperatingCategory = (c: ExpenseCategory): boolean =>
   OPERATING_CATEGORIES.includes(c);
 
@@ -75,9 +69,6 @@ export const listExpenses = (
     params: { page, size, ...(category ? { category } : {}) },
   });
 
-export const getExpense = (id: number) =>
-  apiClient.get<Expense>(`${BASE}/${id}`);
-
 export const createExpense = (body: ExpenseRequest) =>
   apiClient.post<Expense>(BASE, body);
 
@@ -87,5 +78,3 @@ export const updateExpense = (id: number, body: ExpenseRequest) =>
 export const deleteExpense = (id: number) =>
   apiClient.delete<{ message: string }>(`${BASE}/${id}`);
 
-export const listExpenseCategories = () =>
-  apiClient.get<ExpenseCategory[]>(`${BASE}/categories`);

@@ -38,18 +38,26 @@ export default function AnalyticsDashboardPage() {
   const [mostOrdered, setMostOrdered] = useState<MostOrdered[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // Each kept apart from an empty answer. They all used to read as "no data",
+  // which on an analytics page is a claim about the business, not the network.
+  const [rangeFailed, setRangeFailed] = useState(false);
+  const [topFailed, setTopFailed] = useState(false);
+  const [mostOrderedFailed, setMostOrderedFailed] = useState(false);
+  const [rangeAttempt, setRangeAttempt] = useState(0);
 
   useEffect(() => {
     (async () => {
       try {
         const [dash, top, mostOrd] = await Promise.all([
           getAnalyticsDashboard(),
-          getTopSellingProducts().catch(() => ({ data: [] as TopSellingProduct[] })),
-          getMostOrderedProducts().catch(() => ({ data: [] as MostOrdered[] })),
+          getTopSellingProducts().catch(() => null),
+          getMostOrderedProducts().catch(() => null),
         ]);
         setOverall(dash.data);
-        setTopProducts(Array.isArray(top.data) ? top.data : []);
-        setMostOrdered(Array.isArray(mostOrd.data) ? mostOrd.data : []);
+        setTopFailed(top === null);
+        setTopProducts(top && Array.isArray(top.data) ? top.data : []);
+        setMostOrderedFailed(mostOrd === null);
+        setMostOrdered(mostOrd && Array.isArray(mostOrd.data) ? mostOrd.data : []);
       } catch {
         setError("Failed to load analytics.");
       } finally {
@@ -59,12 +67,18 @@ export default function AnalyticsDashboardPage() {
   }, []);
 
   useEffect(() => {
+    // Ignore any answer that arrives after the range has changed. Without this,
+    // picking "Last 7 days" then "All time" could let the slower 7-day response
+    // land last and show 7-day revenue and profit under the "All time" tab.
+    let current = true;
     setRangeLoading(true);
+    setRangeFailed(false);
     getAnalyticsProfit(range)
-      .then((res) => setRangeData(res.data))
-      .catch(() => setRangeData(null))
-      .finally(() => setRangeLoading(false));
-  }, [range]);
+      .then((res) => { if (current) setRangeData(res.data); })
+      .catch(() => { if (current) { setRangeData(null); setRangeFailed(true); } })
+      .finally(() => { if (current) setRangeLoading(false); });
+    return () => { current = false; };
+  }, [range, rangeAttempt]);
 
   if (loading) {
     return (
@@ -272,6 +286,13 @@ export default function AnalyticsDashboardPage() {
               </div>
             )}
           </>
+        ) : rangeFailed ? (
+          <p className="text-sm">
+            <span className="text-red-600 dark:text-red-400">These figures could not be loaded.</span>{" "}
+            <button onClick={() => setRangeAttempt((n) => n + 1)} className="text-gray-500 underline hover:text-gray-700">
+              Try again
+            </button>
+          </p>
         ) : (
           <p className="text-sm text-gray-400">No data for this range.</p>
         )}
@@ -283,7 +304,11 @@ export default function AnalyticsDashboardPage() {
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Top Selling Products</h2>
           <p className="text-xs text-gray-500 mt-0.5">Best sellers, ranked by units sold</p>
         </div>
-        {topProducts.length === 0 ? (
+        {topFailed ? (
+          <p className="px-6 py-12 text-sm text-center text-red-600 dark:text-red-400">
+            Top selling products could not be loaded. Reload the page to try again.
+          </p>
+        ) : topProducts.length === 0 ? (
           <p className="px-6 py-12 text-sm text-center text-gray-400">No data yet.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -339,7 +364,13 @@ export default function AnalyticsDashboardPage() {
         )}
       </section>
 
-      {/* Most ordered raw */}
+      {/* Most ordered raw. Hidden when there is nothing to show - but not when
+        it failed to load, which used to make the whole section vanish. */}
+      {mostOrderedFailed && (
+        <p className="rounded-xl border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+          Most ordered products could not be loaded. Reload the page to try again.
+        </p>
+      )}
       {mostOrdered.length > 0 && (
         <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
