@@ -30,6 +30,7 @@ export default function StockManagement() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   // Debounce the search input so we don't fire a request per keystroke.
   const debouncedSearch = useDebouncedValue(search, 300);
@@ -47,8 +48,13 @@ export default function StockManagement() {
       setRows(res.data.content);
       setTotalPages(Math.max(1, res.data.totalPages));
       setTotalElements(res.data.totalElements);
+      setLoadFailed(false);
     } catch {
       if (seq !== fetchSeq.current) return;
+      // Kept apart from "no rows". This catch used to leave an empty table
+      // that read as "No variants matching your filters", which is how a
+      // query failing on every page load passed for a catalogue with no stock.
+      setLoadFailed(true);
       setRows([]);
       setTotalPages(1);
       setTotalElements(0);
@@ -199,6 +205,18 @@ export default function StockManagement() {
                   ))}
                 </tr>
               ))
+            ) : loadFailed ? (
+              <tr>
+                <td colSpan={6} className="py-16 text-center text-sm">
+                  <p className="font-medium text-red-600 dark:text-red-400">Stock could not be loaded.</p>
+                  <button
+                    onClick={() => loadStock()}
+                    className="mt-2 text-xs font-medium text-gray-500 underline hover:text-gray-700"
+                  >
+                    Try again
+                  </button>
+                </td>
+              </tr>
             ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-16 text-center text-gray-400 text-sm">
