@@ -60,14 +60,24 @@ export class ApiError extends Error {
 /**
  * True when a response on a *protected* endpoint means the session is gone.
  *
- * 403 counts. The admin backend maps unauthenticated requests to Spring
- * Security's default Http403ForbiddenEntryPoint rather than 401, and there is
- * exactly one role (ROLE_ADMIN) with no method-level security, so a genuine
- * "authenticated but not permitted" 403 cannot currently occur.
+ * Only 401. The backend answers 401 for "not signed in" and 403 for "signed
+ * in, but your role cannot do this". It used to answer 403 for both, so every
+ * 403 had to sign the user out - including a Sales admin pressing a button
+ * only an Admin may use.
  */
 export function isSessionDead(status: number): boolean {
-  return status === 401 || status === 403;
+  return status === 401;
 }
+
+/** The server's reason for refusing a request, or the fallback when it gave none. */
+export function serverMessage(err: unknown, fallback: string): string {
+  const e = err as { response?: { data?: { message?: unknown } } } | null;
+  const message = e?.response?.data?.message;
+  return typeof message === "string" && message ? message : fallback;
+}
+
+/** What to say when the server refuses an action for the signed-in role. */
+export const FORBIDDEN_MESSAGE = "Your role can't do that. Ask an Admin if it needs doing.";
 
 /**
  * Refuses writes for a read-only role before they leave the browser.
@@ -126,6 +136,10 @@ apiClient.interceptors.response.use(
     if (!isAuthCall && !isMeCall && typeof status === "number" && isSessionDead(status)) {
       notifyUnauthorized();
     }
+    // Spring's 403 carries no message of its own; give screens one to show.
+    if (status === 403 && error.response && !error.response.data?.message) {
+      error.response.data = { ...(typeof error.response.data === "object" ? error.response.data : {}), message: FORBIDDEN_MESSAGE };
+    }
     return Promise.reject(error);
   }
 );
@@ -136,7 +150,8 @@ apiClient.interceptors.response.use(
 async function failure(res: Response, action: string): Promise<ApiError> {
   if (isSessionDead(res.status)) notifyUnauthorized();
   const err = await res.json().catch(() => null);
-  return new ApiError(err?.message || `Failed to ${action}: ${res.status}`, res.status, err);
+  const fallback = res.status === 403 ? FORBIDDEN_MESSAGE : `Failed to ${action}: ${res.status}`;
+  return new ApiError(err?.message || fallback, res.status, err);
 }
 
 async function unwrap<T>(res: Response, action: string): Promise<T> {

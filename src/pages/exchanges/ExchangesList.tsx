@@ -90,6 +90,7 @@ export default function ExchangesList() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [selected, setSelected] = useState<AdminExchange | null>(null);
 
@@ -125,8 +126,10 @@ export default function ExchangesList() {
       setExchanges(res.data.content);
       setTotalPages(Math.max(1, res.data.totalPages));
       setTotalElements(res.data.totalElements);
+      setLoadFailed(false);
     } catch {
       if (seq !== fetchSeq.current) return;
+      setLoadFailed(true);
       setExchanges([]);
       setTotalPages(1);
       setTotalElements(0);
@@ -257,6 +260,10 @@ export default function ExchangesList() {
               {busy ? "…" : "Mark picked up"}
             </button>
           )}
+          {/* Inspection is of an item we have, so it waits for the pickup. The
+              server refuses it before then too. */}
+          {(e.pickedUpAt || e.exchangeStatus === "PICKED_UP" || e.exchangeStatus === "WAREHOUSE_QC_PENDING") && (
+          <>
           <button
             onClick={() => openQcDialog(e.exchangeId, "warehousePass")}
             disabled={busy}
@@ -276,6 +283,8 @@ export default function ExchangesList() {
           >
             Warehouse QC Fail
           </button>
+          </>
+          )}
         </div>
       );
     }
@@ -654,6 +663,15 @@ export default function ExchangesList() {
                   ))}
                 </tr>
               ))
+            ) : loadFailed ? (
+              <tr>
+                <td colSpan={8} className="py-16 text-center text-sm text-gray-500">
+                  Exchanges could not be loaded.{" "}
+                  <button type="button" onClick={fetchExchanges} className="font-semibold text-brand-600 hover:underline">
+                    Try again
+                  </button>
+                </td>
+              </tr>
             ) : visible.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-16 text-center text-gray-400 text-sm">

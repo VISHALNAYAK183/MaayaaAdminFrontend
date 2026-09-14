@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { serverMessage } from "../api/client";
 import { updateOrderStatus } from "../api/adminApi";
 import type { DeliveryRoute } from "../types/order";
 
@@ -58,8 +59,9 @@ export default function UpdateStatusModal({
         location: location.trim() || undefined,
       });
       onSuccess(res.data);
-    } catch {
-      setError("Failed to update status. Please try again.");
+    } catch (e) {
+      // The server says which step is missing, e.g. "must be SHIPPED first".
+      setError(serverMessage(e, "Failed to update status. Please try again."));
     } finally {
       setLoading(false);
     }

@@ -85,6 +85,7 @@ export default function ReturnsList() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [selected, setSelected] = useState<AdminReturn | null>(null);
 
@@ -104,8 +105,10 @@ export default function ReturnsList() {
       setReturns(res.data.content);
       setTotalPages(Math.max(1, res.data.totalPages));
       setTotalElements(res.data.totalElements);
+      setLoadFailed(false);
     } catch {
       if (seq !== fetchSeq.current) return;
+      setLoadFailed(true);
       setReturns([]);
       setTotalPages(1);
       setTotalElements(0);
@@ -526,6 +529,15 @@ export default function ReturnsList() {
                   ))}
                 </tr>
               ))
+            ) : loadFailed ? (
+              <tr>
+                <td colSpan={8} className="py-16 text-center text-sm text-gray-500">
+                  Returns could not be loaded.{" "}
+                  <button type="button" onClick={fetchReturns} className="font-semibold text-brand-600 hover:underline">
+                    Try again
+                  </button>
+                </td>
+              </tr>
             ) : visible.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-16 text-center text-gray-400 text-sm">

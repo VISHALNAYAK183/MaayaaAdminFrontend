@@ -1,5 +1,6 @@
 import { useReadOnly } from "../../hooks/useReadOnly";
-import { useEffect, useState } from "react";
+import { serverMessage } from "../../api/client";
+import { useEffect, useRef, useState } from "react";
 import { getOrders, approveOrder, rejectOrder } from "../../api/adminApi";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ShipOrderModal from "../../components/ShipOrderModal";
@@ -51,6 +52,9 @@ type ModalState = {
 export default function OrdersList() {
   const readOnly = useReadOnly();
   const [orders, setOrders] = useState<AdminOrderRow[]>([]);
+  // Kept apart from an empty tab: "No orders" is a claim about the shop.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const fetchSeq = useRef(0);
   const [searchParams] = useSearchParams();
   const [tab, setTab] = useState(() => {
     const wanted = searchParams.get("status");
@@ -95,6 +99,8 @@ export default function OrdersList() {
   };
 
   const fetchOrders = async () => {
+    // A slower answer for the tab you just left must not land on this one.
+    const seq = ++fetchSeq.current;
     setLoading(true);
     try {
       const { sortBy, direction } = sortArgs();
@@ -102,13 +108,17 @@ export default function OrdersList() {
       // 100 merged in the browser and called a single page, so a shop with more
       // than 100 pending orders simply could not see the rest of them.
       const res = await getOrders(tab, page, 20, sortBy, direction);
+      if (seq !== fetchSeq.current) return;
       const body = res.data as any;
       setOrders(Array.isArray(body) ? body : (body.content ?? []));
       setTotalPages(body.total_pages ?? 1);
+      setLoadFailed(false);
     } catch {
+      if (seq !== fetchSeq.current) return;
       setOrders([]);
+      setLoadFailed(true);
     } finally {
-      setLoading(false);
+      if (seq === fetchSeq.current) setLoading(false);
     }
   };
 
@@ -118,8 +128,8 @@ export default function OrdersList() {
     try {
       await approveOrder(orderId);
       await fetchOrders();
-    } catch {
-      alert("Failed to approve order.");
+    } catch (e) {
+      alert(serverMessage(e, "Failed to approve order."));
     } finally {
       setActionLoading(null);
     }
@@ -131,8 +141,8 @@ export default function OrdersList() {
     try {
       await rejectOrder(orderId);
       await fetchOrders();
-    } catch {
-      alert("Failed to reject order.");
+    } catch (e) {
+      alert(serverMessage(e, "Failed to reject order."));
     } finally {
       setActionLoading(null);
     }
@@ -415,6 +425,15 @@ export default function OrdersList() {
                   ))}
                 </tr>
               ))
+            ) : loadFailed ? (
+              <tr>
+                <td colSpan={5} className="py-16 text-center text-sm text-gray-500">
+                  Orders could not be loaded.{" "}
+                  <button type="button" onClick={fetchOrders} className="font-semibold text-brand-600 hover:underline">
+                    Try again
+                  </button>
+                </td>
+              </tr>
             ) : orders.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-16 text-center text-gray-400 text-sm">

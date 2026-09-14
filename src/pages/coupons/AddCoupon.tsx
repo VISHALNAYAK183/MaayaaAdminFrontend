@@ -1,4 +1,5 @@
 import { useReadOnly } from "../../hooks/useReadOnly";
+import { serverMessage } from "../../api/client";
 import React, { useState, useRef, useEffect } from "react";
 import {
   addCoupon,
@@ -427,14 +428,28 @@ const CouponManagement = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); setLoading(true); setStatus(null);
+    e.preventDefault();
+    // The server holds these rules too; checking here saves a round trip. A
+    // coupon at 150% used to save, and the shop caps a discount at the cart
+    // total, so every order it touched was free.
+    const value = Number(form.value);
+    if (!form.code.trim()) return setStatus({ type: "error", msg: "A coupon needs a code." });
+    if (!(value > 0)) return setStatus({ type: "error", msg: "The discount must be more than 0." });
+    if (form.discountType === "P" && value > 100) return setStatus({ type: "error", msg: "A percentage discount cannot be more than 100%." });
+    if (Number(form.minPurchase) < 0) return setStatus({ type: "error", msg: "The minimum purchase cannot be negative." });
+    if (!form.validFrom || !form.validTill) return setStatus({ type: "error", msg: "Choose a start and an end date." });
+    if (form.validFrom > form.validTill) return setStatus({ type: "error", msg: "The start date must be on or before the end date." });
+    setLoading(true); setStatus(null);
     try {
       const payload = {
         ...form,
-        value: Number(form.value),
-        minPurchase: Number(form.minPurchase) || undefined,
-        maxDiscount: Number(form.maxDiscount) || undefined,
-        usageLimit: Number(form.usageLimit) || undefined,
+        value,
+        // Sent as 0 rather than left out: 0 is how the server hears "none".
+        // Leaving it out meant "keep", so a max discount or usage limit could
+        // never be taken off once it was set.
+        minPurchase: Math.max(0, Number(form.minPurchase) || 0),
+        maxDiscount: Math.max(0, Number(form.maxDiscount) || 0),
+        usageLimit: Math.max(0, Number(form.usageLimit) || 0),
         userIds: (() => {
           if (editingId) {
             const newlyAdded = selectedUserIds.filter(id => !lockedUserIds.includes(id));
@@ -478,8 +493,8 @@ const CouponManagement = () => {
       setStatus({ type: "success", msg: "Coupon deleted successfully!" });
       if (panelCoupon?.couponId === id) setPanelCoupon(null);
       loadData();
-    } catch {
-      setStatus({ type: "error", msg: "Failed to delete coupon" });
+    } catch (err) {
+      setStatus({ type: "error", msg: serverMessage(err, "Failed to delete coupon") });
     }
   };
 

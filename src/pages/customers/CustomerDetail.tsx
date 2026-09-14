@@ -16,6 +16,7 @@ import {
   type CreditEntry,
 } from "../../api/customersApi";
 import { useReadOnly } from "../../hooks/useReadOnly";
+import { useAuth } from "../../context/AuthContext";
 
 const currency = (n: number | null | undefined) =>
   "₹" +
@@ -105,6 +106,9 @@ export default function CustomerDetailPage() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const readOnly = useReadOnly();
+  // Moving money in or out of a balance is ADMIN only on the server. The button
+  // was shown to every role that can write, and the refusal signed Sales out.
+  const canAdjustCredit = useAuth().role === "ADMIN";
 
   const id = Number(userId);
 
@@ -432,7 +436,7 @@ export default function CustomerDetailPage() {
             <p className="text-2xl font-bold text-gray-900">
               ₹{Number(credit.balance).toLocaleString("en-IN")}
             </p>
-            {!readOnly && (
+            {canAdjustCredit && (
               <button
                 onClick={handleAdjustCredit}
                 disabled={busy}

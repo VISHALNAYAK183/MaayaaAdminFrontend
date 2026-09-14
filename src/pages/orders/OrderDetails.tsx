@@ -1,4 +1,5 @@
 import { useReadOnly } from "../../hooks/useReadOnly";
+import { serverMessage } from "../../api/client";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
@@ -143,8 +144,8 @@ export default function OrderDetails() {
     try {
       await approveOrder(data.order.orderId);
       await load();
-    } catch {
-      alert("Failed to approve order. Please try again.");
+    } catch (e) {
+      alert(serverMessage(e, "Failed to approve order. Please try again."));
     } finally {
       setActionLoading(false);
     }
@@ -182,8 +183,8 @@ export default function OrderDetails() {
     try {
       await rejectOrder(data.order.orderId);
       await load();
-    } catch {
-      alert("Failed to reject order. Please try again.");
+    } catch (e) {
+      alert(serverMessage(e, "Failed to reject order. Please try again."));
     } finally {
       setActionLoading(false);
     }

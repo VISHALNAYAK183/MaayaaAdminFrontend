@@ -31,11 +31,6 @@ export const getCoupons = () => {
   return apiClient.get<Coupon[]>(`${ADMIN_BASE}/coupons`);
 };
 
-// Get single coupon by ID
-export const getCoupon = (id: number) => {
-  return apiClient.get<Coupon>(`${ADMIN_BASE}/coupons/${id}`);
-};
-
 // Create new coupon
 export const addCoupon = (data: Coupon) => {
   return apiClient.post<ApiResponse<Coupon>>(`${ADMIN_BASE}/coupons`, data);
