@@ -23,9 +23,17 @@ export interface Variant {
   sizeId: number;
   colorId: number;
   quantity: number;
+  /** The count when the form opened. Form-only; never sent. */
+  loadedQuantity?: number;
   barcode: string;
   images: VariantImage[];
 }
+
+/**
+ * A variant as saved. The variants sent are the product's whole list: one left
+ * out is removed. Quantity may be left out to keep the current stock.
+ */
+export type VariantPayload = Omit<Variant, "quantity" | "loadedQuantity"> & { quantity?: number };
 
 export interface ProductResponse {
   productId?: number;
@@ -81,6 +89,9 @@ export interface Product {
   images: ProductImage[];
 }
 
+/** What a create or update sends. */
+export type ProductPayload = Omit<Product, "productId" | "variants"> & { variants: VariantPayload[] };
+
 
 export type ProductSortBy = "id" | "name" | "price" | "stock";
 export type ProductStockFilter = "all" | "in" | "low" | "out";
@@ -129,13 +140,13 @@ export const getAdminProducts = async (
   );
 };
 
-export const addProduct = async (body: Omit<Product, "productId">) => ({
+export const addProduct = async (body: ProductPayload) => ({
   data: await http.post<ProductResponse>(URL, body, "create product"),
 });
 
 export const updateProduct = async (
   id: number,
-  body: Omit<Product, "productId">
+  body: ProductPayload
 ) => ({
   data: await http.put<ProductResponse>(`${URL}/${id}`, body, "update product"),
 });

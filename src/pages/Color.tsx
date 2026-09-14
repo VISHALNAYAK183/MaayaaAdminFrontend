@@ -68,6 +68,10 @@ const ColorManagement: React.FC = () => {
       setStatus({ type: "error", msg: "Hex value is required." });
       return;
     }
+    if (!/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(form.hex.trim())) {
+      setStatus({ type: "error", msg: "Hex value must look like #556B2F." });
+      return;
+    }
     setLoading(true);
     setStatus(null);
     try {

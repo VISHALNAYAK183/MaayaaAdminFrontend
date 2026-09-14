@@ -132,18 +132,25 @@ apiClient.interceptors.response.use(
 
 /* ── fetch helpers ───────────────────────────────────────────────────────── */
 
+/** The server's own explanation of a refusal, e.g. "1 product still uses it". */
+async function failure(res: Response, action: string): Promise<ApiError> {
+  if (isSessionDead(res.status)) notifyUnauthorized();
+  const err = await res.json().catch(() => null);
+  return new ApiError(err?.message || `Failed to ${action}: ${res.status}`, res.status, err);
+}
+
 async function unwrap<T>(res: Response, action: string): Promise<T> {
-  if (!res.ok) {
-    if (isSessionDead(res.status)) notifyUnauthorized();
-    const err = await res.json().catch(() => null);
-    throw new ApiError(
-      err?.message || `Failed to ${action}: ${res.status}`,
-      res.status,
-      err
-    );
+  if (!res.ok) throw await failure(res, action);
+  // A few endpoints answer a success with a plain sentence. That is still a
+  // success: failing to parse it used to report a saved change as an error.
+  const text = await res.text();
+  if (!text) return undefined as T;
+  try {
+    const json = JSON.parse(text);
+    return (json?.data ?? json) as T;
+  } catch {
+    return text as T;
   }
-  const json = await res.json();
-  return (json?.data ?? json) as T;
 }
 
 const jsonHeaders = () => ({
@@ -172,10 +179,9 @@ export const http = {
   del: (url: string, action = "delete") =>
     (assertWritable("DELETE"),
     fetch(url, { method: "DELETE", headers: authHeaders() }).then(async (r) => {
-      if (!r.ok) {
-        if (isSessionDead(r.status)) notifyUnauthorized();
-        throw new ApiError(`Failed to ${action}: ${r.status}`, r.status);
-      }
+      // Read the refusal instead of dropping it: a blocked delete used to show
+      // "Failed to delete category: 400" when the server had said exactly why.
+      if (!r.ok) throw await failure(r, action);
       return true;
     })),
   /**

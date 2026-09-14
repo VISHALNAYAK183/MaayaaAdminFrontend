@@ -8,6 +8,7 @@ import {
   updateProduct,
   deleteProduct,
   type Product,
+  type ProductPayload,
   type ProductResponse,
   type VariantImage,
   type QuestionAnswer,
@@ -1102,8 +1103,13 @@ const ProductManagement: React.FC = () => {
   const addVariant = () =>
     setForm((prev) => ({ ...prev, variants: [...prev.variants, blankVariant()] }));
 
-  const removeVariant = (i: number) =>
+  const removeVariant = (i: number) => {
+    if (form.variants[i]?.variantId) {
+      // Saving now really removes it, stock and all, so say so before that.
+      setStatus({ type: "error", msg: "That variant is taken off the shop when you save. Close without saving to keep it." });
+    }
     setForm((prev) => ({ ...prev, variants: prev.variants.filter((_, idx) => idx !== i) }));
+  };
 
   // Group variant rows by colour for rendering — every size sharing a colour
   // shows one image uploader instead of one per size. Recomputed from
@@ -1220,7 +1226,7 @@ const ProductManagement: React.FC = () => {
     setLoading(true);
     setStatus(null);
     try {
-      const payload: Omit<Product, "productId"> = {
+      const payload: ProductPayload = {
         name: form.name.trim(),
         categoryId: Number(form.categoryId),
         collectionId: Number(form.collectionId),
@@ -1244,7 +1250,9 @@ const ProductManagement: React.FC = () => {
             ...(v.variantId ? { variantId: v.variantId } : {}),
             sizeId: Number(v.sizeId),
             colorId: Number(v.colorId),
-            quantity: Number(v.quantity),
+            // Left out when untouched, so saving an edit does not put back the
+            // count from when the form was opened over orders placed since.
+            ...(v.variantId && Number(v.quantity) === v.loadedQuantity ? {} : { quantity: Number(v.quantity) }),
             barcode: v.barcode ?? "",
             images: (v.images ?? [])
               .filter((img) => img.url.trim())
@@ -1279,6 +1287,7 @@ const ProductManagement: React.FC = () => {
       sizeId: Number(v.sizeId ?? 0),
       colorId: Number(v.colorId ?? 0),
       quantity: Number(v.quantity ?? 0),
+      loadedQuantity: Number(v.quantity ?? 0),
       barcode: v.barcode ?? "",
       images: (v.images ?? []).length > 0 ? v.images : [{ url: "", postOrder: 1 }],
     }));
