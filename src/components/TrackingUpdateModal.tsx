@@ -45,18 +45,18 @@ export default function TrackingUpdateModal({ orderId, onSuccess }: Props) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-gray-500 dark:text-gray-400">
+      <p className="text-xs text-gray-500">
         Adds a line to the customer's tracking timeline. The order stays where it is.
       </p>
 
       <div>
-        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="block text-xs font-medium text-gray-700 mb-1">
           Update
         </label>
         <select
           value={kind}
           onChange={(e) => setKind(e.target.value as Kind)}
-          className="w-full text-sm px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+          className="w-full text-sm px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
         >
           {KINDS.map((k) => (
             <option key={k.value} value={k.value}>{k.label}</option>
@@ -65,31 +65,31 @@ export default function TrackingUpdateModal({ orderId, onSuccess }: Props) {
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="block text-xs font-medium text-gray-700 mb-1">
           What to tell them <span className="text-gray-400">(optional)</span>
         </label>
         <input
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={current.placeholder}
-          className="w-full text-sm px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+          className="w-full text-sm px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
         />
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="block text-xs font-medium text-gray-700 mb-1">
           Location <span className="text-gray-400">(optional)</span>
         </label>
         <input
           value={location}
           onChange={(e) => setLocation(e.target.value)}
           placeholder="e.g. Hyderabad hub"
-          className="w-full text-sm px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+          className="w-full text-sm px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
         />
       </div>
 
       {error && (
-        <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
+        <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
           {error}
         </p>
       )}
@@ -97,7 +97,7 @@ export default function TrackingUpdateModal({ orderId, onSuccess }: Props) {
       <button
         onClick={submit}
         disabled={loading}
-        className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
+        className="w-full py-2.5 bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
       >
         {loading ? "Adding…" : "Add tracking update"}
       </button>

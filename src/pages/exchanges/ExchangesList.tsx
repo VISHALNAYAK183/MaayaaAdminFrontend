@@ -212,7 +212,7 @@ export default function ExchangesList() {
   // Status-gated action buttons. Mirrors AdminExchangeService transition checks.
   const renderActions = (e: AdminExchange) => {
     const busy = actionLoading === e.exchangeId;
-    const btn = "text-xs px-2.5 py-1.5 rounded-lg font-medium disabled:opacity-50 transition-colors";
+    const btn = "text-xs px-2.5 py-1.5 rounded-full font-medium disabled:opacity-50 transition-colors shell-press";
 
     if (readOnly) return null;
 
@@ -252,7 +252,7 @@ export default function ExchangesList() {
             <button
               onClick={() => runSimple(e.exchangeId, "pickedUp", "Mark this item as collected from the customer?")}
               disabled={busy}
-              className={`${btn} bg-blue-600 hover:bg-blue-700 text-white`}
+              className={`${btn} bg-gray-900 hover:bg-gray-700 text-white`}
             >
               {busy ? "…" : "Mark picked up"}
             </button>
@@ -288,7 +288,7 @@ export default function ExchangesList() {
             setShipDialog(e.exchangeId);
           }}
           disabled={busy}
-          className={`${btn} bg-blue-600 hover:bg-blue-700 text-white`}
+          className={`${btn} bg-gray-900 hover:bg-gray-700 text-white`}
         >
           {busy ? "…" : "Ship Replacement"}
         </button>
@@ -300,7 +300,7 @@ export default function ExchangesList() {
         <button
           onClick={() => runSimple(e.exchangeId, "complete", "Mark exchange as completed?")}
           disabled={busy}
-          className={`${btn} bg-blue-600 hover:bg-blue-700 text-white`}
+          className={`${btn} bg-gray-900 hover:bg-gray-700 text-white`}
         >
           {busy ? "…" : "Complete Exchange"}
         </button>
@@ -319,11 +319,11 @@ export default function ExchangesList() {
           onClick={() => setQcDialog(null)}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl p-6 w-full max-w-md mx-4"
+            className="shell-panel shadow-xl p-6 w-full max-w-md mx-4"
             onClick={(ev) => ev.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-sm font-semibold text-gray-900">
                 {QC_LABEL[qcDialog.action]} — Exchange #{qcDialog.id}
               </h3>
               <button onClick={() => setQcDialog(null)} className="text-gray-400 hover:text-gray-600" aria-label="Close">
@@ -331,7 +331,7 @@ export default function ExchangesList() {
               </button>
             </div>
 
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
               Comment *
             </label>
             <textarea
@@ -345,21 +345,21 @@ export default function ExchangesList() {
                 qcDialog.action === "warehousePass" ? "Product condition good; replacement will ship" :
                                                      "Used product returned; failing QC"
               }
-              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-900 focus:outline-none focus:border-gray-900 resize-none"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-gray-900 resize-none"
             />
             <p className="text-[11px] text-gray-400 mt-1">{qcComment.length}/500</p>
 
             <div className="mt-4 flex justify-end gap-2">
               <button
                 onClick={() => setQcDialog(null)}
-                className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="text-xs px-3 py-1.5 rounded-full border border-gray-200 hover:bg-gray-50 shell-press"
               >
                 Cancel
               </button>
               <button
                 onClick={submitQc}
                 disabled={actionLoading === qcDialog.id}
-                className="text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-700 disabled:opacity-50"
+                className="text-xs px-3 py-1.5 rounded-full font-medium bg-gray-900 text-white hover:bg-gray-700 disabled:opacity-50 shell-press"
               >
                 {actionLoading === qcDialog.id ? "Saving…" : "Submit"}
               </button>
@@ -379,10 +379,10 @@ export default function ExchangesList() {
           onClick={() => setShipDialog(null)}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl p-6 w-full max-w-md mx-4"
+            className="shell-panel shadow-xl p-6 w-full max-w-md mx-4"
             onClick={(ev) => ev.stopPropagation()}
           >
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
+            <h3 className="text-base font-semibold text-gray-900 mb-1">
               Ship replacement
             </h3>
             <p className="text-xs text-gray-500 mb-4">
@@ -393,19 +393,19 @@ export default function ExchangesList() {
                 value={shipForm.carrier}
                 onChange={(ev) => setShipForm({ ...shipForm, carrier: ev.target.value })}
                 placeholder="Carrier, e.g. Delhivery"
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900"
               />
               <input
                 value={shipForm.trackingNumber}
                 onChange={(ev) => setShipForm({ ...shipForm, trackingNumber: ev.target.value })}
                 placeholder="Tracking number"
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900"
               />
               <input
                 value={shipForm.trackingUrl}
                 onChange={(ev) => setShipForm({ ...shipForm, trackingUrl: ev.target.value })}
                 placeholder="Tracking link"
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900"
               />
               <label className="block text-xs text-gray-500">
                 Expected delivery
@@ -413,21 +413,21 @@ export default function ExchangesList() {
                   type="date"
                   value={shipForm.estimatedDeliveryDate}
                   onChange={(ev) => setShipForm({ ...shipForm, estimatedDeliveryDate: ev.target.value })}
-                  className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white"
+                  className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900"
                 />
               </label>
             </div>
             <div className="flex justify-end gap-2 mt-5">
               <button
                 onClick={() => setShipDialog(null)}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="px-4 py-2 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100 shell-press"
               >
                 Cancel
               </button>
               <button
                 onClick={submitShip}
                 disabled={actionLoading === shipDialog}
-                className="px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+                className="px-4 py-2 rounded-full text-sm font-semibold bg-gray-900 hover:bg-gray-700 text-white disabled:opacity-50 shell-press"
               >
                 {actionLoading === shipDialog ? "…" : "Ship replacement"}
               </button>
@@ -442,11 +442,11 @@ export default function ExchangesList() {
           onClick={() => setSelected(null)}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl p-6 w-full max-w-lg mx-4"
+            className="shell-panel shadow-xl p-6 w-full max-w-lg mx-4"
             onClick={(ev) => ev.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-sm font-semibold text-gray-900">
                 Exchange #{selected.exchangeId} — Order #{selected.orderId ?? "—"}
               </h3>
               <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600" aria-label="Close">
@@ -460,11 +460,11 @@ export default function ExchangesList() {
                   <img
                     src={selected.productImage}
                     alt=""
-                    className="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                    className="w-16 h-16 object-cover rounded-lg border border-gray-200"
                   />
                 )}
                 <div className="text-sm">
-                  <p className="font-medium text-gray-900 dark:text-white">{selected.productName}</p>
+                  <p className="font-medium text-gray-900">{selected.productName}</p>
                   {selected.orderItemId != null && (
                     <p className="text-xs text-gray-400">Order item #{selected.orderItemId}</p>
                   )}
@@ -476,7 +476,7 @@ export default function ExchangesList() {
               {(selected.userName || selected.userEmail) && (
                 <>
                   <dt className="text-gray-500">Customer</dt>
-                  <dd className="text-gray-900 dark:text-white">
+                  <dd className="text-gray-900">
                     {selected.userName ?? (selected.userId != null ? `#${selected.userId}` : "—")}
                     {selected.userEmail && (
                       <span className="block text-[11px] text-gray-400 truncate">{selected.userEmail}</span>
@@ -485,17 +485,17 @@ export default function ExchangesList() {
                 </>
               )}
               <dt className="text-gray-500">Old variant</dt>
-              <dd className="text-gray-900 dark:text-white">
+              <dd className="text-gray-900">
                 {variantLabel(selected.oldVariantSize, selected.oldVariantColor, selected.oldVariantId)}
               </dd>
               <dt className="text-gray-500">New variant</dt>
-              <dd className="text-gray-900 dark:text-white">
+              <dd className="text-gray-900">
                 {variantLabel(selected.newVariantSize, selected.newVariantColor, selected.newVariantId)}
               </dd>
               <dt className="text-gray-500">Reason</dt>
-              <dd className="text-gray-900 dark:text-white">{selected.reason ?? "—"}</dd>
+              <dd className="text-gray-900">{selected.reason ?? "—"}</dd>
               <dt className="text-gray-500">Comments</dt>
-              <dd className="text-gray-900 dark:text-white">{selected.comments ?? "—"}</dd>
+              <dd className="text-gray-900">{selected.comments ?? "—"}</dd>
               <dt className="text-gray-500">Status</dt>
               <dd>
                 <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${STATUS_STYLE[selected.exchangeStatus] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
@@ -503,12 +503,12 @@ export default function ExchangesList() {
                 </span>
               </dd>
               <dt className="text-gray-500">Requested</dt>
-              <dd className="text-gray-900 dark:text-white">{formatDate(selected.requestedAt)}</dd>
+              <dd className="text-gray-900">{formatDate(selected.requestedAt)}</dd>
 
               {selected.pickedUpAt && (
                 <>
                   <dt className="text-gray-500">Picked up</dt>
-                  <dd className="text-gray-900 dark:text-white">{formatDate(selected.pickedUpAt)}</dd>
+                  <dd className="text-gray-900">{formatDate(selected.pickedUpAt)}</dd>
                 </>
               )}
 
@@ -516,11 +516,11 @@ export default function ExchangesList() {
               {selected.replacementShippedAt && (
                 <>
                   <dt className="text-gray-500">Replacement sent</dt>
-                  <dd className="text-gray-900 dark:text-white">
+                  <dd className="text-gray-900">
                     {formatDate(selected.replacementShippedAt)}
                   </dd>
                   <dt className="text-gray-500">Carrier</dt>
-                  <dd className="text-gray-900 dark:text-white">
+                  <dd className="text-gray-900">
                     {[selected.replacementCarrier, selected.replacementTrackingNumber]
                       .filter(Boolean)
                       .join(" · ") || "—"}
@@ -533,7 +533,7 @@ export default function ExchangesList() {
               {selected.dispositionStatus && (
                 <>
                   <dt className="text-gray-500">Held item</dt>
-                  <dd className="text-gray-900 dark:text-white">
+                  <dd className="text-gray-900">
                     {selected.dispositionStatus.replace(/_/g, " ").toLowerCase()}
                     {selected.dispositionDeadline
                       ? ` · until ${formatDate(selected.dispositionDeadline)}`
@@ -545,25 +545,25 @@ export default function ExchangesList() {
               {selected.onlineQcStatus && (
                 <>
                   <dt className="text-gray-500">Online QC</dt>
-                  <dd className="text-gray-900 dark:text-white">{selected.onlineQcStatus}</dd>
+                  <dd className="text-gray-900">{selected.onlineQcStatus}</dd>
                 </>
               )}
               {selected.onlineQcComment && (
                 <>
                   <dt className="text-gray-500">Online comment</dt>
-                  <dd className="text-gray-900 dark:text-white">{selected.onlineQcComment}</dd>
+                  <dd className="text-gray-900">{selected.onlineQcComment}</dd>
                 </>
               )}
               {selected.warehouseQcStatus && (
                 <>
                   <dt className="text-gray-500">Warehouse QC</dt>
-                  <dd className="text-gray-900 dark:text-white">{selected.warehouseQcStatus}</dd>
+                  <dd className="text-gray-900">{selected.warehouseQcStatus}</dd>
                 </>
               )}
               {selected.warehouseQcComment && (
                 <>
                   <dt className="text-gray-500">Warehouse comment</dt>
-                  <dd className="text-gray-900 dark:text-white">{selected.warehouseQcComment}</dd>
+                  <dd className="text-gray-900">{selected.warehouseQcComment}</dd>
                 </>
               )}
             </dl>
@@ -574,25 +574,25 @@ export default function ExchangesList() {
             {["STOCK_RESERVED", "PICKUP_PENDING", "PICKED_UP", "WAREHOUSE_QC_PENDING"]
               .includes(selected.exchangeStatus) && (
               selected.reversePickupBooked ? (
-                <div className="mt-4 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2.5">
-                  <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-1">
+                <div className="mt-4 rounded-lg border border-gray-200 px-3 py-2.5">
+                  <p className="mb-1 shell-label">
                     Collection
                   </p>
-                  <p className="text-sm text-gray-900 dark:text-white">
+                  <p className="text-sm text-gray-900">
                     {selected.reversePickupCarrier ?? "Courier booked"}
                     {selected.reversePickupAwb && (
-                      <span className="text-gray-500 dark:text-gray-400">
+                      <span className="text-gray-500">
                         {" · "}{selected.reversePickupAwb}
                       </span>
                     )}
                   </p>
                 </div>
               ) : (
-                <div className="mt-4 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 px-3 py-2.5">
-                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5">
+                  <p className="text-sm font-semibold text-amber-900">
                     No collection booked
                   </p>
-                  <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">
+                  <p className="text-xs text-amber-800 mt-0.5">
                     No rider is coming for the item being swapped. Arrange the
                     pickup yourself.
                   </p>
@@ -606,19 +606,19 @@ export default function ExchangesList() {
       )}
 
       <div className="mb-6">
-        <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Exchanges</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Size and colour swaps</p>
+        <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900">Exchanges</h1>
+        <p className="text-sm text-gray-500 mt-1">Size and colour swaps</p>
       </div>
 
-      <div className="flex gap-1 mb-5 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit flex-wrap">
+      <div className="flex gap-1 mb-5 bg-gray-100 p-1 rounded-full w-fit flex-wrap">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all shell-press ${
               tab === t.key
-                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
             }`}
           >
             {t.label}
@@ -626,30 +626,30 @@ export default function ExchangesList() {
         ))}
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+      <div className="shell-panel overflow-hidden">
         <div className="overflow-x-auto">
           {/* Scrolls sideways on a phone - these columns do not fit one,
             and a squashed table is worse than one you swipe. */}
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+            <tr className="bg-gray-50 border-b border-gray-200">
               {["Exchange", "Product", "Customer", "Old → New", "Reason", "Status", "Requested", "Actions"].map((h) => (
                 <th
                   key={h}
-                  className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide py-3 px-5"
+                  className="text-left py-3 px-5 shell-label"
                 >
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+          <tbody className="divide-y divide-gray-100">
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
                   {Array.from({ length: 8 }).map((__, j) => (
                     <td key={j} className="py-4 px-5">
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      <div className="h-4 bg-gray-200 rounded animate-pulse" />
                     </td>
                   ))}
                 </tr>
@@ -662,8 +662,8 @@ export default function ExchangesList() {
               </tr>
             ) : (
               visible.map((e) => (
-                <tr key={e.exchangeId} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
-                  <td className="py-4 px-5 text-sm font-mono text-gray-700 dark:text-gray-300">
+                <tr key={e.exchangeId} className="hover:bg-gray-50 transition-colors">
+                  <td className="py-4 px-5 text-sm font-mono text-gray-700">
                     <button onClick={() => setSelected(e)} className="hover:underline">
                       #{e.exchangeId}
                     </button>
@@ -677,10 +677,10 @@ export default function ExchangesList() {
                         <img
                           src={e.productImage}
                           alt=""
-                          className="w-10 h-10 object-cover rounded border border-gray-200 dark:border-gray-700 shrink-0"
+                          className="w-10 h-10 object-cover rounded border border-gray-200 shrink-0"
                         />
                       )}
-                      <div className="text-sm text-gray-900 dark:text-white truncate">
+                      <div className="text-sm text-gray-900 truncate">
                         {e.productName ?? "—"}
                         {e.orderItemId != null && (
                           <span className="block text-[11px] text-gray-400">item #{e.orderItemId}</span>
@@ -688,18 +688,18 @@ export default function ExchangesList() {
                       </div>
                     </div>
                   </td>
-                  <td className="py-4 px-5 text-sm text-gray-700 dark:text-gray-300">
+                  <td className="py-4 px-5 text-sm text-gray-700">
                     <div className="truncate max-w-[180px]">{e.userName ?? (e.userId != null ? `#${e.userId}` : "—")}</div>
                     {e.userEmail && (
                       <div className="text-[11px] text-gray-400 truncate max-w-[180px]">{e.userEmail}</div>
                     )}
                   </td>
-                  <td className="py-4 px-5 text-sm text-gray-700 dark:text-gray-300">
+                  <td className="py-4 px-5 text-sm text-gray-700">
                     <span>{variantLabel(e.oldVariantSize, e.oldVariantColor, e.oldVariantId)}</span>
                     <span className="mx-1 text-gray-400">→</span>
                     <span>{variantLabel(e.newVariantSize, e.newVariantColor, e.newVariantId)}</span>
                   </td>
-                  <td className="py-4 px-5 text-sm text-gray-700 dark:text-gray-300 max-w-[200px] truncate">
+                  <td className="py-4 px-5 text-sm text-gray-700 max-w-[200px] truncate">
                     {e.reason ?? "—"}
                   </td>
                   <td className="py-4 px-5">
@@ -707,7 +707,7 @@ export default function ExchangesList() {
                       {e.exchangeStatus.replace(/_/g, " ")}
                     </span>
                   </td>
-                  <td className="py-4 px-5 text-xs text-gray-500 dark:text-gray-400">
+                  <td className="py-4 px-5 text-xs text-gray-500">
                     {formatDate(e.requestedAt)}
                   </td>
                   <td className="py-4 px-5">{renderActions(e)}</td>

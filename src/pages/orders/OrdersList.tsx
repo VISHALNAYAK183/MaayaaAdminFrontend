@@ -11,15 +11,19 @@ import TrackingUpdateModal from "../../components/TrackingUpdateModal";
 const TABS = ["PENDING", "REQUESTED", "PLACED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED", "REJECTED"];
 
 const TAB_LABEL: Record<string, string> = {
-  PENDING:          "All Pending",
+  PENDING:          "All pending",
   // Cancellations had no tab at all, so an order a customer cancelled
   // overnight was not under any of them — the only way to learn about it was
   // the customer writing in about their refund.
   CANCELLED:        "Cancelled",
   // REQUESTED now means one thing only: a cash order over the confirmation
   // threshold, waiting on a phone call. It is not a general approval queue.
-  REQUESTED:        "Awaiting Call",
-  OUT_FOR_DELIVERY: "Out for Delivery",
+  REQUESTED:        "Awaiting call",
+  PLACED:           "To ship",
+  SHIPPED:          "Shipped",
+  OUT_FOR_DELIVERY: "Out for delivery",
+  DELIVERED:        "Delivered",
+  REJECTED:         "Rejected",
 };
 
 const STATUS_STYLE: Record<string, string> = {
@@ -163,7 +167,7 @@ export default function OrdersList() {
     <button
       onClick={() => openModal(o.order_id, "cancel", o.status)}
       title="Cancel the order: stock back, coupon released, prepaid money refunded"
-      className="text-xs px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg font-medium transition-colors"
+      className="text-xs px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-full font-medium transition-colors shell-press"
     >
       Cancel
     </button>
@@ -180,7 +184,7 @@ export default function OrdersList() {
       return (
         <button
           onClick={() => navigate(`/orders/${o.order_id}`)}
-          className="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 px-1 transition-colors"
+          className="text-xs font-medium text-blue-600 hover:text-blue-800 px-1 transition-colors"
         >
           View &rarr;
         </button>
@@ -194,7 +198,7 @@ export default function OrdersList() {
             onClick={() => handleApprove(o.order_id)}
             disabled={busy}
             title="Customer confirmed the order on the call — release it for dispatch"
-            className="text-xs px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium disabled:opacity-50 transition-colors"
+            className="text-xs px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-medium disabled:opacity-50 transition-colors shell-press"
           >
             {busy ? "…" : "Confirmed"}
           </button>
@@ -202,13 +206,13 @@ export default function OrdersList() {
             onClick={() => handleReject(o.order_id)}
             disabled={busy}
             title="Could not confirm — cancels the order and puts the stock back"
-            className="text-xs px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg font-medium disabled:opacity-50 transition-colors"
+            className="text-xs px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-full font-medium disabled:opacity-50 transition-colors shell-press"
           >
             Not confirmed
           </button>
           <button
             onClick={() => navigate(`/orders/${o.order_id}`)}
-            className="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 px-1 transition-colors"
+            className="text-xs font-medium text-blue-600 hover:text-blue-800 px-1 transition-colors"
           >
             View →
           </button>
@@ -227,7 +231,7 @@ export default function OrdersList() {
                 : "Goes out by courier"
             }
             className={
-              "text-xs px-2.5 py-1.5 text-white rounded-lg font-medium transition-colors " +
+              "text-xs px-2.5 py-1.5 text-white rounded-full font-medium transition-colors shell-press " +
               (o.suggested_route === "LOCAL"
                 ? "bg-emerald-600 hover:bg-emerald-700"
                 : "bg-blue-600 hover:bg-blue-700")
@@ -238,7 +242,7 @@ export default function OrdersList() {
           {cancelButton(o)}
           <button
             onClick={() => navigate(`/orders/${o.order_id}`)}
-            className="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 px-1 transition-colors"
+            className="text-xs font-medium text-blue-600 hover:text-blue-800 px-1 transition-colors"
           >
             View →
           </button>
@@ -251,21 +255,21 @@ export default function OrdersList() {
         <div className="flex items-center gap-1.5 flex-wrap">
           <button
             onClick={() => openModal(o.order_id, "updateStatus", o.status, o.suggested_route)}
-            className="text-xs px-2.5 py-1.5 bg-gray-900 hover:bg-gray-700 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-lg font-medium transition-colors"
+            className="text-xs px-2.5 py-1.5 bg-gray-900 hover:bg-gray-700 text-white rounded-full font-medium transition-colors shell-press"
           >
             Update Status
           </button>
           <button
             onClick={() => openModal(o.order_id, "trackingUpdate", o.status)}
             title="Tell the customer where the parcel is, without moving it on"
-            className="text-xs px-2.5 py-1.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg font-medium transition-colors"
+            className="text-xs px-2.5 py-1.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-full font-medium transition-colors shell-press"
           >
             Add update
           </button>
           {cancelButton(o)}
           <button
             onClick={() => navigate(`/orders/${o.order_id}`)}
-            className="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 px-1 transition-colors"
+            className="text-xs font-medium text-blue-600 hover:text-blue-800 px-1 transition-colors"
           >
             View →
           </button>
@@ -276,7 +280,7 @@ export default function OrdersList() {
     return (
       <button
         onClick={() => navigate(`/orders/${o.order_id}`)}
-        className="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+        className="text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors"
       >
         View →
       </button>
@@ -292,11 +296,11 @@ export default function OrdersList() {
           onClick={closeModal}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl p-6 w-full max-w-sm mx-4"
+            className="shell-panel shadow-xl p-6 w-full max-w-sm mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-sm font-semibold text-gray-900">
                 {modal.type === "ship"
                   ? "Ship Order"
                   : modal.type === "cancel"
@@ -308,7 +312,7 @@ export default function OrdersList() {
               </h3>
               <button
                 onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -348,22 +352,22 @@ export default function OrdersList() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Order Management</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Confirm, ship and track</p>
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900">Order Management</h1>
+          <p className="text-sm text-gray-500 mt-1">Confirm, ship and track</p>
         </div>
       </div>
 
       {/* Tabs + Sort */}
       <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
-        <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit flex-wrap">
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-full w-fit flex-wrap">
           {TABS.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all shell-press ${
               tab === t
-                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
             }`}
           >
             {TAB_LABEL[t] ?? t.replace(/_/g, " ")}
@@ -373,7 +377,7 @@ export default function OrdersList() {
         <select
           value={sortKey}
           onChange={(e) => setSortKey(e.target.value as any)}
-          className="text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+          className="text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700"
         >
           <option value="default">Default</option>
           <option value="newest">Newest first</option>
@@ -383,30 +387,30 @@ export default function OrdersList() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+      <div className="shell-panel overflow-hidden">
         <div className="overflow-x-auto">
           {/* Scrolls sideways on a phone - these columns do not fit one,
             and a squashed table is worse than one you swipe. */}
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+            <tr className="bg-gray-50 border-b border-gray-200">
               {["Order ID", "Customer", "Amount", "Status", "Actions"].map((h) => (
                 <th
                   key={h}
-                  className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide py-3 px-5"
+                  className="text-left py-3 px-5 shell-label"
                 >
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+          <tbody className="divide-y divide-gray-100">
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
                   {Array.from({ length: 5 }).map((__, j) => (
                     <td key={j} className="py-4 px-5">
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      <div className="h-4 bg-gray-200 rounded animate-pulse" />
                     </td>
                   ))}
                 </tr>
@@ -414,27 +418,27 @@ export default function OrdersList() {
             ) : orders.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-16 text-center text-gray-400 text-sm">
-                  No {(TAB_LABEL[tab] ?? tab.replace(/_/g, " ")).toLowerCase()} orders
+                  No orders under “{TAB_LABEL[tab] ?? tab.replace(/_/g, " ")}”
                 </td>
               </tr>
             ) : (
               orders.map((o) => (
-                <tr key={o.order_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
-                  <td className="py-4 px-5 text-sm font-mono text-gray-700 dark:text-gray-300">
+                <tr key={o.order_id} className="hover:bg-gray-50 transition-colors">
+                  <td className="py-4 px-5 text-sm font-mono text-gray-700">
                     #{o.order_id}
                   </td>
-                  <td className="py-4 px-5 text-sm text-gray-700 dark:text-gray-300">
+                  <td className="py-4 px-5 text-sm text-gray-700">
                     <div>{o.customer_name ?? "—"}</div>
                     {o.customer_phone && (
                       <a
                         href={`tel:${o.customer_phone}`}
-                        className="text-xs font-mono text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                        className="text-xs font-mono text-blue-600 hover:text-blue-800"
                       >
                         {o.customer_phone}
                       </a>
                     )}
                   </td>
-                  <td className="py-4 px-5 text-sm font-semibold text-gray-900 dark:text-white">
+                  <td className="py-4 px-5 text-sm font-semibold text-gray-900">
                     ₹{Number(o.amount ?? 0).toLocaleString()}
                   </td>
                   <td className="py-4 px-5">
@@ -455,20 +459,20 @@ export default function OrdersList() {
         </div>
 
         {totalPages > 1 && (
-          <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+          <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
             <p className="text-xs text-gray-400">Page {page + 1} of {totalPages}</p>
             <div className="flex gap-1.5">
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium text-gray-600 dark:text-gray-300"
+                className="text-xs px-3 py-1.5 border border-gray-200 rounded-full bg-white disabled:opacity-40 hover:bg-gray-50 transition-colors font-medium text-gray-600 shell-press"
               >
                 ← Prev
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium text-gray-600 dark:text-gray-300"
+                className="text-xs px-3 py-1.5 border border-gray-200 rounded-full bg-white disabled:opacity-40 hover:bg-gray-50 transition-colors font-medium text-gray-600 shell-press"
               >
                 Next →
               </button>

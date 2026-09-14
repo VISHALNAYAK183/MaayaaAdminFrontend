@@ -64,7 +64,7 @@ export default function MfaVerify() {
         <button
           type="button"
           onClick={() => restart()}
-          className="mt-4 w-full text-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+          className="mt-4 w-full text-center text-sm text-gray-500 hover:text-gray-700"
         >
           Back to sign in
         </button>

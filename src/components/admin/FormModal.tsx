@@ -43,25 +43,26 @@ export const FormModal: React.FC<Props> = ({
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  if (!open) return null;
-
+  // Before the early return: a hook must run on every render, open or not.
   const readOnly = useReadOnly();
+
+  if (!open) return null;
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      className="shell-scrim fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className={`bg-white rounded-2xl shadow-xl w-full ${widthCls[maxWidth]} flex flex-col max-h-[90vh]`}
+        className={`shell-pop shell-palette flex max-h-[90vh] w-full flex-col ${widthCls[maxWidth]}`}
       >
-        <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between rounded-t-2xl shrink-0">
-          <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-6 py-4">
+          <h2 className="text-[17.5px] font-semibold tracking-tight text-gray-900">{title}</h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 text-2xl leading-none"
+            className="shell-press grid size-8 place-items-center rounded-full text-2xl leading-none text-gray-500 hover:bg-gray-100 hover:text-gray-900"
             aria-label="Close"
           >
             &times;
@@ -71,11 +72,11 @@ export const FormModal: React.FC<Props> = ({
         <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0">
           <div className="p-6 space-y-6 flex-1 overflow-y-auto">{children}</div>
 
-          <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4 bg-white rounded-b-2xl shrink-0">
+          <div className="flex shrink-0 justify-end gap-3 border-t border-gray-200 px-6 py-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors"
+              className="px-5 py-2 rounded-full border border-slate-200 bg-white text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors shell-press"
             >
               Cancel
             </button>
@@ -83,7 +84,7 @@ export const FormModal: React.FC<Props> = ({
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center px-5 py-2 rounded-lg bg-slate-900 hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold shadow-md transition-all"
+              className="flex items-center px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors shell-press"
             >
               {loading ? (
                 <>

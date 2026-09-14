@@ -123,8 +123,8 @@ export const ItemForm = ({
         <form onSubmit={onSubmit} className="space-y-6">
 
           {/* ── IMAGE SECTION ── */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-3">
+          <div className="shell-panel p-6">
+            <label className="block mb-3 shell-label">
               Image {isHero && <span className="text-red-400">*</span>}
             </label>
 
@@ -206,8 +206,8 @@ export const ItemForm = ({
           </div>
 
           {/* ── CONTENT FIELDS ── */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Content</label>
+          <div className="shell-panel p-6 space-y-4">
+            <label className="block shell-label">Content</label>
             {FIELDS.map((field) => (
               <div key={field.name}>
                 <label className="text-xs text-gray-500 block mb-1">{field.label}</label>
@@ -223,8 +223,8 @@ export const ItemForm = ({
           </div>
 
           {/* ── REFERENCES & POSITION ── */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-4">References & Position</label>
+          <div className="shell-panel p-6">
+            <label className="block mb-4 shell-label">References & Position</label>
             <div className="grid grid-cols-2 gap-4">
               {ID_FIELDS.map((field) => (
                 <div key={field.name}>
@@ -261,7 +261,7 @@ export const ItemForm = ({
               {saving ? "Saving..." : submitLabel}
             </button>
             <button type="button" onClick={onCancel}
-              className="px-8 py-3 border border-gray-200 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
+              className="px-8 py-3 border border-gray-200 rounded-full text-sm font-semibold hover:bg-gray-50 transition-colors shell-press"
             >
               Cancel
             </button>

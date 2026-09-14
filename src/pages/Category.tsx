@@ -203,10 +203,10 @@ const CategoryManagement: React.FC = () => {
         <table className="w-full text-sm">
           <thead className="bg-slate-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Description</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Actions</th>
+              <th className="px-6 py-3 text-left shell-label">ID</th>
+              <th className="px-6 py-3 text-left shell-label">Name</th>
+              <th className="px-6 py-3 text-left shell-label">Description</th>
+              <th className="px-6 py-3 text-left shell-label">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -260,10 +260,10 @@ const CategoryManagement: React.FC = () => {
               </div>
               <div className="flex items-center gap-1">
                 <button type="button" onClick={() => setPage(Math.max(1, safePage - 1))} disabled={safePage === 1}
-                  className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">‹</button>
+                  className="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors shell-press">‹</button>
                 <span className="text-xs text-slate-600 px-2 font-semibold">Page {safePage} of {totalPages}</span>
                 <button type="button" onClick={() => setPage(Math.min(totalPages, safePage + 1))} disabled={safePage === totalPages}
-                  className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">›</button>
+                  className="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors shell-press">›</button>
               </div>
             </div>
           </div>

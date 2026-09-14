@@ -182,9 +182,9 @@ const SizeManagement: React.FC = () => {
         <table className="w-full text-sm">
           <thead className="bg-slate-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Label</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Actions</th>
+              <th className="px-6 py-3 text-left shell-label">ID</th>
+              <th className="px-6 py-3 text-left shell-label">Label</th>
+              <th className="px-6 py-3 text-left shell-label">Actions</th>
             </tr>
           </thead>
           <tbody>

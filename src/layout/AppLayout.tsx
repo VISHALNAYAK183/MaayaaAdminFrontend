@@ -3,6 +3,7 @@ import { InboxProvider } from "../context/InboxContext";
 import { useReadOnly } from "../hooks/useReadOnly";
 import { pageForPath } from "../config/sections";
 import TopBar from "./TopBar";
+import PageErrorBoundary from "./PageErrorBoundary";
 import { ChevronLeftIcon } from "./shellIcons";
 
 const AppLayout: React.FC = () => {
@@ -20,7 +21,9 @@ const AppLayout: React.FC = () => {
         )}
         <main className="mx-auto w-full max-w-[1440px] px-4 pb-16 pt-4 md:px-6 md:pt-5">
           {pathname !== "/" && <Wayfinding pathname={pathname} />}
-          <Outlet />
+          <PageErrorBoundary key={pathname}>
+            <Outlet />
+          </PageErrorBoundary>
         </main>
       </div>
     </InboxProvider>

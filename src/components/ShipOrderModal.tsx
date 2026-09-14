@@ -9,12 +9,12 @@ interface Props {
 }
 
 const inputClass =
-  "w-full text-sm px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg " +
-  "bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none " +
+  "w-full text-sm px-3 py-2 border border-gray-200 rounded-lg " +
+  "bg-white text-gray-900 focus:outline-none " +
   "focus:ring-2 focus:ring-blue-500 transition-colors";
 
 const labelClass =
-  "block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1";
+  "block text-xs font-medium text-gray-700 mb-1";
 
 /** "Fri, 5 Sep" — every address this ships to is Indian. */
 const formatDate = (value: string | null) => {
@@ -150,7 +150,7 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
   }, [route, form, courierId, parcel, orderId, onSuccess]);
 
   const errorBox = error && (
-    <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
+    <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
       {error}
     </p>
   );
@@ -159,7 +159,7 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
     return (
       <div className="space-y-3">
         {errorBox || (
-          <p className="text-sm text-gray-500 dark:text-gray-400">Checking the address…</p>
+          <p className="text-sm text-gray-500">Checking the address…</p>
         )}
       </div>
     );
@@ -174,22 +174,22 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+      <p className="mb-1 shell-label">
         {route === "LOCAL" ? "Self Delivery" : "Shipping Details"}
       </p>
 
       {route === "LOCAL" ? (
         <>
-          <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-3 space-y-1">
-            <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 space-y-1">
+            <p className="text-sm font-semibold text-emerald-900">
               We&rsquo;re delivering this one
             </p>
-            <p className="text-xs text-emerald-800 dark:text-emerald-300">
+            <p className="text-xs text-emerald-800">
               {destination || "Local zone"} is in the local zone, so it goes out as{" "}
               {options.localCarrier} — no courier, no label, no tracking number.
             </p>
             {formatDate(options.localEta) && (
-              <p className="text-xs text-emerald-800 dark:text-emerald-300">
+              <p className="text-xs text-emerald-800">
                 The customer will be told it arrives {formatDate(options.localEta)}.
               </p>
             )}
@@ -208,7 +208,7 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
           <button
             type="button"
             onClick={() => { setRoute("MANUAL"); setError(""); }}
-            className="w-full text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 underline underline-offset-2"
+            className="w-full text-xs text-gray-500 hover:text-gray-800 underline underline-offset-2"
           >
             Send this one by courier instead
           </button>
@@ -216,7 +216,7 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
       ) : route === "SHIPROCKET" ? (
         <>
           {destination && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500">
               Going to {destination}
               {options.cod ? " · cash on delivery" : ""}
             </p>
@@ -235,7 +235,7 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
               placeholder="0.350"
               className={inputClass}
             />
-            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-[11px] text-gray-500 mt-1">
               {options.estimatedParcel?.fromCatalogue
                 ? "Pre-filled from the products. Correct it from the scale — the courier reweighs and bills the difference."
                 : "Weigh it bagged and tagged. The courier reweighs at their hub and bills the difference."}
@@ -272,14 +272,14 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
           </div>
 
           {unmeasured.length > 0 && (
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+            <p className="text-[11px] text-gray-500">
               Nothing saved against {unmeasured.join(", ")}, so there was nothing to pre-fill.
             </p>
           )}
 
           {options.courierLookupFailed ? (
-            <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-3 py-3">
-              <p className="text-xs text-amber-800 dark:text-amber-300">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3">
+              <p className="text-xs text-amber-800">
                 {options.courierLookupFailed}
               </p>
             </div>
@@ -303,7 +303,7 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
                   </option>
                 ))}
               </select>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-[11px] text-gray-500 mt-1">
                 Cheapest that will carry this parcel is picked for you.
                 {options.cod ? " Only couriers that collect cash are listed." : ""}
               </p>
@@ -315,7 +315,7 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
           <button
             onClick={submit}
             disabled={loading || courierBlocked}
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
+            className="w-full py-2.5 bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
           >
             {loading ? "Booking…" : "Ship — book courier"}
           </button>
@@ -323,7 +323,7 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
           <button
             type="button"
             onClick={() => { setRoute("MANUAL"); setError(""); }}
-            className="w-full text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 underline underline-offset-2"
+            className="w-full text-xs text-gray-500 hover:text-gray-800 underline underline-offset-2"
           >
             Enter a tracking number by hand instead
           </button>
@@ -331,7 +331,7 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
       ) : (
         <>
           {destination && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500">
               Going to {destination}
               {suggestedLocal ? " — inside the local zone." : "."}
             </p>
@@ -389,7 +389,7 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
           <button
             onClick={submit}
             disabled={loading}
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
+            className="w-full py-2.5 bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
           >
             {loading ? "Shipping…" : "Mark as Shipped"}
           </button>
@@ -398,7 +398,7 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
             <button
               type="button"
               onClick={() => { setRoute("LOCAL"); setError(""); }}
-              className="w-full text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 underline underline-offset-2"
+              className="w-full text-xs text-gray-500 hover:text-gray-800 underline underline-offset-2"
             >
               Deliver it ourselves after all
             </button>

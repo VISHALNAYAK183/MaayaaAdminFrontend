@@ -160,11 +160,11 @@ export default function StockManagement() {
     <div>
       <div className="mb-6 flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Stock Management</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900">Stock Management</h1>
+          <p className="text-sm text-gray-500 mt-1">
             {summary.total} variant{summary.total === 1 ? "" : "s"} ·
-            <span className="text-amber-600 dark:text-amber-400 ml-1">{summary.low} low</span> ·
-            <span className="text-red-600 dark:text-red-400 ml-1">{summary.out} out</span>
+            <span className="text-amber-600 ml-1">{summary.low} low</span> ·
+            <span className="text-red-600 ml-1">{summary.out} out</span>
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -173,17 +173,17 @@ export default function StockManagement() {
             placeholder="Search product…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            className="px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
           />
-          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+          <div className="flex bg-gray-100 p-1 rounded-full">
             {(["ALL", "LOW", "OUT"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors shell-press ${
                   filter === f
-                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                    : "text-gray-500 dark:text-gray-400"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500"
                 }`}
               >
                 {f === "ALL" ? "All" : f === "LOW" ? "Low stock" : "Out of stock"}
@@ -193,30 +193,30 @@ export default function StockManagement() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+      <div className="shell-panel overflow-hidden">
         <div className="overflow-x-auto">
           {/* Scrolls sideways on a phone - these columns do not fit one,
             and a squashed table is worse than one you swipe. */}
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+            <tr className="bg-gray-50 border-b border-gray-200">
               {["Product", "Size", "Color", "Stock", "", "Save"].map((h, i) => (
                 <th
                   key={i}
-                  className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide py-3 px-5"
+                  className="text-left py-3 px-5 shell-label"
                 >
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+          <tbody className="divide-y divide-gray-100">
             {loading ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <tr key={i}>
                   {Array.from({ length: 6 }).map((__, j) => (
                     <td key={j} className="py-4 px-5">
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      <div className="h-4 bg-gray-200 rounded animate-pulse" />
                     </td>
                   ))}
                 </tr>
@@ -224,7 +224,7 @@ export default function StockManagement() {
             ) : loadFailed ? (
               <tr>
                 <td colSpan={6} className="py-16 text-center text-sm">
-                  <p className="font-medium text-red-600 dark:text-red-400">Stock could not be loaded.</p>
+                  <p className="font-medium text-red-600">Stock could not be loaded.</p>
                   <button
                     onClick={() => loadStock()}
                     className="mt-2 text-xs font-medium text-gray-500 underline hover:text-gray-700"
@@ -248,16 +248,16 @@ export default function StockManagement() {
                 return (
                   <tr
                     key={row.variantId}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors"
+                    className="hover:bg-gray-50 transition-colors"
                   >
-                    <td className="py-3 px-5 text-sm text-gray-900 dark:text-white truncate max-w-[260px]">
+                    <td className="py-3 px-5 text-sm text-gray-900 truncate max-w-[260px]">
                       {row.productName}
                       <span className="block text-[11px] text-gray-400">#{row.productId} · variant {row.variantId}</span>
                     </td>
-                    <td className="py-3 px-5 text-sm text-gray-700 dark:text-gray-300">
+                    <td className="py-3 px-5 text-sm text-gray-700">
                       {row.sizeId != null ? sizes[row.sizeId] ?? `#${row.sizeId}` : "—"}
                     </td>
-                    <td className="py-3 px-5 text-sm text-gray-700 dark:text-gray-300">
+                    <td className="py-3 px-5 text-sm text-gray-700">
                       {row.colorId != null ? colors[row.colorId] ?? `#${row.colorId}` : "—"}
                     </td>
                     <td className="py-3 px-5">
@@ -267,7 +267,7 @@ export default function StockManagement() {
                         step={1}
                         value={draft ?? row.quantity}
                         onChange={(e) => handleDraftChange(row.variantId, e.target.value)}
-                        className="w-24 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                        className="w-24 px-2 py-1.5 text-sm rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                       />
                     </td>
                     <td className="py-3 px-5">
@@ -288,7 +288,7 @@ export default function StockManagement() {
                       <button
                         onClick={() => handleSave(row)}
                         disabled={!dirty || isBusy}
-                        className="text-xs px-3 py-1.5 rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white transition-colors"
+                        className="text-xs px-3 py-1.5 rounded-full font-medium bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white transition-colors shell-press"
                       >
                         {isBusy ? "…" : "Save"}
                       </button>

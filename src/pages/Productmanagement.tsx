@@ -194,7 +194,7 @@ const BarcodePreview: React.FC<{ value: string; id: string }> = ({ value, id }) 
     <div className="flex items-center gap-3 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl mt-2">
       <canvas id={id} className="h-10" />
       <div className="flex flex-col gap-0.5 min-w-0">
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">CODE128</span>
+        <span className="shell-label">CODE128</span>
         <span className="text-xs font-mono text-slate-600 truncate">{value}</span>
       </div>
     </div>
@@ -362,7 +362,7 @@ const VariantImages: React.FC<{
     <div className="col-span-2 mt-1">
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
+        <span className="flex items-center gap-1.5 shell-label">
           <ImageIcon />
           Variant Images ({filledCount}/5)
         </span>
@@ -370,7 +370,7 @@ const VariantImages: React.FC<{
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-dashed border-slate-300 text-xs text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-dashed border-slate-300 text-xs text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all shell-press"
           >
             <PlusIcon /> Add image
           </button>
@@ -431,7 +431,7 @@ const VariantImages: React.FC<{
                 onDragOver={(e) => onRowDragOver(e, imgIdx)}
                 onDrop={(e) => onRowDrop(e, imgIdx)}
                 onDragEnd={onRowDragEnd}
-                className={`flex items-center gap-2.5 px-3 py-2 bg-white border rounded-xl shadow-sm transition-all
+                className={`shell-panel flex items-center gap-2.5 px-3 py-2 transition-all
                   ${isDragging ? "opacity-40" : ""}
                   ${isDragOver ? "border-blue-400 ring-2 ring-blue-100" : "border-slate-200"}
                 `}
@@ -646,19 +646,19 @@ const ProductDetailPanel: React.FC<{
             <div className="px-6 py-5 space-y-5">
               <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <div className="text-center flex-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Base Price</p>
+                  <p className="mb-1 shell-label">Base Price</p>
                   <p className="text-sm font-bold text-slate-400 line-through">₹{product.basePrice}</p>
                 </div>
                 <div className="w-px h-10 bg-slate-200" />
                 <div className="text-center flex-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Sale Price</p>
+                  <p className="mb-1 shell-label">Sale Price</p>
                   <p className="text-base font-extrabold text-slate-800">₹{product.discountedPrice}</p>
                 </div>
                 {product.basePrice > product.discountedPrice && (
                   <>
                     <div className="w-px h-10 bg-slate-200" />
                     <div className="text-center flex-1">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Discount</p>
+                      <p className="mb-1 shell-label">Discount</p>
                       <span className="text-sm font-bold text-green-600">
                         {Math.round(((product.basePrice - product.discountedPrice) / product.basePrice) * 100)}% off
                       </span>
@@ -668,7 +668,7 @@ const ProductDetailPanel: React.FC<{
               </div>
 
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">
+                <p className="mb-3 shell-label">
                   Variants ({(product.variants ?? []).length})
                 </p>
                 {(product.variants ?? []).length === 0 ? (
@@ -741,7 +741,7 @@ const ProductDetailPanel: React.FC<{
                     <div className="rounded-xl border border-slate-200 overflow-hidden">
                       <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
                         <span className="text-base">✨</span>
-                        <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Story</span>
+                        <span className="shell-label">Story</span>
                       </div>
                       <div className="px-4 py-4">
                         <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{product.story}</p>
@@ -752,7 +752,7 @@ const ProductDetailPanel: React.FC<{
                     <div className="rounded-xl border border-slate-200 overflow-hidden">
                       <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
                         <span className="text-base">📋</span>
-                        <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Details</span>
+                        <span className="shell-label">Details</span>
                       </div>
                       <div className="px-4 py-4">
                         <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{product.details}</p>
@@ -763,7 +763,7 @@ const ProductDetailPanel: React.FC<{
                     <div className="rounded-xl border border-slate-200 overflow-hidden">
                       <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
                         <span className="text-base">🧵</span>
-                        <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Fabric Details</span>
+                        <span className="shell-label">Fabric Details</span>
                       </div>
                       <div className="px-4 py-4">
                         <div className="flex flex-wrap gap-2">
@@ -843,7 +843,7 @@ const ProductDetailPanel: React.FC<{
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">
+                  <p className="mb-3 shell-label">
                     {product.questionsAnswers.length} Question{product.questionsAnswers.length !== 1 ? "s" : ""}
                   </p>
                   {product.questionsAnswers.map((qa, i) => (
@@ -1577,7 +1577,7 @@ const ProductManagement: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleStepTabClick(step.id)}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap shell-press
                         ${formStep === step.id
                           ? "bg-slate-900 text-white shadow-sm"
                           : formStep > step.id
@@ -1708,7 +1708,7 @@ const ProductManagement: React.FC = () => {
                       difference, so a measured parcel beats a stored guess.
                       Filling these in just saves typing them later. */}
                   <div className="col-span-2">
-                    <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
+                    <div className="h-px bg-gray-100 my-1" />
                   </div>
                   <Fld label="Packed weight (kg)" hint="Optional — pre-fills the ship dialog. e.g. 0.350 for a 350 g parcel">
                     <input
@@ -1793,7 +1793,7 @@ const ProductManagement: React.FC = () => {
                     onClick={generateAllBarcodes}
                     disabled={!canGenerateAnyBarcode}
                     title={canGenerateAnyBarcode ? "Generate barcodes for all variants with size + colour set" : "Set product name and at least one variant's size + colour first"}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors shrink-0 mb-4"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors shrink-0 mb-4 shell-press"
                   >
                     <BarcodeIcon /> Generate All Barcodes
                   </button>
@@ -1810,7 +1810,7 @@ const ProductManagement: React.FC = () => {
                       <div key={group.key} className="border border-slate-200 rounded-xl overflow-hidden">
                         {/* Colour group header */}
                         <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
-                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                          <span className="shell-label">
                             {colorName} · {group.indices.length} size{group.indices.length > 1 ? "s" : ""}
                           </span>
                         </div>
@@ -1831,7 +1831,7 @@ const ProductManagement: React.FC = () => {
                             return (
                               <div key={i} className="p-4">
                                 <div className="flex items-center justify-between mb-3">
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Size row #{i + 1}</span>
+                                  <span className="shell-label">Size row #{i + 1}</span>
                                   {form.variants.length > 1 && (
                                     <button type="button" onClick={() => removeVariant(i)}
                                       className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition-colors">
@@ -1883,7 +1883,7 @@ const ProductManagement: React.FC = () => {
                                         onClick={() => generateBarcode(i)}
                                         disabled={!canGenerateBarcode(variant)}
                                         title={canGenerateBarcode(variant) ? "Auto-generate barcode" : "Set product name, size and colour first"}
-                                        className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors whitespace-nowrap"
+                                        className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-full bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors whitespace-nowrap shell-press"
                                       >
                                         <BarcodeIcon />⚡
                                       </button>
@@ -1909,7 +1909,7 @@ const ProductManagement: React.FC = () => {
                   })}
 
                   <button type="button" onClick={addVariant}
-                    className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-slate-300 rounded-xl text-sm text-slate-500 hover:border-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all">
+                    className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-slate-300 rounded-full text-sm text-slate-500 hover:border-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all shell-press">
                     <PlusIcon /> Add variant
                   </button>
                 </div>
@@ -1944,7 +1944,7 @@ const ProductManagement: React.FC = () => {
                     </div>
                   ))}
                   <button type="button" onClick={addQA}
-                    className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-slate-300 rounded-xl text-sm text-slate-500 hover:border-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all">
+                    className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-slate-300 rounded-full text-sm text-slate-500 hover:border-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all shell-press">
                     <PlusIcon /> Add question & answer
                   </button>
                 </div>
@@ -1964,7 +1964,7 @@ const ProductManagement: React.FC = () => {
                   type="button"
                   onClick={() => setFormStep((s) => Math.max(0, s - 1))}
                   disabled={formStep === 0}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors shell-press"
                 >
                   ← Previous
                 </button>
@@ -1976,7 +1976,7 @@ const ProductManagement: React.FC = () => {
                   onClick={handleNext}
                   disabled={isLastStep || stepError !== null}
                   title={stepError ?? undefined}
-                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-semibold text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-sm font-semibold text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors shell-press"
                 >
                   Next →
                 </button>
@@ -2001,7 +2001,7 @@ const ProductManagement: React.FC = () => {
       >
           {/* ── Filter Row ── */}
           <div className="flex items-center gap-2 px-6 py-3 border-b border-slate-100 bg-slate-50/50 flex-wrap">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide mr-1">Filters:</span>
+            <span className="mr-1 shell-label">Filters:</span>
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(Number(e.target.value))}
@@ -2046,7 +2046,7 @@ const ProductManagement: React.FC = () => {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="ml-auto flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors"
+                className="ml-auto flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors shell-press"
               >
                 <XIcon /> Clear filters
               </button>
@@ -2063,14 +2063,14 @@ const ProductManagement: React.FC = () => {
                 <button
                   type="button"
                   onClick={clearSelection}
-                  className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                  className="px-3 py-1.5 rounded-full border border-slate-300 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors shell-press"
                 >
                   Clear
                 </button>
                 <button
                   type="button"
                   onClick={() => setPendingBulkDelete(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors shell-press"
                 >
                   <TrashIcon />
                   Delete {selectedIds.size}
@@ -2108,15 +2108,15 @@ const ProductManagement: React.FC = () => {
                 <th className="px-4 py-3 text-left">
                   <SortHeader label="Product" col="name" active={sortBy === "name"} dir={sortDir} onClick={() => toggleSort("name")} />
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Tags</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Gender</th>
+                <th className="px-4 py-3 text-left shell-label">Tags</th>
+                <th className="px-4 py-3 text-left shell-label">Gender</th>
                 <th className="px-4 py-3 text-left">
                   <SortHeader label="Price" col="price" active={sortBy === "price"} dir={sortDir} onClick={() => toggleSort("price")} />
                 </th>
                 <th className="px-4 py-3 text-left">
                   <SortHeader label="Stock" col="stock" active={sortBy === "stock"} dir={sortDir} onClick={() => toggleSort("stock")} />
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wide">Actions</th>
+                <th className="px-4 py-3 text-right shell-label">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -2139,7 +2139,7 @@ const ProductManagement: React.FC = () => {
                         <button
                           type="button"
                           onClick={clearFilters}
-                          className="mt-2 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-700 text-white text-xs font-bold transition-colors"
+                          className="mt-2 px-4 py-1.5 rounded-full bg-slate-900 hover:bg-slate-700 text-white text-xs font-bold transition-colors shell-press"
                         >
                           Clear filters
                         </button>
@@ -2243,7 +2243,7 @@ const ProductManagement: React.FC = () => {
                             onClick={() => setDetailProduct(isActive ? null : product)}
                             className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors
                               ${isActive
-                                ? "bg-blue-600 text-white"
+                                ? "bg-gray-900 text-white"
                                 : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"}`}
                             title="View details"
                           >
@@ -2318,7 +2318,7 @@ const ProductManagement: React.FC = () => {
                     type="button"
                     onClick={() => setPage(Math.max(1, safePage - 1))}
                     disabled={safePage === 1}
-                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors shell-press"
                   >
                     ‹
                   </button>
@@ -2329,7 +2329,7 @@ const ProductManagement: React.FC = () => {
                     type="button"
                     onClick={() => setPage(Math.min(totalPages, safePage + 1))}
                     disabled={safePage === totalPages}
-                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors shell-press"
                   >
                     ›
                   </button>

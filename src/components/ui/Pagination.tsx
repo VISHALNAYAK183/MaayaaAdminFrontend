@@ -24,7 +24,7 @@ export default function Pagination({ page, totalPages, onChange, className }: Pa
   return (
     <div
       className={
-        "px-5 py-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between " +
+        "px-5 py-3 border-t border-gray-100 flex items-center justify-between " +
         (className ?? "")
       }
     >
@@ -35,14 +35,14 @@ export default function Pagination({ page, totalPages, onChange, className }: Pa
         <button
           onClick={() => onChange(Math.max(0, page - 1))}
           disabled={prevDisabled}
-          className="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium text-gray-600 dark:text-gray-300"
+          className="text-xs px-3 py-1.5 border border-gray-200 rounded-full bg-white disabled:opacity-40 hover:bg-gray-50 transition-colors font-medium text-gray-600 shell-press"
         >
           ← Prev
         </button>
         <button
           onClick={() => onChange(Math.min(totalPages - 1, page + 1))}
           disabled={nextDisabled}
-          className="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium text-gray-600 dark:text-gray-300"
+          className="text-xs px-3 py-1.5 border border-gray-200 rounded-full bg-white disabled:opacity-40 hover:bg-gray-50 transition-colors font-medium text-gray-600 shell-press"
         >
           Next →
         </button>

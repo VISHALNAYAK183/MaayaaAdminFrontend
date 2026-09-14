@@ -19,7 +19,7 @@ export const RowActions: React.FC<Props> = ({ onEdit, onDelete, extra }) => {
     {!readOnly && onEdit && (
       <button
         onClick={onEdit}
-        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors shell-press"
         title="Edit"
       >
         <EditIcon />
@@ -28,7 +28,7 @@ export const RowActions: React.FC<Props> = ({ onEdit, onDelete, extra }) => {
     {!readOnly && onDelete && (
       <button
         onClick={onDelete}
-        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+        className="p-1.5 text-red-500 hover:bg-red-50 rounded-full transition-colors shell-press"
         title="Delete"
       >
         <TrashIcon />

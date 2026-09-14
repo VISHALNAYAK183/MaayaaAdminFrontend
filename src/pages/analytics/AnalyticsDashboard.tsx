@@ -86,7 +86,7 @@ export default function AnalyticsDashboardPage() {
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
-            className="h-24 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"
+            className="h-24 bg-gray-100 rounded-xl animate-pulse"
           />
         ))}
       </div>
@@ -95,7 +95,7 @@ export default function AnalyticsDashboardPage() {
 
   if (error || !overall) {
     return (
-      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-sm text-red-700 dark:text-red-400">
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-sm text-red-700">
         {error || "No analytics data."}
       </div>
     );
@@ -164,15 +164,15 @@ export default function AnalyticsDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Analytics</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900">Analytics</h1>
+        <p className="text-sm text-gray-500 mt-1">
           Profit and sales
         </p>
       </div>
 
       {/* Overall KPIs */}
       <section>
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wider">
+        <h2 className="shell-label mb-3">
           Overall
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -185,18 +185,18 @@ export default function AnalyticsDashboardPage() {
       {/* Range KPIs */}
       <section>
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+          <h2 className="shell-label">
             By Period
           </h2>
-          <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+          <div className="flex gap-1 bg-gray-100 p-1 rounded-full">
             {RANGES.map((r) => (
               <button
                 key={r.value}
                 onClick={() => setRange(r.value)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all shell-press ${
                   range === r.value
-                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 {r.label}
@@ -207,7 +207,7 @@ export default function AnalyticsDashboardPage() {
         {rangeLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-24 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+              <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse" />
             ))}
           </div>
         ) : rangeData ? (
@@ -225,44 +225,44 @@ export default function AnalyticsDashboardPage() {
                 was never counted at all. Putting it beside the numbers rather
                 than inside them is what makes that answerable. */}
             {rangeData.freightCharged != null && (
-              <div className="mt-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+              <div className="shell-panel mt-4 p-4">
                 <div className="flex items-baseline justify-between flex-wrap gap-2">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                  <h3 className="text-sm font-semibold text-gray-900">
                     What shipping cost
                   </h3>
-                  <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                  <span className="text-[11px] text-gray-500">
                     Not included in Net Profit above
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
                   <div>
-                    <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    <p className="shell-label">
                       Courier charges
                     </p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    <p className="text-lg font-bold text-gray-900">
                       {currency(rangeData.freightCharged)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    <p className="shell-label">
                       Spent on returned parcels
                     </p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    <p className="text-lg font-bold text-gray-900">
                       {currency(rangeData.freightOnReturnedParcels ?? 0)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    <p className="shell-label">
                       Parcels returned
                     </p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    <p className="text-lg font-bold text-gray-900">
                       {number(rangeData.returnedToOriginCount ?? 0)}
                     </p>
                   </div>
                 </div>
 
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-3 max-w-2xl">
+                <p className="text-[11px] text-gray-500 mt-3 max-w-2xl">
                   Compare this with your Shiprocket invoices and with what product
                   cost already allows for shipping. If product cost does not include
                   it, this is missing from Net Profit and should be subtracted.
@@ -271,13 +271,13 @@ export default function AnalyticsDashboardPage() {
             )}
             {Array.isArray(rangeData.expenseBreakdown) && rangeData.expenseBreakdown.length > 0 && (
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                <span className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <span className="shell-label">
                   Expense breakdown:
                 </span>
                 {rangeData.expenseBreakdown.map((b) => (
                   <span
                     key={b.category}
-                    className="text-xs px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600"
+                    className="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200"
                   >
                     <span className="font-semibold mr-1">{b.category}:</span>
                     {currency(b.amount)}
@@ -288,7 +288,7 @@ export default function AnalyticsDashboardPage() {
           </>
         ) : rangeFailed ? (
           <p className="text-sm">
-            <span className="text-red-600 dark:text-red-400">These figures could not be loaded.</span>{" "}
+            <span className="text-red-600">These figures could not be loaded.</span>{" "}
             <button onClick={() => setRangeAttempt((n) => n + 1)} className="text-gray-500 underline hover:text-gray-700">
               Try again
             </button>
@@ -299,13 +299,13 @@ export default function AnalyticsDashboardPage() {
       </section>
 
       {/* Top selling products */}
-      <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Top Selling Products</h2>
+      <section className="shell-panel overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h2 className="text-[17.5px] font-semibold tracking-tight text-gray-900">Top Selling Products</h2>
           <p className="text-xs text-gray-500 mt-0.5">Best sellers, ranked by units sold</p>
         </div>
         {topFailed ? (
-          <p className="px-6 py-12 text-sm text-center text-red-600 dark:text-red-400">
+          <p className="px-6 py-12 text-sm text-center text-red-600">
             Top selling products could not be loaded. Reload the page to try again.
           </p>
         ) : topProducts.length === 0 ? (
@@ -316,31 +316,31 @@ export default function AnalyticsDashboardPage() {
               and a squashed table is worse than one you swipe. */}
           <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+              <tr className="bg-gray-50 border-b border-gray-200">
                 {["#", "Product", "Units Sold", "Revenue", "Avg Selling Price", "Stock Left"].map((h) => (
                   <th
                     key={h}
-                    className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide py-3 px-5"
+                    className="text-left py-3 px-5 shell-label"
                   >
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-100">
               {topProducts.map((p, idx) => (
-                <tr key={p.productId} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
+                <tr key={p.productId} className="hover:bg-gray-50 transition-colors">
                   <td className="py-3 px-5 text-sm font-mono text-gray-500">{idx + 1}</td>
-                  <td className="py-3 px-5 text-sm font-medium text-gray-900 dark:text-white">
+                  <td className="py-3 px-5 text-sm font-medium text-gray-900">
                     {p.productName}
                   </td>
-                  <td className="py-3 px-5 text-sm font-semibold text-gray-900 dark:text-white">
+                  <td className="py-3 px-5 text-sm font-semibold text-gray-900">
                     {number(p.unitsSold)}
                   </td>
-                  <td className="py-3 px-5 text-sm text-gray-900 dark:text-white">
+                  <td className="py-3 px-5 text-sm text-gray-900">
                     {currency(p.revenue)}
                   </td>
-                  <td className="py-3 px-5 text-sm text-gray-900 dark:text-white">
+                  <td className="py-3 px-5 text-sm text-gray-900">
                     {currency(p.averageSellingPrice)}
                   </td>
                   <td className="py-3 px-5 text-sm">
@@ -367,14 +367,14 @@ export default function AnalyticsDashboardPage() {
       {/* Most ordered raw. Hidden when there is nothing to show - but not when
         it failed to load, which used to make the whole section vanish. */}
       {mostOrderedFailed && (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+        <p className="rounded-xl border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-700">
           Most ordered products could not be loaded. Reload the page to try again.
         </p>
       )}
       {mostOrdered.length > 0 && (
-        <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Most Ordered Products</h2>
+        <section className="shell-panel overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className="text-[17.5px] font-semibold tracking-tight text-gray-900">Most Ordered Products</h2>
             <p className="text-xs text-gray-500 mt-0.5">Raw order line count</p>
           </div>
           <div className="overflow-x-auto">
@@ -382,25 +382,25 @@ export default function AnalyticsDashboardPage() {
               and a squashed table is worse than one you swipe. */}
           <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+              <tr className="bg-gray-50 border-b border-gray-200">
                 {["#", "Product", "Total Ordered"].map((h) => (
                   <th
                     key={h}
-                    className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide py-3 px-5"
+                    className="text-left py-3 px-5 shell-label"
                   >
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-100">
               {mostOrdered.map((p, idx) => (
-                <tr key={p.product_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
+                <tr key={p.product_id} className="hover:bg-gray-50 transition-colors">
                   <td className="py-3 px-5 text-sm font-mono text-gray-500">{idx + 1}</td>
-                  <td className="py-3 px-5 text-sm font-medium text-gray-900 dark:text-white">
+                  <td className="py-3 px-5 text-sm font-medium text-gray-900">
                     {p.product_name}
                   </td>
-                  <td className="py-3 px-5 text-sm font-semibold text-gray-900 dark:text-white">
+                  <td className="py-3 px-5 text-sm font-semibold text-gray-900">
                     {number(p.total_ordered)}
                   </td>
                 </tr>
@@ -422,17 +422,17 @@ interface CardProps {
 
 function Card({ label, value, tone }: CardProps) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+    <div className="shell-panel p-5">
+      <p className="shell-label">
         {label}
       </p>
       <p
         className={`text-2xl font-bold mt-2 ${
           tone === "good"
-            ? "text-emerald-600 dark:text-emerald-400"
+            ? "text-emerald-600"
             : tone === "bad"
-            ? "text-red-600 dark:text-red-400"
-            : "text-gray-900 dark:text-white"
+            ? "text-red-600"
+            : "text-gray-900"
         }`}
       >
         {value}

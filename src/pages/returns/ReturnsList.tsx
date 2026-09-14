@@ -162,7 +162,7 @@ export default function ReturnsList() {
 
   const renderActions = (r: AdminReturn) => {
     const busy = actionLoading === r.returnId;
-    const btn = "text-xs px-2.5 py-1.5 rounded-lg font-medium disabled:opacity-50 transition-colors";
+    const btn = "text-xs px-2.5 py-1.5 rounded-full font-medium disabled:opacity-50 transition-colors shell-press";
 
     // Nothing here is readable-only, so a viewer gets no actions at all.
     if (readOnly) return null;
@@ -197,7 +197,7 @@ export default function ReturnsList() {
         <button
           onClick={() => runAction(r.returnId, "pickedUp", "Mark this item as collected from the customer?")}
           disabled={busy}
-          className={`${btn} bg-blue-600 hover:bg-blue-700 text-white`}
+          className={`${btn} bg-gray-900 hover:bg-gray-700 text-white`}
         >
           {busy ? "…" : "Mark picked up"}
         </button>
@@ -266,7 +266,7 @@ export default function ReturnsList() {
         <button
           onClick={() => runAction(r.returnId, "refundComplete", "Mark refund as completed? Confirm money has been disbursed.")}
           disabled={busy}
-          className={`${btn} bg-blue-600 hover:bg-blue-700 text-white`}
+          className={`${btn} bg-gray-900 hover:bg-gray-700 text-white`}
         >
           {busy ? "…" : "Mark Refund Completed"}
         </button>
@@ -284,11 +284,11 @@ export default function ReturnsList() {
           onClick={() => setSelected(null)}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl p-6 w-full max-w-lg mx-4"
+            className="shell-panel shadow-xl p-6 w-full max-w-lg mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-sm font-semibold text-gray-900">
                 Return #{selected.returnId} — Order #{selected.orderId}
               </h3>
               <button
@@ -305,22 +305,22 @@ export default function ReturnsList() {
                 <img
                   src={selected.productImage}
                   alt={selected.productName ?? ""}
-                  className="w-20 h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                  className="w-20 h-20 object-cover rounded-lg border border-gray-200"
                 />
               )}
               <div className="flex-1 text-sm">
-                <p className="font-medium text-gray-900 dark:text-white">{selected.productName ?? "—"}</p>
+                <p className="font-medium text-gray-900">{selected.productName ?? "—"}</p>
                 {(selected.variantSize || selected.variantColor) && (
-                  <p className="text-gray-500 dark:text-gray-400">
+                  <p className="text-gray-500">
                     {[selected.variantSize && `Size ${selected.variantSize}`, selected.variantColor]
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
                 )}
-                <p className="text-gray-500 dark:text-gray-400">
+                <p className="text-gray-500">
                   Qty {selected.quantity ?? "—"} · ₹{Number(selected.itemPrice ?? 0).toLocaleString()}
                 </p>
-                <p className="text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-gray-500 mt-1">
                   Refund: ₹{Number(selected.refundAmount ?? 0).toLocaleString()}
                 </p>
 
@@ -332,7 +332,7 @@ export default function ReturnsList() {
                     a WhatsApp thread. */}
                 {selected.photos && selected.photos.length > 0 && (
                   <div className="mt-2">
-                    <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-1">
+                    <p className="mb-1 shell-label">
                       Customer photos
                     </p>
                     <div className="flex gap-1.5 flex-wrap">
@@ -342,7 +342,7 @@ export default function ReturnsList() {
                           href={photoSrc(url)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"
+                          className="block w-16 h-16 rounded-lg overflow-hidden border border-gray-200"
                           title="Open full size"
                         >
                           <img
@@ -357,7 +357,7 @@ export default function ReturnsList() {
                   </div>
                 )}
                 {selected.onlineQcComment && (
-                  <p className="mt-2 text-[12px] text-gray-600 dark:text-gray-400">
+                  <p className="mt-2 text-[12px] text-gray-600">
                     <span className="font-semibold">Checked:</span> {selected.onlineQcComment}
                   </p>
                 )}
@@ -398,15 +398,15 @@ export default function ReturnsList() {
 
             <dl className="text-sm grid grid-cols-2 gap-y-2 gap-x-4">
               <dt className="text-gray-500">Customer</dt>
-              <dd className="text-gray-900 dark:text-white">{selected.userName ?? `#${selected.userId}`}</dd>
+              <dd className="text-gray-900">{selected.userName ?? `#${selected.userId}`}</dd>
               <dt className="text-gray-500">Email</dt>
-              <dd className="text-gray-900 dark:text-white break-all">{selected.userEmail ?? "—"}</dd>
+              <dd className="text-gray-900 break-all">{selected.userEmail ?? "—"}</dd>
               <dt className="text-gray-500">Phone</dt>
-              <dd className="text-gray-900 dark:text-white">{selected.userPhone ?? "—"}</dd>
+              <dd className="text-gray-900">{selected.userPhone ?? "—"}</dd>
               <dt className="text-gray-500">Reason</dt>
-              <dd className="text-gray-900 dark:text-white">{selected.reason ?? "—"}</dd>
+              <dd className="text-gray-900">{selected.reason ?? "—"}</dd>
               <dt className="text-gray-500">Comments</dt>
-              <dd className="text-gray-900 dark:text-white">{selected.comments ?? "—"}</dd>
+              <dd className="text-gray-900">{selected.comments ?? "—"}</dd>
               <dt className="text-gray-500">Status</dt>
               <dd>
                 <span
@@ -418,23 +418,23 @@ export default function ReturnsList() {
                 </span>
               </dd>
               <dt className="text-gray-500">Requested</dt>
-              <dd className="text-gray-900 dark:text-white">{formatDate(selected.requestedAt)}</dd>
+              <dd className="text-gray-900">{formatDate(selected.requestedAt)}</dd>
               <dt className="text-gray-500">Approved</dt>
-              <dd className="text-gray-900 dark:text-white">{formatDate(selected.approvedAt)}</dd>
+              <dd className="text-gray-900">{formatDate(selected.approvedAt)}</dd>
               <dt className="text-gray-500">Rejected</dt>
-              <dd className="text-gray-900 dark:text-white">{formatDate(selected.rejectedAt)}</dd>
+              <dd className="text-gray-900">{formatDate(selected.rejectedAt)}</dd>
               <dt className="text-gray-500">Refunded</dt>
-              <dd className="text-gray-900 dark:text-white">{formatDate(selected.refundedAt)}</dd>
+              <dd className="text-gray-900">{formatDate(selected.refundedAt)}</dd>
               {selected.refundStatus && (
                 <>
                   <dt className="text-gray-500">Refund Status</dt>
-                  <dd className="text-gray-900 dark:text-white">{selected.refundStatus}</dd>
+                  <dd className="text-gray-900">{selected.refundStatus}</dd>
                 </>
               )}
               {selected.refundTransactionId && (
                 <>
                   <dt className="text-gray-500">Txn ID</dt>
-                  <dd className="text-gray-900 dark:text-white break-all">{selected.refundTransactionId}</dd>
+                  <dd className="text-gray-900 break-all">{selected.refundTransactionId}</dd>
                 </>
               )}
             </dl>
@@ -444,25 +444,25 @@ export default function ReturnsList() {
                 nothing to collect and "not booked" would be noise. */}
             {["APPROVED", "PICKED_UP", "INSPECTED"].includes(selected.returnStatus) && (
               selected.reversePickupBooked ? (
-                <div className="mt-4 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2.5">
-                  <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-1">
+                <div className="mt-4 rounded-lg border border-gray-200 px-3 py-2.5">
+                  <p className="mb-1 shell-label">
                     Collection
                   </p>
-                  <p className="text-sm text-gray-900 dark:text-white">
+                  <p className="text-sm text-gray-900">
                     {selected.reversePickupCarrier ?? "Courier booked"}
                     {selected.reversePickupAwb && (
-                      <span className="text-gray-500 dark:text-gray-400">
+                      <span className="text-gray-500">
                         {" · "}{selected.reversePickupAwb}
                       </span>
                     )}
                   </p>
                 </div>
               ) : (
-                <div className="mt-4 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 px-3 py-2.5">
-                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5">
+                  <p className="text-sm font-semibold text-amber-900">
                     No collection booked
                   </p>
-                  <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">
+                  <p className="text-xs text-amber-800 mt-0.5">
                     No rider is coming for this one. Arrange the pickup yourself,
                     or approve it again once the courier is reachable.
                   </p>
@@ -476,52 +476,52 @@ export default function ReturnsList() {
       )}
 
       <div className="mb-6">
-        <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Returns & Refunds</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900">Returns & Refunds</h1>
+        <p className="text-sm text-gray-500 mt-1">
           {totalElements} total
         </p>
       </div>
 
-      <div className="flex gap-1 mb-5 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit flex-wrap">
+      <div className="flex gap-1 mb-5 bg-gray-100 p-1 rounded-full w-fit flex-wrap">
         {TABS.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all shell-press ${
               tab === t
-                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            {t === "ALL" ? "All" : t.replace(/_/g, " ")}
+            {t === "ALL" ? "All" : t.charAt(0) + t.slice(1).replace(/_/g, " ").toLowerCase()}
           </button>
         ))}
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+      <div className="shell-panel overflow-hidden">
         <div className="overflow-x-auto">
           {/* Scrolls sideways on a phone - these columns do not fit one,
             and a squashed table is worse than one you swipe. */}
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+            <tr className="bg-gray-50 border-b border-gray-200">
               {["Return ID", "Product", "Customer", "Reason", "Refund", "Status", "Requested", "Actions"].map((h) => (
                 <th
                   key={h}
-                  className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide py-3 px-5"
+                  className="text-left py-3 px-5 shell-label"
                 >
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+          <tbody className="divide-y divide-gray-100">
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
                   {Array.from({ length: 8 }).map((__, j) => (
                     <td key={j} className="py-4 px-5">
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      <div className="h-4 bg-gray-200 rounded animate-pulse" />
                     </td>
                   ))}
                 </tr>
@@ -536,9 +536,9 @@ export default function ReturnsList() {
               visible.map((r) => (
                 <tr
                   key={r.returnId}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors"
+                  className="hover:bg-gray-50 transition-colors"
                 >
-                  <td className="py-4 px-5 text-sm font-mono text-gray-700 dark:text-gray-300">
+                  <td className="py-4 px-5 text-sm font-mono text-gray-700">
                     <button onClick={() => setSelected(r)} className="hover:underline">
                       #{r.returnId}
                     </button>
@@ -552,10 +552,10 @@ export default function ReturnsList() {
                         <img
                           src={r.productImage}
                           alt=""
-                          className="w-10 h-10 object-cover rounded border border-gray-200 dark:border-gray-700 shrink-0"
+                          className="w-10 h-10 object-cover rounded border border-gray-200 shrink-0"
                         />
                       )}
-                      <div className="text-sm text-gray-900 dark:text-white truncate">
+                      <div className="text-sm text-gray-900 truncate">
                         {r.productName ?? "—"}
                         <span className="block text-[11px] text-gray-400 truncate">
                           {[
@@ -569,16 +569,16 @@ export default function ReturnsList() {
                       </div>
                     </div>
                   </td>
-                  <td className="py-4 px-5 text-sm text-gray-700 dark:text-gray-300">
+                  <td className="py-4 px-5 text-sm text-gray-700">
                     <div className="truncate max-w-[180px]">{r.userName ?? `#${r.userId}`}</div>
                     {r.userEmail && (
                       <div className="text-[11px] text-gray-400 truncate max-w-[180px]">{r.userEmail}</div>
                     )}
                   </td>
-                  <td className="py-4 px-5 text-sm text-gray-700 dark:text-gray-300 max-w-[200px] truncate">
+                  <td className="py-4 px-5 text-sm text-gray-700 max-w-[200px] truncate">
                     {r.reason ?? "—"}
                   </td>
-                  <td className="py-4 px-5 text-sm font-semibold text-gray-900 dark:text-white">
+                  <td className="py-4 px-5 text-sm font-semibold text-gray-900">
                     ₹{Number(r.refundAmount ?? 0).toLocaleString()}
                   </td>
                   <td className="py-4 px-5">
@@ -590,7 +590,7 @@ export default function ReturnsList() {
                       {r.returnStatus.replace(/_/g, " ")}
                     </span>
                   </td>
-                  <td className="py-4 px-5 text-xs text-gray-500 dark:text-gray-400">
+                  <td className="py-4 px-5 text-xs text-gray-500">
                     {formatDate(r.requestedAt)}
                   </td>
                   <td className="py-4 px-5">{renderActions(r)}</td>

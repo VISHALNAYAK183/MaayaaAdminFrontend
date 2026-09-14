@@ -157,23 +157,23 @@ const HomeCmsStudio = () => {
   const tabClass = (active: boolean) =>
     `px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
       active
-        ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-        : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+        ? "bg-white text-gray-900 shadow-sm"
+        : "text-gray-500 hover:text-gray-700"
     }`;
 
   return (
     <>
       <StudioHeader>
         <div>
-          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Home CMS</h1>
-          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900">Home CMS</h1>
+          <p className="mt-0.5 text-xs text-gray-500">
             Arrange the home page and see it before customers do.
           </p>
         </div>
 
         {isDesktop && (
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <div className="flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
+          <div className="flex gap-1 rounded-full bg-gray-100 p-1">
             {GENDER_TABS.map(({ key, label }) => (
               <button key={key} onClick={() => setGender(key)} className={tabClass(gender === key)}>
                 {label}
@@ -181,7 +181,7 @@ const HomeCmsStudio = () => {
             ))}
           </div>
 
-          <div className="flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
+          <div className="flex gap-1 rounded-full bg-gray-100 p-1">
             {DEVICES.map((d) => (
               <button
                 key={d.label}
@@ -193,7 +193,7 @@ const HomeCmsStudio = () => {
             ))}
           </div>
 
-          <label className="flex cursor-pointer items-center gap-2 rounded-xl bg-gray-100 px-3 py-2 text-sm text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+          <label className="flex cursor-pointer items-center gap-2 rounded-xl bg-gray-100 px-3 py-2 text-sm text-gray-600">
             <input
               type="checkbox"
               checked={includeDrafts}
@@ -205,7 +205,7 @@ const HomeCmsStudio = () => {
 
           <button
             onClick={() => { reloadFrame(); reload(); }}
-            className="rounded-xl bg-gray-100 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
+            className="rounded-full bg-gray-100 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 shell-press"
           >
             Refresh
           </button>
@@ -213,7 +213,7 @@ const HomeCmsStudio = () => {
           {!readOnly && (
             <button
               onClick={() => setAddOpen(true)}
-              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="rounded-full bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 shell-press"
             >
               + Section
             </button>
@@ -223,7 +223,7 @@ const HomeCmsStudio = () => {
       </StudioHeader>
 
       {gender === "OTHER" && (
-        <p className="mb-3 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+        <p className="mb-3 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500">
           Unisex sections have no page of their own — they appear on both the Men's and
           Women's pages, and the preview shows them alongside the Men's. Order them from
           those tabs, where the whole page is visible.
@@ -231,25 +231,25 @@ const HomeCmsStudio = () => {
       )}
 
       {!readOnly && isDirty && (
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
           <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-amber-500 px-2 text-xs font-bold text-white">
             {pendingCount}
           </span>
-          <span className="text-sm text-amber-900 dark:text-amber-200">
+          <span className="text-sm text-amber-900">
             unpublished change{pendingCount === 1 ? "" : "s"} — shown here, not on the site yet.
           </span>
           <div className="ml-auto flex gap-2">
             <button
               onClick={onDiscard}
               disabled={publishing}
-              className="rounded-lg px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50 dark:text-amber-200 dark:hover:bg-amber-500/20"
+              className="rounded-full px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50 shell-press"
             >
               Discard
             </button>
             <button
               onClick={onPublish}
               disabled={publishing}
-              className="rounded-lg bg-amber-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+              className="rounded-full bg-amber-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50 shell-press"
             >
               {publishing ? "Publishing…" : "Publish"}
             </button>
@@ -261,8 +261,8 @@ const HomeCmsStudio = () => {
         <div
           className={`mb-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-sm ${
             notice?.ok && !loadError
-              ? "border-green-200 bg-green-50 text-green-800 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-300"
-              : "border-red-200 bg-red-50 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
+              ? "border-green-200 bg-green-50 text-green-800"
+              : "border-red-200 bg-red-50 text-red-800"
           }`}
         >
           <span className="flex-1">{loadError ?? notice?.text}</span>
@@ -275,11 +275,11 @@ const HomeCmsStudio = () => {
       )}
 
       {!isDesktop ? (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center dark:border-gray-700 dark:bg-gray-800/50">
-          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+          <p className="text-sm font-semibold text-gray-700">
             Home CMS needs a bigger screen
           </p>
-          <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+          <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-gray-500">
             Arranging the home page means dragging sections against a full-width preview
             of the storefront, side by side. Neither fits a phone, and the drag handles
             rely on desktop drag events that touch screens do not send — so this opens on
@@ -292,7 +292,7 @@ const HomeCmsStudio = () => {
       ) : (
       <DndProvider backend={HTML5Backend}>
       <div className="flex h-[calc(100vh-15rem)] min-h-[520px] gap-4">
-        <div className="w-[340px] shrink-0 overflow-y-auto rounded-xl border border-gray-200 bg-gray-50/60 dark:border-gray-700 dark:bg-gray-900/40">
+        <div className="w-[340px] shrink-0 overflow-y-auto rounded-xl border border-gray-200 bg-gray-50/60">
           <StudioRail
             sections={visible}
             selectedId={selected}
@@ -330,14 +330,14 @@ const HomeCmsStudio = () => {
       {openSection && (
         <div className="fixed inset-0 z-40 flex justify-end bg-black/40" onClick={() => setEditing(null)}>
           <div
-            className="h-full w-full max-w-3xl overflow-y-auto bg-gray-50 p-4 shadow-2xl dark:bg-gray-900"
+            className="h-full w-full max-w-3xl overflow-y-auto bg-gray-50 p-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Edit section</h2>
+              <h2 className="text-[17.5px] font-semibold tracking-tight text-gray-900">Edit section</h2>
               <button
                 onClick={() => setEditing(null)}
-                className="rounded-lg bg-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200"
+                className="rounded-full bg-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-300 shell-press"
               >
                 Done
               </button>

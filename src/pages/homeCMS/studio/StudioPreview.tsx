@@ -48,7 +48,7 @@ const StudioPreview = ({ iframeRef, src, frameKey, device, ready, invalidBase }:
 
   if (invalidBase) {
     return (
-      <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+      <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
         VITE_STOREFRONT_BASE is not a valid URL, so there is nothing to preview.
       </div>
     );
@@ -57,7 +57,7 @@ const StudioPreview = ({ iframeRef, src, frameKey, device, ready, invalidBase }:
   return (
     <div
       ref={boxRef}
-      className="relative h-full overflow-auto rounded-xl border border-gray-200 bg-gray-100 p-4 dark:border-gray-700 dark:bg-gray-900"
+      className="relative h-full overflow-auto rounded-xl border border-gray-200 bg-gray-100 p-4"
     >
       <div
         className="mx-auto"

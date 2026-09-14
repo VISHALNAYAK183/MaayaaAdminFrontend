@@ -36,14 +36,14 @@ const SectionItems = () => {
             ←
           </button>
           <div>
-            <p className="text-xs text-gray-400 uppercase tracking-widest font-medium">Section #{sectionId}</p>
+            <p className="shell-label">Section #{sectionId}</p>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">Items</h1>
           </div>
         </div>
         {!readOnly && (
         <button
           onClick={() => navigate(`/home-cms/section/${sectionId}/items/add`)}
-          className="flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-700 transition-colors"
+          className="flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-700 transition-colors shell-press"
         >
           <span className="text-lg leading-none">+</span> Add Item
         </button>
@@ -85,7 +85,7 @@ const SectionItems = () => {
 /* ─── ITEM CARD (matches sketch: image with x, link label, edit label) ── */
 const ItemCard = ({ item, onEdit }: { item: SectionItem; onEdit: () => void }) => {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden group hover:shadow-md transition-shadow">
+    <div className="shell-panel overflow-hidden group hover:shadow-md transition-shadow">
       {/* Image area */}
       <div className="relative aspect-[4/3] bg-gray-100">
         {item.image ? (
@@ -137,7 +137,7 @@ const ItemCard = ({ item, onEdit }: { item: SectionItem; onEdit: () => void }) =
           {/* Edit button */}
           <button
             onClick={onEdit}
-            className="text-[11px] font-semibold text-gray-600 border border-gray-200 px-2.5 py-1 rounded-md hover:bg-gray-50 transition-colors"
+            className="text-[11px] font-semibold text-gray-600 border border-gray-200 px-2.5 py-1 rounded-full hover:bg-gray-50 transition-colors shell-press"
           >
             edit
           </button>
@@ -166,7 +166,7 @@ const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
     <p className="text-gray-400 text-sm mb-4">No items in this section yet</p>
     <button
       onClick={onAdd}
-      className="bg-gray-900 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-700"
+      className="bg-gray-900 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-700 shell-press"
     >
       + Add First Item
     </button>

@@ -68,21 +68,21 @@ export default function ProductAnalyticsModal({ productId, productName, onClose 
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl p-6 w-full max-w-2xl mx-4"
+        className="shell-panel shadow-xl p-6 w-full max-w-2xl mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between mb-5">
           <div>
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-base font-semibold text-gray-900">
               Product Analytics
             </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-500 mt-0.5">
               {data?.productName ?? productName ?? `#${productId}`}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="text-gray-400 hover:text-gray-600"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -96,7 +96,7 @@ export default function ProductAnalyticsModal({ productId, productName, onClose 
             {Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
-                className="h-20 bg-gray-100 dark:bg-gray-700 rounded-lg animate-pulse"
+                className="h-20 bg-gray-100 rounded-lg animate-pulse"
               />
             ))}
           </div>
@@ -107,12 +107,12 @@ export default function ProductAnalyticsModal({ productId, productName, onClose 
             {stats.map((s) => (
               <div
                 key={s.label}
-                className="bg-gray-50 dark:bg-gray-700/40 rounded-lg p-3"
+                className="bg-gray-50 rounded-lg p-3"
               >
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <p className="shell-label">
                   {s.label}
                 </p>
-                <p className={`text-lg font-bold mt-1 ${s.tone ?? "text-gray-900 dark:text-white"}`}>
+                <p className={`text-lg font-bold mt-1 ${s.tone ?? "text-gray-900"}`}>
                   {s.value}
                 </p>
               </div>

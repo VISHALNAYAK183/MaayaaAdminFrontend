@@ -39,7 +39,7 @@ function RoleSelect({
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value as Role)}
-        className="h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+        className="h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
       >
         {ROLES.map((r) => (
           <option key={r} value={r}>
@@ -47,7 +47,7 @@ function RoleSelect({
           </option>
         ))}
       </select>
-      <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+      <p className="mt-1.5 text-xs text-gray-500">
         {ROLE_DESCRIPTIONS[value]}
       </p>
     </div>
@@ -204,29 +204,29 @@ export default function AdminUserManagement() {
       </div>
 
       {flash && (
-        <div className="mb-4 rounded-lg border border-success-500/30 bg-success-50 px-4 py-3 text-sm text-success-700 dark:bg-success-500/10 dark:text-success-400">
+        <div className="mb-4 rounded-lg border border-success-500/30 bg-success-50 px-4 py-3 text-sm text-success-700">
           {flash}
         </div>
       )}
       {pageError && (
-        <div className="mb-4 rounded-lg border border-error-500/30 bg-error-50 px-4 py-3 text-sm text-error-600 dark:bg-error-500/10 dark:text-error-400">
+        <div className="mb-4 rounded-lg border border-error-500/30 bg-error-50 px-4 py-3 text-sm text-error-600">
           {pageError}
         </div>
       )}
 
-      <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+      <div className="shell-panel">
+        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
           <div>
-            <h3 className="text-base font-medium text-gray-800 dark:text-white/90">
+            <h3 className="text-base font-medium text-gray-800">
               Admin accounts
             </h3>
-            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-0.5 text-sm text-gray-500">
               {users.length} account{users.length === 1 ? "" : "s"}
             </p>
           </div>
           <button
             onClick={() => setDialog({ kind: "add" })}
-            className="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600"
+            className="rounded-full bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-700 shell-press"
           >
             Add admin
           </button>
@@ -234,15 +234,15 @@ export default function AdminUserManagement() {
 
         <div className="overflow-x-auto">
           {loading ? (
-            <p className="px-5 py-8 text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+            <p className="px-5 py-8 text-sm text-gray-500">Loading…</p>
           ) : users.length === 0 ? (
-            <p className="px-5 py-8 text-sm text-gray-500 dark:text-gray-400">
+            <p className="px-5 py-8 text-sm text-gray-500">
               No admin accounts found.
             </p>
           ) : (
             <table className="min-w-full">
-              <thead className="border-b border-gray-200 dark:border-gray-800">
-                <tr className="text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              <thead className="border-b border-gray-200">
+                <tr className="text-left shell-label">
                   <th className="px-5 py-3">User</th>
                   <th className="px-5 py-3">Role</th>
                   <th className="px-5 py-3">Status</th>
@@ -251,25 +251,25 @@ export default function AdminUserManagement() {
                   <th className="px-5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+              <tbody className="divide-y divide-gray-200">
                 {users.map((u) => {
                   const isSelf = u.username === me;
                   const active = u.status === "ACTIVE";
                   return (
                     <tr key={u.id} className="text-sm">
                       <td className="px-5 py-4">
-                        <div className="font-medium text-gray-800 dark:text-white/90">
+                        <div className="font-medium text-gray-800">
                           {u.username}
                           {isSelf && (
-                            <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-normal text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                            <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-normal text-brand-600">
                               you
                             </span>
                           )}
                         </div>
-                        <div className="text-gray-500 dark:text-gray-400">{u.email}</div>
+                        <div className="text-gray-500">{u.email}</div>
                       </td>
                       <td className="px-5 py-4">
-                        <div className="font-medium text-gray-700 dark:text-gray-300">
+                        <div className="font-medium text-gray-700">
                           {ROLE_LABELS[u.role as Role] ?? u.role}
                         </div>
                       </td>
@@ -277,8 +277,8 @@ export default function AdminUserManagement() {
                         <span
                           className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                             active
-                              ? "bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-400"
-                              : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                              ? "bg-success-50 text-success-700"
+                              : "bg-gray-100 text-gray-600"
                           }`}
                         >
                           {active ? "Active" : "Inactive"}
@@ -288,14 +288,14 @@ export default function AdminUserManagement() {
                         <span
                           className={
                             u.mfaEnabled
-                              ? "text-success-600 dark:text-success-400"
-                              : "text-warning-600 dark:text-warning-400"
+                              ? "text-success-600"
+                              : "text-warning-600"
                           }
                         >
                           {u.mfaEnabled ? "Enrolled" : "Not set up"}
                         </span>
                       </td>
-                      <td className="px-5 py-4 text-gray-500 dark:text-gray-400">
+                      <td className="px-5 py-4 text-gray-500">
                         {fmt(u.lastLoginAt)}
                       </td>
                       <td className="px-5 py-4">
@@ -305,13 +305,13 @@ export default function AdminUserManagement() {
                               setNewRole((u.role as Role) ?? "VIEWER");
                               setDialog({ kind: "role", user: u });
                             }}
-                            className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                            className="rounded-full border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-50 shell-press"
                           >
                             Role
                           </button>
                           <button
                             onClick={() => setDialog({ kind: "password", user: u })}
-                            className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                            className="rounded-full border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-50 shell-press"
                           >
                             Password
                           </button>
@@ -320,7 +320,7 @@ export default function AdminUserManagement() {
                               onClick={() =>
                                 setDialog({ kind: "confirm", user: u, action: "resetMfa" })
                               }
-                              className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                              className="rounded-full border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-50 shell-press"
                             >
                               Reset 2FA
                             </button>
@@ -335,7 +335,7 @@ export default function AdminUserManagement() {
                                     action: active ? "deactivate" : "activate",
                                   })
                                 }
-                                className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                                className="rounded-full border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-50 shell-press"
                               >
                                 {active ? "Deactivate" : "Activate"}
                               </button>
@@ -343,7 +343,7 @@ export default function AdminUserManagement() {
                                 onClick={() =>
                                   setDialog({ kind: "confirm", user: u, action: "delete" })
                                 }
-                                className="rounded-lg border border-error-200 px-2.5 py-1.5 text-xs text-error-600 hover:bg-error-50 dark:border-error-500/30 dark:text-error-400 dark:hover:bg-error-500/10"
+                                className="rounded-full border border-error-200 px-2.5 py-1.5 text-xs text-error-600 hover:bg-error-50 shell-press"
                               >
                                 Delete
                               </button>
@@ -362,12 +362,12 @@ export default function AdminUserManagement() {
 
       {/* ── Add admin ─────────────────────────────────────────────────────── */}
       <Modal isOpen={dialog.kind === "add"} onClose={closeDialog} className="max-w-md p-6">
-        <h4 className="text-lg font-medium text-gray-800 dark:text-white/90">Add admin</h4>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <h4 className="text-lg font-medium text-gray-800">Add admin</h4>
+        <p className="mt-1 text-sm text-gray-500">
           They'll be prompted to set up two-factor the first time they sign in.
         </p>
         {formError && (
-          <div className="mt-4 rounded-lg border border-error-500/30 bg-error-50 px-3 py-2 text-sm text-error-600 dark:bg-error-500/10 dark:text-error-400">
+          <div className="mt-4 rounded-lg border border-error-500/30 bg-error-50 px-3 py-2 text-sm text-error-600">
             {formError}
           </div>
         )}
@@ -407,7 +407,7 @@ export default function AdminUserManagement() {
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={closeDialog}
-            className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="rounded-full border border-gray-200 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 shell-press"
           >
             Cancel
           </button>
@@ -419,7 +419,7 @@ export default function AdminUserManagement() {
               !newEmail.trim() ||
               newPassword.length < MIN_PASSWORD
             }
-            className="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
+            className="rounded-full bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50 shell-press"
           >
             {busy ? "Adding…" : "Add admin"}
           </button>
@@ -434,14 +434,14 @@ export default function AdminUserManagement() {
       >
         {dialog.kind === "password" && (
           <>
-            <h4 className="text-lg font-medium text-gray-800 dark:text-white/90">
+            <h4 className="text-lg font-medium text-gray-800">
               Change password
             </h4>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-sm text-gray-500">
               For <span className="font-medium">{dialog.user.username}</span>.
             </p>
             {formError && (
-              <div className="mt-4 rounded-lg border border-error-500/30 bg-error-50 px-3 py-2 text-sm text-error-600 dark:bg-error-500/10 dark:text-error-400">
+              <div className="mt-4 rounded-lg border border-error-500/30 bg-error-50 px-3 py-2 text-sm text-error-600">
                 {formError}
               </div>
             )}
@@ -470,14 +470,14 @@ export default function AdminUserManagement() {
                 />
               </div>
             </div>
-            <p className="mt-4 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+            <p className="mt-4 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500">
               Changing a password does not sign out existing sessions — tokens stay valid
               until they expire.
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={closeDialog}
-                className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                className="rounded-full border border-gray-200 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 shell-press"
               >
                 Cancel
               </button>
@@ -488,7 +488,7 @@ export default function AdminUserManagement() {
                   replacementPassword.length < MIN_PASSWORD ||
                   (dialog.user.username === me && !currentPassword)
                 }
-                className="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
+                className="rounded-full bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50 shell-press"
               >
                 {busy ? "Saving…" : "Update password"}
               </button>
@@ -501,35 +501,35 @@ export default function AdminUserManagement() {
       <Modal isOpen={dialog.kind === "role"} onClose={closeDialog} className="max-w-md p-6">
         {dialog.kind === "role" && (
           <>
-            <h4 className="text-lg font-medium text-gray-800 dark:text-white/90">
+            <h4 className="text-lg font-medium text-gray-800">
               Change role
             </h4>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-sm text-gray-500">
               For <span className="font-medium">{dialog.user.username}</span>.
             </p>
             {formError && (
-              <div className="mt-4 rounded-lg border border-error-500/30 bg-error-50 px-3 py-2 text-sm text-error-600 dark:bg-error-500/10 dark:text-error-400">
+              <div className="mt-4 rounded-lg border border-error-500/30 bg-error-50 px-3 py-2 text-sm text-error-600">
                 {formError}
               </div>
             )}
             <div className="mt-5">
               <RoleSelect value={newRole} onChange={setNewRole} disabled={busy} />
             </div>
-            <p className="mt-4 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+            <p className="mt-4 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500">
               Takes effect immediately — access is resolved from the account on every
               request, not from the token they signed in with.
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={closeDialog}
-                className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                className="rounded-full border border-gray-200 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 shell-press"
               >
                 Cancel
               </button>
               <button
                 onClick={submitRole}
                 disabled={busy || newRole === dialog.user.role}
-                className="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
+                className="rounded-full bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50 shell-press"
               >
                 {busy ? "Saving…" : "Update role"}
               </button>
@@ -542,13 +542,13 @@ export default function AdminUserManagement() {
       <Modal isOpen={dialog.kind === "confirm"} onClose={closeDialog} className="max-w-md p-6">
         {dialog.kind === "confirm" && (
           <>
-            <h4 className="text-lg font-medium text-gray-800 dark:text-white/90">
+            <h4 className="text-lg font-medium text-gray-800">
               {dialog.action === "delete" && `Delete ${dialog.user.username}?`}
               {dialog.action === "resetMfa" && `Reset two-factor for ${dialog.user.username}?`}
               {dialog.action === "deactivate" && `Deactivate ${dialog.user.username}?`}
               {dialog.action === "activate" && `Activate ${dialog.user.username}?`}
             </h4>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-2 text-sm text-gray-500">
               {dialog.action === "delete" &&
                 "This permanently removes the account. It can't be undone from here."}
               {dialog.action === "resetMfa" &&
@@ -558,21 +558,21 @@ export default function AdminUserManagement() {
               {dialog.action === "activate" && "They'll be able to sign in again."}
             </p>
             {formError && (
-              <div className="mt-4 rounded-lg border border-error-500/30 bg-error-50 px-3 py-2 text-sm text-error-600 dark:bg-error-500/10 dark:text-error-400">
+              <div className="mt-4 rounded-lg border border-error-500/30 bg-error-50 px-3 py-2 text-sm text-error-600">
                 {formError}
               </div>
             )}
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={closeDialog}
-                className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                className="rounded-full border border-gray-200 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 shell-press"
               >
                 Cancel
               </button>
               <button
                 onClick={submitConfirm}
                 disabled={busy}
-                className={`rounded-lg px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50 ${
+                className={`rounded-full px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50 shell-press ${
                   dialog.action === "delete"
                     ? "bg-error-500 hover:bg-error-600"
                     : "bg-brand-500 hover:bg-brand-600"

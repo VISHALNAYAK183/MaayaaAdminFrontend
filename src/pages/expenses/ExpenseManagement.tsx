@@ -274,15 +274,15 @@ export default function ExpenseManagement() {
     <div className="space-y-5">
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Expenses</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900">Expenses</h1>
+          <p className="text-sm text-gray-500 mt-1">
             Operating costs: ads, salaries, gateway fees
           </p>
         </div>
         {!readOnly && (
         <button
           onClick={openAdd}
-          className="px-4 py-2 bg-gray-900 hover:bg-gray-700 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 text-sm font-semibold rounded-lg"
+          className="px-4 py-2 bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold rounded-full shell-press"
         >
           + Add expense
         </button>
@@ -311,7 +311,7 @@ export default function ExpenseManagement() {
           value={currency(totals.itc)}
         />
       </div>
-      <div className="text-xs text-gray-500 dark:text-gray-400">
+      <div className="text-xs text-gray-500">
         <span className="italic">Note:</span> totals above cover only the {rows.length} row{rows.length === 1 ? "" : "s"} on this page.
         For the period total, use the <a href="/gst-report" className="underline">GST report</a>.
         {" "}Operating expenses are subtracted from gross profit; COGS-linked rows
@@ -322,7 +322,7 @@ export default function ExpenseManagement() {
       {/* Filter — split into operating and COGS-linked groups so the user
           can see which categories drive net profit vs which exist for ITC. */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">Category:</span>
+        <span className="shell-label">Category:</span>
         <button
           onClick={() => setFilter("ALL")}
           className={chipCls(filter === "ALL")}
@@ -339,12 +339,12 @@ export default function ExpenseManagement() {
             {c.label}
           </button>
         ))}
-        <span className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700" aria-hidden />
+        <span className="mx-1 h-5 w-px bg-gray-200" aria-hidden />
         {CATEGORIES.filter((c) => !c.operating).map((c) => (
           <button
             key={c.value}
             onClick={() => setFilter(c.value)}
-            className={chipCls(filter === c.value) + " ring-1 ring-amber-200 dark:ring-amber-800/40"}
+            className={chipCls(filter === c.value) + " ring-1 ring-amber-200"}
             title="COGS-linked — ITC only, per-unit cost lives in ProductCost"
           >
             {c.label}
@@ -354,27 +354,27 @@ export default function ExpenseManagement() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+      <div className="shell-panel overflow-hidden">
         <div className="overflow-x-auto">
           {/* Scrolls sideways on a phone - these columns do not fit one,
             and a squashed table is worse than one you swipe. */}
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+            <tr className="bg-gray-50 border-b border-gray-200">
               {["Date", "Category", "Description", "Vendor", "GSTIN", "Amount", "ITC", "Actions"].map((h) => (
-                <th key={h} className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide py-3 px-4">
+                <th key={h} className="text-left py-3 px-4 shell-label">
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+          <tbody className="divide-y divide-gray-100">
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
                   {Array.from({ length: 8 }).map((__, j) => (
                     <td key={j} className="py-4 px-4">
-                      <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded animate-pulse" />
+                      <div className="h-4 bg-gray-100 rounded animate-pulse" />
                     </td>
                   ))}
                 </tr>
@@ -385,8 +385,8 @@ export default function ExpenseManagement() {
               <tr><td colSpan={8} className="py-12 text-center text-sm text-gray-400">No expenses yet — click "+ Add expense" to create one.</td></tr>
             ) : (
               rows.map((r) => (
-                <tr key={r.expenseId} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
-                  <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{fmtDate(r.incurredAt)}</td>
+                <tr key={r.expenseId} className="hover:bg-gray-50 transition-colors">
+                  <td className="py-3 px-4 text-sm text-gray-700">{fmtDate(r.incurredAt)}</td>
                   <td className="py-3 px-4">
                     <span
                       className={
@@ -404,12 +404,12 @@ export default function ExpenseManagement() {
                       {CATEGORY_LABEL[r.category] ?? r.category}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{r.description ?? "—"}</td>
-                  <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{r.vendorName ?? "—"}</td>
-                  <td className="py-3 px-4 text-xs font-mono text-gray-600 dark:text-gray-400">
+                  <td className="py-3 px-4 text-sm text-gray-700">{r.description ?? "—"}</td>
+                  <td className="py-3 px-4 text-sm text-gray-700">{r.vendorName ?? "—"}</td>
+                  <td className="py-3 px-4 text-xs font-mono text-gray-600">
                     {r.vendorGstin ?? <span className="italic text-gray-400">Unreg.</span>}
                   </td>
-                  <td className="py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white">{currency(r.amount)}</td>
+                  <td className="py-3 px-4 text-sm font-semibold text-gray-900">{currency(r.amount)}</td>
                   <td className="py-3 px-4 text-xs">
                     {r.itcEligible ? (
                       <span className="text-emerald-600">Yes · {currency(Number(r.cgst ?? 0) + Number(r.sgst ?? 0) + Number(r.igst ?? 0))}</span>
@@ -420,8 +420,8 @@ export default function ExpenseManagement() {
                   <td className="py-3 px-4 text-right">
                     <div className="flex justify-end gap-1.5">
                       {!readOnly && (<>
-                      <button onClick={() => openEdit(r)} className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded transition-colors">Edit</button>
-                      <button onClick={() => handleDelete(r.expenseId)} className="text-xs font-medium text-red-600 hover:text-red-800 px-2 py-1 rounded transition-colors">Delete</button>
+                      <button onClick={() => openEdit(r)} className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded-full transition-colors shell-press">Edit</button>
+                      <button onClick={() => handleDelete(r.expenseId)} className="text-xs font-medium text-red-600 hover:text-red-800 px-2 py-1 rounded-full transition-colors shell-press">Delete</button>
                       </>)}
                     </div>
                   </td>
@@ -434,20 +434,20 @@ export default function ExpenseManagement() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+          <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
             <p className="text-xs text-gray-400">Page {page + 1} of {totalPages}</p>
             <div className="flex gap-1.5">
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium text-gray-600 dark:text-gray-300"
+                className="text-xs px-3 py-1.5 border border-gray-200 rounded-full bg-white disabled:opacity-40 hover:bg-gray-50 transition-colors font-medium text-gray-600 shell-press"
               >
                 ← Prev
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium text-gray-600 dark:text-gray-300"
+                className="text-xs px-3 py-1.5 border border-gray-200 rounded-full bg-white disabled:opacity-40 hover:bg-gray-50 transition-colors font-medium text-gray-600 shell-press"
               >
                 Next →
               </button>
@@ -462,10 +462,10 @@ export default function ExpenseManagement() {
              onClick={(e) => { if (e.target === e.currentTarget) closeForm(); }}>
           <form
             onSubmit={handleSave}
-            className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl p-6 w-full max-w-xl"
+            className="shell-panel shadow-xl p-6 w-full max-w-xl"
           >
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-base font-semibold text-gray-900">
                 {editingId == null ? "Add Expense" : "Edit Expense"}
               </h3>
               <button type="button" onClick={closeForm} className="text-gray-400 hover:text-gray-600">
@@ -590,7 +590,7 @@ export default function ExpenseManagement() {
               </Field>
             </div>
 
-            <p className="mt-3 text-[11px] text-gray-500 dark:text-gray-400">
+            <p className="mt-3 text-[11px] text-gray-500">
               ITC is auto-claimed when a valid vendor GSTIN is provided.
               CGST/SGST/IGST is auto-split based on whether the vendor is in Karnataka (intra-state) or another state.
             </p>
@@ -599,14 +599,14 @@ export default function ExpenseManagement() {
               <button
                 type="button"
                 onClick={closeForm}
-                className="px-4 py-2 text-sm font-medium border border-gray-200 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-300"
+                className="px-4 py-2 text-sm font-medium border border-gray-200 rounded-full text-gray-600 shell-press"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="px-5 py-2 bg-gray-900 hover:bg-gray-700 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 text-sm font-semibold rounded-lg disabled:opacity-50"
+                className="px-5 py-2 bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold rounded-full disabled:opacity-50 shell-press"
               >
                 {saving ? "Saving…" : editingId == null ? "Create" : "Save changes"}
               </button>
@@ -619,19 +619,19 @@ export default function ExpenseManagement() {
 }
 
 const inputCls =
-  "w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500";
+  "w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500";
 
 const chipCls = (active: boolean) =>
   "text-xs px-3 py-1.5 rounded-full font-semibold transition-colors " +
   (active
-    ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600");
+    ? "bg-gray-900 text-white"
+    : "bg-gray-100 text-gray-600 hover:bg-gray-200");
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="text-xl font-bold mt-1 text-gray-900 dark:text-white">{value}</p>
+    <div className="shell-panel p-4">
+      <p className="shell-label">{label}</p>
+      <p className="text-xl font-bold mt-1 text-gray-900">{value}</p>
       {hint && <p className="mt-1 text-[10px] text-gray-400">{hint}</p>}
     </div>
   );
@@ -648,7 +648,7 @@ function Field({
 }) {
   return (
     <div className={className ?? ""}>
-      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+      <label className="block text-xs font-semibold text-gray-700 mb-1">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       {children}

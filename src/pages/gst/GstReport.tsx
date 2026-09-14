@@ -87,23 +87,23 @@ export default function GstReportPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">GST Report</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900">GST Report</h1>
+          <p className="text-sm text-gray-500 mt-1">
             Monthly GSTR-3B numbers and the GSTR-1 export
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">Month</label>
+          <label className="shell-label">Month</label>
           <input
             type="month"
             value={month}
             onChange={(e) => setMonth(e.target.value)}
-            className="text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="text-sm px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-900"
           />
           <button
             onClick={handleDownload}
             disabled={downloading || !data}
-            className="ml-2 px-4 py-2 bg-gray-900 hover:bg-gray-700 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 text-sm font-semibold rounded-lg disabled:opacity-50"
+            className="ml-2 px-4 py-2 bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold rounded-full disabled:opacity-50 shell-press"
           >
             {downloading ? "Generating…" : "Download GSTR-1 CSV"}
           </button>
@@ -113,16 +113,16 @@ export default function GstReportPage() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-24 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+            <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse" />
           ))}
         </div>
       ) : error || !data ? (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-sm text-red-700 dark:text-red-400">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-sm text-red-700">
           {error || "No data."}
         </div>
       ) : (
         <>
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+          <h2 className="shell-label">
             Period — {monthLabel(month)}
           </h2>
 
@@ -141,9 +141,9 @@ export default function GstReportPage() {
             </div>
 
             {data.outward.byRate.length > 0 && (
-              <div className="mt-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-700">
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              <div className="shell-panel mt-4 overflow-hidden">
+                <div className="px-5 py-3 border-b border-gray-100">
+                  <h3 className="text-sm font-semibold text-gray-700">
                     By Rate Bucket
                   </h3>
                 </div>
@@ -152,24 +152,24 @@ export default function GstReportPage() {
                     and a squashed table is worse than one you swipe. */}
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+                    <tr className="bg-gray-50 border-b border-gray-200">
                       {["Rate", "Taxable Value", "GST Collected"].map((h) => (
-                        <th key={h} className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide py-3 px-5">
+                        <th key={h} className="text-left py-3 px-5 shell-label">
                           {h}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  <tbody className="divide-y divide-gray-100">
                     {data.outward.byRate.map((b) => (
                       <tr key={b.rate}>
-                        <td className="py-3 px-5 text-sm font-semibold text-gray-900 dark:text-white">
+                        <td className="py-3 px-5 text-sm font-semibold text-gray-900">
                           {Number(b.rate).toFixed(2)}%
                         </td>
-                        <td className="py-3 px-5 text-sm text-gray-700 dark:text-gray-300">
+                        <td className="py-3 px-5 text-sm text-gray-700">
                           {currency(b.taxableValue)}
                         </td>
-                        <td className="py-3 px-5 text-sm text-gray-700 dark:text-gray-300">
+                        <td className="py-3 px-5 text-sm text-gray-700">
                           {currency(b.gstAmount)}
                         </td>
                       </tr>
@@ -193,27 +193,27 @@ export default function GstReportPage() {
           </Section>
 
           {/* Net payable */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 flex items-center justify-between">
+          <div className="shell-panel p-6 flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <p className="shell-label">
                 Net GST Payable
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 Output GST − ITC
               </p>
             </div>
             <p
               className={`text-3xl font-bold ${
                 Number(data.netGstPayable) >= 0
-                  ? "text-red-600 dark:text-red-400"
-                  : "text-emerald-600 dark:text-emerald-400"
+                  ? "text-red-600"
+                  : "text-emerald-600"
               }`}
             >
               {currency(data.netGstPayable)}
             </p>
           </div>
 
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-gray-500">
             Hand these numbers to your CA for GSTR-3B. Use the GSTR-1 CSV
             (button above) for the per-invoice line-item upload to the GST portal.
           </p>
@@ -229,8 +229,8 @@ function Section({
   return (
     <section>
       <div className="mb-3">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h2>
-        {subtitle && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{subtitle}</p>}
+        <h2 className="text-[17.5px] font-semibold tracking-tight text-gray-900">{title}</h2>
+        {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
       </div>
       {children}
     </section>
@@ -241,15 +241,15 @@ function Card({
   label, value, tone,
 }: { label: string; value: string; tone?: "emerald" | "red" }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+    <div className="shell-panel p-5">
+      <p className="shell-label">
         {label}
       </p>
       <p
         className={`text-xl font-bold mt-1 ${
           tone === "emerald"
-            ? "text-emerald-600 dark:text-emerald-400"
-            : "text-gray-900 dark:text-white"
+            ? "text-emerald-600"
+            : "text-gray-900"
         }`}
       >
         {value}

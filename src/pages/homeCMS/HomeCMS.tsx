@@ -68,13 +68,13 @@ const HomeCMS = () => {
       {/* Page Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Home CMS</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">The list view, from before the studio</p>
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900">Home CMS</h1>
+          <p className="text-sm text-gray-500 mt-1">The list view, from before the studio</p>
         </div>
         {!readOnly && (
         <button
           onClick={() => setAddOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-700 text-white rounded-full text-sm font-medium transition-colors shell-press"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -87,25 +87,25 @@ const HomeCMS = () => {
       {/* Unpublished changes. Everything above and below this bar is edited in
         the browser only — this is the one control that writes to the site. */}
       {!readOnly && isDirty && (
-        <div className="sticky top-0 z-20 mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+        <div className="sticky top-0 z-20 mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
           <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-amber-500 px-2 text-xs font-bold text-white">
             {pendingCount}
           </span>
-          <span className="text-sm text-amber-900 dark:text-amber-200">
+          <span className="text-sm text-amber-900">
             unpublished change{pendingCount === 1 ? "" : "s"} — the storefront still shows the old page.
           </span>
           <div className="ml-auto flex gap-2">
             <button
               onClick={onDiscard}
               disabled={publishing}
-              className="rounded-lg px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50 dark:text-amber-200 dark:hover:bg-amber-500/20"
+              className="rounded-full px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50 shell-press"
             >
               Discard
             </button>
             <button
               onClick={onPublish}
               disabled={publishing}
-              className="rounded-lg bg-amber-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+              className="rounded-full bg-amber-600 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50 shell-press"
             >
               {publishing ? "Publishing…" : "Publish"}
             </button>
@@ -117,8 +117,8 @@ const HomeCMS = () => {
         <div
           className={`mb-5 flex items-start gap-3 rounded-xl border px-4 py-3 text-sm ${
             notice.ok
-              ? "border-green-200 bg-green-50 text-green-800 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-300"
-              : "border-red-200 bg-red-50 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
+              ? "border-green-200 bg-green-50 text-green-800"
+              : "border-red-200 bg-red-50 text-red-800"
           }`}
         >
           <span className="flex-1">{notice.text}</span>
@@ -129,31 +129,31 @@ const HomeCMS = () => {
       )}
 
       {loadError && (
-        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {loadError}
         </div>
       )}
 
       {/* Gender Tabs */}
-      <div className="flex gap-1 mb-5 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 mb-5 bg-gray-100 p-1 rounded-full w-fit">
         {GENDER_TABS.map(({ key, label }) => {
           const count = sections.filter((s) => s.gender === key).length;
           return (
             <button
               key={key}
               onClick={() => setActiveGender(key)}
-              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all shell-press ${
                 activeGender === key
-                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
             >
               {label}
               {count > 0 && (
                 <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${
                   activeGender === key
-                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-gray-200 text-gray-500"
                 }`}>
                   {count}
                 </span>
@@ -167,10 +167,10 @@ const HomeCMS = () => {
       <div className="space-y-4">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 rounded-xl h-36 animate-pulse border border-gray-200 dark:border-gray-700" />
+            <div key={i} className="shell-panel h-36 animate-pulse" />
           ))
         ) : visibleSections.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-16 text-center">
+          <div className="shell-panel border-dashed p-16 text-center">
             <p className="text-gray-400 text-sm">
               No sections for{" "}
               <span className="font-medium">{GENDER_TABS.find((t) => t.key === activeGender)?.label}</span>{" "}

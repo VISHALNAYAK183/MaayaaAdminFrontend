@@ -6,10 +6,10 @@ interface Props {
 }
 
 export const StatCard: React.FC<Props> = ({ label, value }) => (
-  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
-    <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">
+  <div className="shell-panel px-5 py-4">
+    <p className="mb-1 shell-label">
       {label}
     </p>
-    <div className="text-2xl font-extrabold text-slate-900">{value}</div>
+    <div className="shell-num text-[27px] font-semibold leading-tight tracking-tight text-gray-900">{value}</div>
   </div>
 );

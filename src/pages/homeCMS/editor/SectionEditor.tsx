@@ -89,21 +89,21 @@ export const SectionBlock = ({ section, products, onDelete, onUpdate, onAddItem,
   const [editModal, setEditModal] = useState(false);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
+    <div className="shell-panel overflow-hidden">
       {/* top bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <div className="flex-1 min-w-0">
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+          <span className="text-sm font-semibold text-gray-900">
             {SECTION_LABEL[section.type] ?? section.type}
           </span>
           {hasMeta && section.title && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{section.title}{section.subtitle ? ` — ${section.subtitle}` : ""}</p>
+            <p className="text-xs text-gray-500 mt-0.5 truncate">{section.title}{section.subtitle ? ` — ${section.subtitle}` : ""}</p>
           )}
         </div>
 
         <div className="flex items-center gap-2 ml-3 shrink-0">
           {/* Item count */}
-          <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 tabular-nums">
+          <span className="text-[11px] font-medium text-gray-400 tabular-nums">
             {section.items.length} item{section.items.length !== 1 ? "s" : ""}
           </span>
 
@@ -111,10 +111,10 @@ export const SectionBlock = ({ section, products, onDelete, onUpdate, onAddItem,
             backend stores is translated on the way in and out (draft/types). */}
           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
             section.status === "ACTIVE"
-              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
               : section.status === "INACTIVE"
-              ? "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600"
-              : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
+              ? "bg-gray-100 text-gray-500 border-gray-200"
+              : "bg-amber-50 text-amber-700 border-amber-200"
           }`}>
             {section.status === "ACTIVE" ? "Active" : section.status === "INACTIVE" ? "Inactive" : "Draft"}
           </span>
@@ -122,14 +122,14 @@ export const SectionBlock = ({ section, products, onDelete, onUpdate, onAddItem,
           {!readOnly && (<>
           <button
             onClick={() => setEditModal(true)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
             title="Edit section settings"
           >
             <PencilIcon />
           </button>
           <button
             onClick={onDelete}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-red-400 hover:bg-red-50 transition-colors"
             title="Delete section"
           >
             <TrashIcon />
@@ -143,10 +143,10 @@ export const SectionBlock = ({ section, products, onDelete, onUpdate, onAddItem,
         <div className="px-6 pb-6 pt-4">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide py-3 pl-4 pr-3 w-14">#</th>
-                <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide py-3 pr-4">Image</th>
-                <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide py-3 pr-4">Link</th>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="text-left py-3 pl-4 pr-3 w-14 shell-label">#</th>
+                <th className="text-left py-3 pr-4 shell-label">Image</th>
+                <th className="text-left py-3 pr-4 shell-label">Link</th>
                 <th className="w-10"></th>
               </tr>
             </thead>
@@ -526,7 +526,7 @@ const HeroItemCard = ({
                 </button>
                 <button
                   onClick={() => setEditImageModal(false)}
-                  className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border border-gray-200 rounded-full text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors shell-press"
                 >
                   Cancel
                 </button>
@@ -662,7 +662,7 @@ const AddHeroItemCard = ({ onAdd, allItems }: { onAdd: (p: any) => void; allItem
           <div className="flex items-center gap-1">
             <button
               onClick={submit}
-              className="h-6 px-2.5 bg-gray-900 text-white rounded text-[11px] font-semibold hover:bg-gray-800 transition-colors whitespace-nowrap"
+              className="h-6 px-2.5 bg-gray-900 text-white rounded-full text-[11px] font-semibold hover:bg-gray-800 transition-colors whitespace-nowrap shell-press"
             >
               Add
             </button>
@@ -757,7 +757,7 @@ const ItemCard = ({ item, tall, product, existingProductIds = [], onUpdate, onDe
 
     return (
       <>
-      <div className="shrink-0 bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group" style={{ width: cardW }}>
+      <div className="shell-panel shrink-0 overflow-hidden hover:shadow-md transition-shadow group" style={{ width: cardW }}>
         {/* Image — not clickable */}
         <div className="relative overflow-hidden bg-gray-50" style={{ height: cardH }}>
           {thumb ? (
@@ -856,7 +856,7 @@ const ItemCard = ({ item, tall, product, existingProductIds = [], onUpdate, onDe
           <input autoFocus value={linkVal} onChange={(e) => setLinkVal(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && saveLink()} placeholder="/link"
             className="w-full text-[10px] border border-gray-300 rounded-md px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-gray-800" />
-          <button onClick={saveLink} className="shrink-0 text-[9px] bg-gray-900 text-white px-1.5 py-1 rounded-md font-bold">✓</button>
+          <button onClick={saveLink} className="shrink-0 text-[9px] bg-gray-900 text-white px-1.5 py-1 rounded-full font-bold shell-press">✓</button>
         </div>
       ) : (
         <div className="flex items-center justify-between gap-1">
@@ -864,7 +864,7 @@ const ItemCard = ({ item, tall, product, existingProductIds = [], onUpdate, onDe
             {item.link ? item.link.replace(/^https?:\/\/[^/]+/, "").slice(0, 10) || "link" : "link"}
           </span>
           <button onClick={() => setLinkEdit(true)}
-            className="text-[10px] text-gray-500 border border-gray-200 px-2 py-0.5 rounded-md hover:bg-gray-50 shrink-0 font-medium">
+            className="text-[10px] text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full hover:bg-gray-50 shrink-0 font-medium shell-press">
             edit
           </button>
         </div>
@@ -978,7 +978,7 @@ const AddItemCard = ({
         </div>
         <div className="flex gap-1.5">
           <button onClick={submit} className="flex-1 bg-gray-900 text-white text-[11px] font-bold py-1.5 rounded-lg">Add</button>
-          <button onClick={() => { setExpanded(false); setPosError(""); }} className="text-[11px] text-gray-400 px-2 border border-gray-200 rounded-lg">✕</button>
+          <button onClick={() => { setExpanded(false); setPosError(""); }} className="text-[11px] text-gray-400 px-2 border border-gray-200 rounded-full shell-press">✕</button>
         </div>
       </div>
     );
@@ -1001,7 +1001,7 @@ const AddItemCard = ({
         <span className="text-[10px] text-gray-300">link</span>
         <button
           onClick={() => setExpanded(true)}
-          className="text-[10px] text-gray-400 border border-gray-200 px-2 py-0.5 rounded-md hover:bg-gray-50 font-medium"
+          className="text-[10px] text-gray-400 border border-gray-200 px-2 py-0.5 rounded-full hover:bg-gray-50 font-medium shell-press"
         >
           add
         </button>
@@ -1057,15 +1057,15 @@ export const SectionModal = ({ initial, onClose, onSave }: ModalProps) => {
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md"
+        className="bg-white rounded-xl shadow-xl w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">
             {isEdit ? "Edit Section" : "Add Section"}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -1080,10 +1080,10 @@ export const SectionModal = ({ initial, onClose, onSave }: ModalProps) => {
                 <button
                   key={t} type="button"
                   onClick={() => setForm({ ...form, type: t })}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors shell-press ${
                     form.type === t
-                      ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white"
-                      : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-500 dark:hover:border-gray-400"
+                      ? "bg-gray-900 text-white border-gray-900"
+                      : "border-gray-300 text-gray-600 hover:border-gray-500"
                   }`}
                 >{SECTION_LABEL[t] ?? t}</button>
               ))}
@@ -1103,8 +1103,8 @@ export const SectionModal = ({ initial, onClose, onSave }: ModalProps) => {
                     onClick={() => setForm({ ...form, gender: key })}
                     className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${
                       form.gender === key
-                        ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900"
-                        : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "border-gray-300 text-gray-600 hover:bg-gray-50"
                     }`}
                   >{label}</button>
                 ))}
@@ -1120,8 +1120,8 @@ export const SectionModal = ({ initial, onClose, onSave }: ModalProps) => {
                   onClick={() => setForm({ ...form, status: s })}
                   className={`flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors ${
                     form.status === s
-                      ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900"
-                      : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      ? "bg-gray-900 text-white border-gray-900"
+                      : "border-gray-300 text-gray-600 hover:bg-gray-50"
                   }`}
                 >{s}</button>
               ))}
@@ -1130,11 +1130,11 @@ export const SectionModal = ({ initial, onClose, onSave }: ModalProps) => {
 
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors"
+              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-full hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors shell-press"
             >Cancel</button>
             <button
               type="submit" disabled={saving}
-              className="flex-1 px-4 py-2.5 bg-gray-900 hover:bg-gray-700 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+              className="flex-1 px-4 py-2.5 bg-gray-900 hover:bg-gray-700 text-white rounded-full text-sm font-medium disabled:opacity-50 transition-colors shell-press"
             >
               {saving ? "Saving…" : isEdit ? "Update Section" : "Add Section"}
             </button>
@@ -1147,7 +1147,7 @@ export const SectionModal = ({ initial, onClose, onSave }: ModalProps) => {
 
 // ─── SMALL HELPERS ───────────────────────────────────────────────────────────
 const Label = ({ children }: { children: React.ReactNode }) => (
-  <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">{children}</span>
+  <span className="block text-sm font-medium text-gray-700">{children}</span>
 );
 
 const ModalField = ({
@@ -1158,7 +1158,7 @@ const ModalField = ({
     <input
       type={type} value={value} required={required}
       onChange={(e) => onChange(e.target.value)}
-      className="mt-1.5 w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-300 transition-colors"
+      className="mt-1.5 w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-colors"
     />
   </div>
 );

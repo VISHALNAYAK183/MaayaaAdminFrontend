@@ -15,9 +15,9 @@ import { moved, useSortable } from "./useSortable";
  */
 
 const STATUS_STYLE: Record<SectionStatus, string> = {
-  ACTIVE: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800",
-  DRAFT: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800",
-  INACTIVE: "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600",
+  ACTIVE: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  DRAFT: "bg-amber-50 text-amber-700 border-amber-200",
+  INACTIVE: "bg-gray-100 text-gray-500 border-gray-200",
 };
 
 const STATUS_LABEL: Record<SectionStatus, string> = {
@@ -71,12 +71,12 @@ const ItemRow = ({ item, index, sectionId, draggable, product, onMove }: ItemRow
       {src ? (
         <img src={src} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />
       ) : (
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-gray-100 text-[9px] text-gray-400 dark:bg-gray-700">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-gray-100 text-[9px] text-gray-400">
           {item.productId ? "#" + item.productId : "—"}
         </span>
       )}
 
-      <span className="min-w-0 flex-1 truncate text-[11px] text-gray-600 dark:text-gray-300">
+      <span className="min-w-0 flex-1 truncate text-[11px] text-gray-600">
         {label || `Item ${item.position}`}
       </span>
       <span className="text-[10px] text-gray-400">{item.position}</span>
@@ -125,8 +125,8 @@ const SectionRow = ({
       data-rail-section={String(section.sectionId)}
       className={`rounded-lg border transition-colors ${isDragging ? "opacity-40" : ""} ${
         selected
-          ? "border-blue-400 bg-blue-50/60 dark:border-blue-500 dark:bg-blue-500/10"
-          : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800"
+          ? "border-blue-400 bg-blue-50/60"
+          : "border-gray-200 bg-white hover:border-gray-300"
       }`}
     >
       <div className="flex items-start gap-1.5 p-2.5">
@@ -156,13 +156,13 @@ const SectionRow = ({
           }}
           className="flex min-w-0 flex-1 cursor-pointer items-start gap-2"
         >
-          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-gray-100 text-[10px] font-bold text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-gray-100 text-[10px] font-bold text-gray-500">
             {section.position}
           </span>
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <span className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+              <span className="truncate text-sm font-semibold text-gray-900">
                 {section.title?.trim() || SECTION_LABEL[section.type] || section.type}
               </span>
               <span className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold ${STATUS_STYLE[section.status]}`}>
@@ -170,7 +170,7 @@ const SectionRow = ({
               </span>
               {shared && (
                 <span
-                  className="shrink-0 rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[9px] font-semibold text-violet-700 dark:border-violet-500/40 dark:bg-violet-500/10 dark:text-violet-300"
+                  className="shrink-0 rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[9px] font-semibold text-violet-700"
                   title="Unisex — this section also appears on the other audience's page, and moving it here moves it there too."
                 >
                   Unisex
@@ -186,11 +186,11 @@ const SectionRow = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-1 border-t border-gray-100 px-2.5 py-1.5 dark:border-gray-700">
+      <div className="flex items-center gap-1 border-t border-gray-100 px-2.5 py-1.5">
         {section.items.length > 0 && (
           <button
             onClick={() => onToggle(section.sectionId)}
-            className="rounded px-1.5 py-1 text-[11px] font-medium text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="rounded-full px-1.5 py-1 text-[11px] font-medium text-gray-500 hover:bg-gray-100 shell-press"
           >
             {expanded ? "Hide items" : "Items"}
           </button>
@@ -201,7 +201,7 @@ const SectionRow = ({
             <select
               value={section.status}
               onChange={(e) => onStatus(section.sectionId, e.target.value as SectionStatus)}
-              className="rounded border border-gray-200 bg-transparent px-1 py-0.5 text-[11px] text-gray-600 dark:border-gray-600 dark:text-gray-300"
+              className="rounded border border-gray-200 bg-transparent px-1 py-0.5 text-[11px] text-gray-600"
               aria-label="Section visibility"
             >
               <option value="ACTIVE">Live</option>
@@ -211,13 +211,13 @@ const SectionRow = ({
 
             <button
               onClick={() => onOpen(section.sectionId)}
-              className="ml-auto rounded px-2 py-1 text-[11px] font-semibold text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+              className="ml-auto rounded-full px-2 py-1 text-[11px] font-semibold text-blue-600 hover:bg-blue-50 shell-press"
             >
               Edit
             </button>
             <button
               onClick={() => onDelete(section.sectionId)}
-              className="rounded px-2 py-1 text-[11px] font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+              className="rounded-full px-2 py-1 text-[11px] font-medium text-red-500 hover:bg-red-50 shell-press"
             >
               Delete
             </button>
@@ -226,7 +226,7 @@ const SectionRow = ({
       </div>
 
       {expanded && (
-        <div className="space-y-1 border-t border-gray-100 p-2 dark:border-gray-700">
+        <div className="space-y-1 border-t border-gray-100 p-2">
           {items.map((item, i) => (
             <ItemRow
               key={item.itemId}
@@ -285,7 +285,7 @@ const StudioRail = ({
     return (
       <div className="space-y-2 p-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
+          <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-100" />
         ))}
       </div>
     );

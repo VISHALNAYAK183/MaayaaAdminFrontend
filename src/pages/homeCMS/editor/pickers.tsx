@@ -213,7 +213,7 @@ export const ProductPickerModal = ({ onSelect, onClose, existingProductIds }: Pr
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="flex items-center gap-1 text-[11px] px-3 py-1.5 border border-gray-200 rounded-lg bg-white disabled:opacity-40 hover:bg-gray-50 transition-colors font-medium text-gray-600"
+              className="flex items-center gap-1 text-[11px] px-3 py-1.5 border border-gray-200 rounded-full bg-white disabled:opacity-40 hover:bg-gray-50 transition-colors font-medium text-gray-600 shell-press"
             >
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               Prev
@@ -221,7 +221,7 @@ export const ProductPickerModal = ({ onSelect, onClose, existingProductIds }: Pr
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={products.length < limit}
-              className="flex items-center gap-1 text-[11px] px-3 py-1.5 border border-gray-200 rounded-lg bg-white disabled:opacity-40 hover:bg-gray-50 transition-colors font-medium text-gray-600"
+              className="flex items-center gap-1 text-[11px] px-3 py-1.5 border border-gray-200 rounded-full bg-white disabled:opacity-40 hover:bg-gray-50 transition-colors font-medium text-gray-600 shell-press"
             >
               Next
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>

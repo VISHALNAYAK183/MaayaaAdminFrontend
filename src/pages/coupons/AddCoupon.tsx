@@ -151,7 +151,7 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({ value, onChange, minDat
 // ─── Shared Helpers ───────────────────────────────────────────────────────────
 const Fld = ({ label, req, hint, children }: { label: string; req?: boolean; hint?: string; children: React.ReactNode }) => (
   <div className="flex flex-col gap-1.5">
-    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+    <label className="shell-label">
       {label}{req && <span className="text-red-500 ml-0.5">*</span>}
     </label>
     {children}
@@ -317,32 +317,32 @@ const UsersPanel: React.FC<UsersPanelProps> = ({ coupon, users, onClose, onUserR
         {/* Panel Footer */}
         <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 space-y-2">
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-white rounded-xl border border-slate-200 px-3 py-2.5 text-center">
-              <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold mb-0.5">Valid From</p>
+            <div className="shell-panel px-3 py-2.5 text-center">
+              <p className="mb-0.5 shell-label">Valid From</p>
               <p className="text-xs font-semibold text-slate-700">{new Date(coupon.validFrom).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p>
             </div>
-            <div className="bg-white rounded-xl border border-slate-200 px-3 py-2.5 text-center">
-              <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold mb-0.5">Valid Till</p>
+            <div className="shell-panel px-3 py-2.5 text-center">
+              <p className="mb-0.5 shell-label">Valid Till</p>
               <p className="text-xs font-semibold text-slate-700">{new Date(coupon.validTill).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p>
             </div>
           </div>
           {(coupon.minPurchase || coupon.maxDiscount || coupon.usageLimit) ? (
             <div className="flex gap-2">
               {coupon.minPurchase ? (
-                <div className="flex-1 bg-white rounded-xl border border-slate-200 px-3 py-2.5 text-center">
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold mb-0.5">Min Purchase</p>
+                <div className="shell-panel flex-1 px-3 py-2.5 text-center">
+                  <p className="mb-0.5 shell-label">Min Purchase</p>
                   <p className="text-xs font-semibold text-slate-700">₹{coupon.minPurchase}</p>
                 </div>
               ) : null}
               {coupon.maxDiscount ? (
-                <div className="flex-1 bg-white rounded-xl border border-slate-200 px-3 py-2.5 text-center">
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold mb-0.5">Max Discount</p>
+                <div className="shell-panel flex-1 px-3 py-2.5 text-center">
+                  <p className="mb-0.5 shell-label">Max Discount</p>
                   <p className="text-xs font-semibold text-slate-700">₹{coupon.maxDiscount}</p>
                 </div>
               ) : null}
               {coupon.usageLimit ? (
-                <div className="flex-1 bg-white rounded-xl border border-slate-200 px-3 py-2.5 text-center">
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold mb-0.5">Usage Limit</p>
+                <div className="shell-panel flex-1 px-3 py-2.5 text-center">
+                  <p className="mb-0.5 shell-label">Usage Limit</p>
                   <p className="text-xs font-semibold text-slate-700">{coupon.usageLimit}</p>
                 </div>
               ) : null}
@@ -503,27 +503,18 @@ const CouponManagement = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-100 p-8 font-sans">
+    <div>
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <div className="flex items-center gap-1.5 mb-2">
-            {["Dashboard", "Promotions"].map(c => (
-              <React.Fragment key={c}>
-                <span className="text-xs text-slate-400 cursor-pointer hover:text-slate-600">{c}</span>
-                <span className="text-xs text-slate-300">›</span>
-              </React.Fragment>
-            ))}
-            <span className="text-xs text-slate-600 font-semibold">Coupon Management</span>
-          </div>
           <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-slate-900">Coupon Management</h1>
-          <p className="text-sm text-slate-400 mt-0.5">Manage your discount coupons</p>
+          <p className="mt-1 text-sm text-slate-500">Discount codes, and who can use them</p>
         </div>
         {!readOnly && (
         <button
           onClick={() => { setLockedUserIds([]); setShowForm(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-full hover:bg-slate-700 transition-colors shell-press"
         >
           <span className="text-xl leading-none">+</span>
           <span className="text-sm font-semibold">New Coupon</span>
@@ -548,7 +539,7 @@ const CouponManagement = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-lg font-bold text-slate-800">{editingId ? "Edit Coupon" : "Create New Coupon"}</h2>
+              <h2 className="text-[17.5px] font-semibold tracking-tight text-gray-900">{editingId ? "Edit Coupon" : "Create New Coupon"}</h2>
               <button onClick={reset} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
             </div>
 
@@ -587,7 +578,7 @@ const CouponManagement = () => {
               <div className="bg-gradient-to-br from-slate-50 to-blue-50 border border-dashed border-blue-200 rounded-xl p-4 mb-6">
                 <div className="flex items-start gap-4 mb-3">
                   <div className="flex-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block mb-1.5">
+                    <label className="block mb-1.5 shell-label">
                       Keyword / Prefix <em className="normal-case font-normal text-slate-400 not-italic">(optional)</em>
                     </label>
                     <input value={genPrefix}
@@ -596,7 +587,7 @@ const CouponManagement = () => {
                   </div>
                   <div className="text-xl text-blue-300 mt-7 shrink-0">→</div>
                   <div className="min-w-[180px] shrink-0">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block mb-1.5">Preview</label>
+                    <label className="block mb-1.5 shell-label">Preview</label>
                     <div className="flex items-center gap-2 bg-white border border-blue-200 rounded-lg px-3 py-2 min-h-[42px]">
                       <span className="font-mono font-extrabold text-blue-700 tracking-widest flex-1 text-sm">{preview || "———"}</span>
                       <button type="button" onClick={regenerate}
@@ -605,7 +596,7 @@ const CouponManagement = () => {
                   </div>
                 </div>
                 <button type="button" onClick={applyCode}
-                  className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold tracking-wide transition-colors">
+                  className="w-full py-2.5 rounded-lg bg-gray-900 hover:bg-gray-700 text-white text-sm font-bold tracking-wide transition-colors">
                   ↓ &nbsp; Use this code
                 </button>
               </div>
@@ -663,11 +654,11 @@ const CouponManagement = () => {
                               className="rounded border-slate-300" />
                           )}
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">User ID</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Name</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Email</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Phone</th>
-                        {editingId && <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Status</th>}
+                        <th className="px-4 py-3 text-left shell-label">User ID</th>
+                        <th className="px-4 py-3 text-left shell-label">Name</th>
+                        <th className="px-4 py-3 text-left shell-label">Email</th>
+                        <th className="px-4 py-3 text-left shell-label">Phone</th>
+                        {editingId && <th className="px-4 py-3 text-left shell-label">Status</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -723,11 +714,11 @@ const CouponManagement = () => {
               {/* Form Actions */}
               <div className="flex justify-end gap-3 border-t border-slate-200 pt-6">
                 <button type="button" onClick={reset}
-                  className="px-5 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors">
+                  className="px-5 py-2 rounded-full border border-slate-200 bg-white text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors shell-press">
                   Cancel
                 </button>
                 <button type="submit" disabled={loading}
-                  className="flex items-center px-5 py-2 rounded-lg bg-slate-900 hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold shadow-md transition-all">
+                  className="flex items-center px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold shadow-md transition-all shell-press">
                   {loading ? (
                     <>
                       <svg className="animate-spin w-3.5 h-3.5 mr-2" fill="none" viewBox="0 0 24 24">
@@ -753,26 +744,26 @@ const CouponManagement = () => {
 
       {/* ── Stats Row ── */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Total Coupons</p>
+        <div className="shell-panel px-5 py-4">
+          <p className="mb-1 shell-label">Total Coupons</p>
           <p className="text-2xl font-extrabold text-slate-900">{coupons.length}</p>
         </div>
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Active</p>
+        <div className="shell-panel px-5 py-4">
+          <p className="mb-1 shell-label">Active</p>
           <p className="text-2xl font-extrabold text-slate-900">{activeCoupons.length}</p>
         </div>
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Search Results</p>
+        <div className="shell-panel px-5 py-4">
+          <p className="mb-1 shell-label">Search Results</p>
           <p className="text-2xl font-extrabold text-slate-900">{filtered.length}</p>
         </div>
       </div>
 
       {/* ── Table Card ── */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="shell-panel overflow-hidden">
 
         {/* Toolbar */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between gap-4 flex-wrap">
-          <h2 className="text-sm font-bold text-slate-800">All Coupons</h2>
+          <h2 className="text-[17.5px] font-semibold tracking-tight text-gray-900">All Coupons</h2>
           <div className="relative w-64">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"><SearchIcon /></span>
             <input type="text" value={search} onChange={e => setSearch(e.target.value)}
@@ -785,17 +776,17 @@ const CouponManagement = () => {
           <table className="w-full text-sm">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Code</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Value</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Min Purchase</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Max Discount</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Usage Limit</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Valid From</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Valid Till</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Users</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Actions</th>
+                <th className="px-6 py-3 text-left shell-label">ID</th>
+                <th className="px-6 py-3 text-left shell-label">Code</th>
+                <th className="px-6 py-3 text-left shell-label">Type</th>
+                <th className="px-6 py-3 text-left shell-label">Value</th>
+                <th className="px-6 py-3 text-left shell-label">Min Purchase</th>
+                <th className="px-6 py-3 text-left shell-label">Max Discount</th>
+                <th className="px-6 py-3 text-left shell-label">Usage Limit</th>
+                <th className="px-6 py-3 text-left shell-label">Valid From</th>
+                <th className="px-6 py-3 text-left shell-label">Valid Till</th>
+                <th className="px-6 py-3 text-left shell-label">Users</th>
+                <th className="px-6 py-3 text-left shell-label">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -847,7 +838,7 @@ const CouponManagement = () => {
                       <td className="px-6 py-4">
                         <button
                           onClick={() => setPanelCoupon(isActive ? null : coupon)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all shell-press
                             ${isActive ? "bg-slate-800 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-600"}`}
                         >
                           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -860,13 +851,13 @@ const CouponManagement = () => {
                         <div className="flex items-center gap-2">
                           {!readOnly && (<>
                           <button onClick={() => handleEdit(coupon)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors shell-press" title="Edit">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                           </button>
                           <button onClick={() => coupon.couponId && handleDelete(coupon.couponId)}
-                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-full transition-colors shell-press" title="Delete">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>

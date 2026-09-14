@@ -4,7 +4,7 @@ const DragHandle = ({ disabled }: { disabled?: boolean }) => (
     width="10"
     height="16"
     viewBox="0 0 10 16"
-    className={disabled ? "text-gray-200 dark:text-gray-700" : "text-gray-400"}
+    className={disabled ? "text-gray-200" : "text-gray-400"}
     fill="currentColor"
     aria-hidden="true"
   >

@@ -20,11 +20,11 @@ export default function AuthLayout({
         </div>
 
         <div className="shell-panel p-6 sm:p-8">
-          <h1 className="text-xl font-semibold text-gray-800 dark:text-white/90">
+          <h1 className="text-xl font-semibold text-gray-800">
             {title}
           </h1>
           {subtitle && (
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>
+            <p className="mt-2 text-sm text-gray-500">{subtitle}</p>
           )}
           <div className="mt-6">{children}</div>
         </div>

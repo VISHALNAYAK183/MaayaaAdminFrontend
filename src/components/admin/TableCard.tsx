@@ -24,9 +24,9 @@ export const TableCard: React.FC<Props> = ({
   searchTerm,
   children,
 }) => (
-  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-    <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between gap-4 flex-wrap">
-      <h2 className="text-sm font-bold text-slate-800">{title}</h2>
+  <div className="shell-panel overflow-hidden">
+    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-200 px-5 py-4">
+      <h2 className="text-[17.5px] font-semibold tracking-tight text-gray-900">{title}</h2>
       {onSearchChange && (
         <div className="relative w-64">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -37,7 +37,7 @@ export const TableCard: React.FC<Props> = ({
             value={search ?? ""}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={searchPlaceholder}
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white placeholder:text-slate-300 transition-all"
+            className="h-10 w-full rounded-full border border-gray-200 bg-white pl-9 pr-3 text-sm text-gray-900 outline-none transition-colors hover:border-gray-300 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 placeholder:text-gray-400"
           />
         </div>
       )}
@@ -46,8 +46,8 @@ export const TableCard: React.FC<Props> = ({
     <div className="overflow-x-auto">{children}</div>
 
     {showingCount !== undefined && totalCount !== undefined && showingCount > 0 && (
-      <div className="px-6 py-3 border-t border-slate-100 bg-slate-50">
-        <p className="text-xs text-slate-400">
+      <div className="border-t border-gray-200 px-5 py-3">
+        <p className="text-xs text-gray-500">
           Showing <span className="font-semibold text-slate-600">{showingCount}</span> of{" "}
           <span className="font-semibold text-slate-600">{totalCount}</span> {itemLabel}
           {searchTerm && (

@@ -113,17 +113,17 @@ export default function MfaSetup() {
             </div>
 
             <div>
-              <p className="mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-400">
+              <p className="mb-1.5 text-sm font-medium text-gray-700">
                 Or enter this key manually
               </p>
               <div className="flex items-center gap-2">
-                <code className="flex-1 break-all rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+                <code className="flex-1 break-all rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-sm text-gray-800">
                   {groupSecret(enrolment.secret)}
                 </code>
                 <button
                   type="button"
                   onClick={copySecret}
-                  className="shrink-0 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-900"
+                  className="shrink-0 rounded-full border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 shell-press"
                 >
                   {copied ? "Copied" : "Copy"}
                 </button>
@@ -148,7 +148,7 @@ export default function MfaSetup() {
         <button
           type="button"
           onClick={() => restart()}
-          className="mt-4 w-full text-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+          className="mt-4 w-full text-center text-sm text-gray-500 hover:text-gray-700"
         >
           Back to sign in
         </button>

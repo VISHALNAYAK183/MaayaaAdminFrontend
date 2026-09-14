@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { AlertIcon, PageIcon } from "../../layout/shellIcons";
 
 interface Props {
   open: boolean;
@@ -35,34 +36,34 @@ export const ConfirmDialog: React.FC<Props> = ({
 
   const confirmCls =
     tone === "danger"
-      ? "bg-red-600 hover:bg-red-700 text-white"
+      ? "bg-error-600 hover:bg-error-700 text-white"
       : "bg-slate-900 hover:bg-slate-700 text-white";
 
   const iconCls =
-    tone === "danger" ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600";
+    tone === "danger" ? "bg-error-50 text-error-700" : "bg-gray-100 text-gray-700";
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4"
+      className="shell-scrim fixed inset-0 z-[70] flex items-center justify-center p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onCancel();
       }}
     >
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+      <div className="shell-pop shell-palette w-full max-w-md overflow-hidden">
         <div className="px-6 py-5 flex items-start gap-4">
-          <div className={`w-11 h-11 rounded-full flex items-center justify-center text-xl shrink-0 ${iconCls}`}>
-            {tone === "danger" ? "⚠️" : "ℹ️"}
+          <div className={`grid size-11 shrink-0 place-items-center rounded-full ${iconCls}`}>
+            {tone === "danger" ? <AlertIcon className="size-5" /> : <PageIcon className="size-5" />}
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-base font-bold text-slate-900 mb-1">{title}</h3>
+            <h3 className="mb-1 text-base font-semibold text-gray-900">{title}</h3>
             <div className="text-sm text-slate-600 leading-relaxed">{message}</div>
           </div>
         </div>
-        <div className="flex justify-end gap-3 px-6 py-4 bg-slate-50 border-t border-slate-200">
+        <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors"
+            className="px-4 py-2 rounded-full border border-slate-200 bg-white text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors shell-press"
           >
             {cancelLabel}
           </button>
@@ -70,7 +71,7 @@ export const ConfirmDialog: React.FC<Props> = ({
             type="button"
             onClick={onConfirm}
             autoFocus
-            className={`px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors ${confirmCls}`}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shell-press ${confirmCls}`}
           >
             {confirmLabel}
           </button>

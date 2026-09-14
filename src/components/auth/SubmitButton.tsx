@@ -17,7 +17,7 @@ export default function SubmitButton({
       type={type}
       onClick={onClick}
       disabled={disabled || busy}
-      className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 text-sm font-medium text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+      className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {busy && (
         <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />

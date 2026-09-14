@@ -32,14 +32,14 @@ const fmtDate = (iso: string | null) => {
 };
 
 const STATUS_TONE: Record<string, string> = {
-  DELIVERED: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300",
-  CANCELLED: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
-  REJECTED: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
+  DELIVERED: "bg-green-100 text-green-700",
+  CANCELLED: "bg-red-100 text-red-700",
+  REJECTED: "bg-red-100 text-red-700",
 };
 
 const toneFor = (status: string | null) =>
   STATUS_TONE[status ?? ""] ??
-  "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300";
+  "bg-gray-100 text-gray-700";
 
 function Card({ title, subtitle, children }: {
   title: string;
@@ -47,11 +47,11 @@ function Card({ title, subtitle, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+    <div className="shell-panel p-5">
       <div className="mb-3 flex items-baseline justify-between gap-2">
-        <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">{title}</h2>
+        <h2 className="text-[17.5px] font-semibold tracking-tight text-gray-900">{title}</h2>
         {subtitle && (
-          <span className="text-xs text-gray-400 dark:text-gray-500">{subtitle}</span>
+          <span className="text-xs text-gray-400">{subtitle}</span>
         )}
       </div>
       {children}
@@ -61,11 +61,11 @@ function Card({ title, subtitle, children }: {
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-      <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+    <div className="shell-panel p-4">
+      <p className="shell-label">
         {label}
       </p>
-      <p className={"mt-1 text-xl font-semibold " + (tone ?? "text-gray-800 dark:text-white/90")}>
+      <p className={"mt-1 text-xl font-semibold " + (tone ?? "text-gray-800")}>
         {value}
       </p>
     </div>
@@ -74,14 +74,14 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: str
 
 function Basket({ lines, empty }: { lines: BasketLine[]; empty: string }) {
   if (lines.length === 0) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">{empty}</p>;
+    return <p className="text-sm text-gray-500">{empty}</p>;
   }
   return (
-    <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+    <ul className="divide-y divide-gray-100">
       {lines.map((l, i) => (
         <li key={`${l.productId}-${l.variantId}-${i}`} className="flex items-center justify-between py-2">
           <div className="min-w-0">
-            <p className="truncate text-sm text-gray-800 dark:text-white/90">
+            <p className="truncate text-sm text-gray-800">
               {l.productName}
             </p>
             <p className="text-xs text-gray-400">
@@ -90,7 +90,7 @@ function Basket({ lines, empty }: { lines: BasketLine[]; empty: string }) {
             </p>
           </div>
           <div className="ml-3 shrink-0 text-right">
-            <p className="text-sm text-gray-700 dark:text-gray-200">{currency(l.price)}</p>
+            <p className="text-sm text-gray-700">{currency(l.price)}</p>
             {(l.quantity ?? 1) > 1 && (
               <p className="text-xs text-gray-400">× {l.quantity}</p>
             )}
@@ -247,13 +247,13 @@ export default function CustomerDetailPage() {
   };
 
   if (loading) {
-    return <div className="p-6 text-sm text-gray-500 dark:text-gray-400">Loading…</div>;
+    return <div className="p-6 text-sm text-gray-500">Loading…</div>;
   }
 
   if (!customer) {
     return (
       <div className="p-6">
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error ?? "Customer not found."}
         </div>
         <button
@@ -267,10 +267,10 @@ export default function CustomerDetailPage() {
   }
 
   return (
-    <div className="p-4 md:p-6">
+    <div>
       <button
         onClick={() => navigate("/customers")}
-        className="mb-4 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+        className="mb-4 text-sm text-gray-500 hover:text-gray-700"
       >
         ← Customers
       </button>
@@ -283,12 +283,12 @@ export default function CustomerDetailPage() {
               {customer.name}
             </h1>
             {customer.disabled && (
-              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300">
+              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
                 Disabled
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-gray-500">
             {customer.email}
             {customer.phone ? ` · ${customer.phone}` : ""}
             {customer.gender ? ` · ${customer.gender}` : ""}
@@ -305,7 +305,7 @@ export default function CustomerDetailPage() {
               disabled={busy}
               onClick={() => run(() => sendPasswordReset(customer.userId))}
               title="Emails the customer a reset code. Passwords are hashed, so nobody — including this panel — can read the existing one."
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              className="rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 shell-press"
             >
               Send password reset
             </button>
@@ -321,7 +321,7 @@ export default function CustomerDetailPage() {
                 if (ok) run(() => setCustomerDisabled(customer.userId, next));
               }}
               className={
-                "rounded-lg px-3 py-2 text-sm font-medium text-white disabled:opacity-50 " +
+                "rounded-full px-3 py-2 text-sm font-medium text-white disabled:opacity-50 shell-press " +
                 (customer.disabled
                   ? "bg-green-600 hover:bg-green-700"
                   : "bg-red-600 hover:bg-red-700")
@@ -334,12 +334,12 @@ export default function CustomerDetailPage() {
       </div>
 
       {notice && (
-        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-900 dark:bg-green-950/40 dark:text-green-300">
+        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
           {notice}
         </div>
       )}
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -351,7 +351,7 @@ export default function CustomerDetailPage() {
         <Stat
           label="Cancellations"
           value={String(customer.cancelledCount)}
-          tone={customer.cancelledCount > 0 ? "text-amber-600 dark:text-amber-400" : undefined}
+          tone={customer.cancelledCount > 0 ? "text-amber-600" : undefined}
         />
         <Stat label="Addresses" value={String(customer.addresses.length)} />
       </div>
@@ -360,9 +360,9 @@ export default function CustomerDetailPage() {
         {/* Orders */}
         <Card title="Orders" subtitle={`${customer.orders.length} total`}>
           {customer.orders.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">No orders yet.</p>
+            <p className="text-sm text-gray-500">No orders yet.</p>
           ) : (
-            <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+            <ul className="divide-y divide-gray-100">
               {customer.orders.map((o) => (
                 <li key={o.orderId} className="flex items-center justify-between py-2">
                   <div>
@@ -381,7 +381,7 @@ export default function CustomerDetailPage() {
                     <span className={"rounded-full px-2 py-0.5 text-xs font-medium " + toneFor(o.orderStatus)}>
                       {o.orderStatus ?? "—"}
                     </span>
-                    <span className="w-20 text-right text-sm text-gray-700 dark:text-gray-200">
+                    <span className="w-20 text-right text-sm text-gray-700">
                       {currency(o.amount)}
                     </span>
                   </div>
@@ -394,29 +394,29 @@ export default function CustomerDetailPage() {
         {/* Addresses */}
         <Card title="Addresses" subtitle={`${customer.addresses.length} saved`}>
           {customer.addresses.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">No saved addresses.</p>
+            <p className="text-sm text-gray-500">No saved addresses.</p>
           ) : (
             <ul className="space-y-3">
               {customer.addresses.map((a) => (
                 <li
                   key={a.addressId}
-                  className="rounded-lg border border-gray-100 p-3 text-sm dark:border-gray-700"
+                  className="rounded-lg border border-gray-100 p-3 text-sm"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-800 dark:text-white/90">
+                    <span className="font-medium text-gray-800">
                       {a.name || customer.name}
                     </span>
                     {a.default && (
-                      <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+                      <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-600">
                         Default
                       </span>
                     )}
                     {a.type && <span className="text-xs text-gray-400">{a.type}</span>}
                   </div>
-                  <p className="mt-1 text-gray-600 dark:text-gray-300">
+                  <p className="mt-1 text-gray-600">
                     {[a.address1, a.address2, a.landmark].filter(Boolean).join(", ")}
                   </p>
-                  <p className="text-gray-600 dark:text-gray-300">
+                  <p className="text-gray-600">
                     {[a.city, a.state, a.pinCode].filter(Boolean).join(", ")}
                   </p>
                   {a.phone && <p className="mt-1 text-xs text-gray-400">{a.phone}</p>}
@@ -429,14 +429,14 @@ export default function CustomerDetailPage() {
         {/* Store credit — a balance, and every movement behind it */}
         <Card title="Store credit" subtitle={`₹${Number(credit.balance).toLocaleString("en-IN")} available`}>
           <div className="flex items-center justify-between gap-3 mb-3">
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+            <p className="text-2xl font-bold text-gray-900">
               ₹{Number(credit.balance).toLocaleString("en-IN")}
             </p>
             {!readOnly && (
               <button
                 onClick={handleAdjustCredit}
                 disabled={busy}
-                className="text-xs px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                className="text-xs px-3 py-1.5 border border-gray-200 rounded-full font-medium hover:bg-gray-50 disabled:opacity-50 shell-press"
               >
                 Adjust
               </button>
@@ -444,17 +444,17 @@ export default function CustomerDetailPage() {
           </div>
 
           {credit.entries.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-500">
               No store credit has ever been issued to this customer.
             </p>
           ) : (
-            <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+            <ul className="divide-y divide-gray-100">
               {credit.entries.slice(0, 8).map((e, i) => {
                 const isIn = e.type === "CREDIT" || e.type === "REVERSAL";
                 return (
                   <li key={i} className="flex items-start justify-between gap-3 py-2">
                     <div className="min-w-0">
-                      <p className="text-sm text-gray-800 dark:text-white/90">
+                      <p className="text-sm text-gray-800">
                         {e.note || (isIn ? "Credit added" : "Spent")}
                       </p>
                       <p className="text-[11px] text-gray-400 mt-0.5">
@@ -483,15 +483,15 @@ export default function CustomerDetailPage() {
         {/* Coupons */}
         <Card title="Coupons" subtitle={`${customer.assignedCoupons.filter((c) => c.active).length} active`}>
           {customer.assignedCoupons.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-500">
               No coupons assigned to this customer.
             </p>
           ) : (
-            <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+            <ul className="divide-y divide-gray-100">
               {customer.assignedCoupons.map((c) => (
                 <li key={c.couponUserId} className="flex items-center justify-between py-2">
                   <div>
-                    <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    <p className="text-sm font-medium text-gray-800">
                       {c.code ?? "—"}
                     </p>
                     <p className="text-xs text-gray-400">
@@ -505,8 +505,8 @@ export default function CustomerDetailPage() {
                     className={
                       "rounded-full px-2 py-0.5 text-xs font-medium " +
                       (c.active
-                        ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300"
-                        : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400")
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-500")
                     }
                   >
                     {c.active ? "Active" : "Inactive"}
@@ -517,9 +517,9 @@ export default function CustomerDetailPage() {
           )}
 
           {!readOnly && (
-            <div className="mt-4 border-t border-gray-100 pt-3 dark:border-gray-700">
+            <div className="mt-4 border-t border-gray-100 pt-3">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                <p className="shell-label">
                   {creating ? "Create a coupon for them" : "Assign a coupon"}
                 </p>
                 <button
@@ -538,12 +538,12 @@ export default function CustomerDetailPage() {
                       value={draft.code}
                       onChange={(e) => draftField("code", e.target.value.toUpperCase().trim())}
                       placeholder="CODE"
-                      className="min-w-[8rem] flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm uppercase dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                      className="min-w-[8rem] flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm uppercase"
                     />
                     <select
                       value={draft.discountType}
                       onChange={(e) => draftField("discountType", e.target.value as "P" | "F")}
-                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                     >
                       <option value="P">% off</option>
                       <option value="F">₹ off</option>
@@ -554,7 +554,7 @@ export default function CustomerDetailPage() {
                       value={draft.value}
                       onChange={(e) => draftField("value", Number(e.target.value) || 0)}
                       title="Discount amount"
-                      className="w-24 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                      className="w-24 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                     />
                   </div>
 
@@ -567,7 +567,7 @@ export default function CustomerDetailPage() {
                         draftField("minPurchase", e.target.value === "" ? undefined : Number(e.target.value))
                       }
                       placeholder="Min purchase"
-                      className="w-32 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                      className="w-32 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                     />
                     <input
                       type="number"
@@ -578,7 +578,7 @@ export default function CustomerDetailPage() {
                       }
                       placeholder="Max discount"
                       title="Cap on a percentage discount"
-                      className="w-32 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                      className="w-32 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                     />
                     <input
                       type="number"
@@ -586,7 +586,7 @@ export default function CustomerDetailPage() {
                       value={draft.usageLimit ?? 1}
                       onChange={(e) => draftField("usageLimit", Math.max(1, Number(e.target.value) || 1))}
                       title="How many times they may use it"
-                      className="w-24 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                      className="w-24 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                     />
                   </div>
 
@@ -595,14 +595,14 @@ export default function CustomerDetailPage() {
                       type="date"
                       value={draft.validFrom}
                       onChange={(e) => draftField("validFrom", e.target.value)}
-                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                     />
                     <span className="text-xs text-gray-400">to</span>
                     <input
                       type="date"
                       value={draft.validTill}
                       onChange={(e) => draftField("validTill", e.target.value)}
-                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                     />
                     <button
                       disabled={busy || !draft.code || draft.value <= 0 || draft.validTill < draft.validFrom}
@@ -612,7 +612,7 @@ export default function CustomerDetailPage() {
                           setDraft((d) => ({ ...d, code: "" }));
                         })
                       }
-                      className="ml-auto rounded-lg bg-brand-500 px-3 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-40"
+                      className="ml-auto rounded-full bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-40 shell-press"
                     >
                       Create &amp; assign
                     </button>
@@ -628,7 +628,7 @@ export default function CustomerDetailPage() {
                 <select
                   value={couponId}
                   onChange={(e) => setCouponId(e.target.value)}
-                  className="min-w-[10rem] flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                  className="min-w-[10rem] flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                 >
                   <option value="">Choose a coupon…</option>
                   {coupons.map((c) => (
@@ -643,7 +643,7 @@ export default function CustomerDetailPage() {
                   value={maxUsage}
                   onChange={(e) => setMaxUsage(Math.max(1, Number(e.target.value) || 1))}
                   title="How many times they may use it"
-                  className="w-20 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                  className="w-20 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                 />
                 <button
                   disabled={!couponId || busy}
@@ -652,7 +652,7 @@ export default function CustomerDetailPage() {
                       setCouponId("")
                     )
                   }
-                  className="rounded-lg bg-brand-500 px-3 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-40"
+                  className="rounded-full bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-40 shell-press"
                 >
                   Assign
                 </button>
@@ -672,14 +672,14 @@ export default function CustomerDetailPage() {
         {/* Redemptions */}
         <Card title="Coupons used" subtitle={`${customer.redeemedCoupons.length} redemptions`}>
           {customer.redeemedCoupons.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-500">
               This customer has not redeemed a coupon.
             </p>
           ) : (
-            <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+            <ul className="divide-y divide-gray-100">
               {customer.redeemedCoupons.map((r) => (
                 <li key={r.usedCouponId} className="flex items-center justify-between py-2 text-sm">
-                  <span className="font-medium text-gray-800 dark:text-white/90">
+                  <span className="font-medium text-gray-800">
                     {r.code ?? "—"}
                   </span>
                   <span className="text-xs text-gray-400">

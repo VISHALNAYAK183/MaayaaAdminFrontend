@@ -76,23 +76,23 @@ const EditSection = () => {
           ←
         </button>
         <div>
-          <p className="text-xs text-gray-400 uppercase tracking-widest font-medium">Home CMS</p>
+          <p className="shell-label">Home CMS</p>
           <h1 className="text-xl font-bold text-gray-900">Edit Section</h1>
         </div>
       </div>
 
       <div className="px-8 py-8 max-w-lg mx-auto">
-        <div className="bg-white rounded-2xl border border-gray-200 p-8">
+        <div className="shell-panel p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
 
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Section Type</label>
+              <label className="block mb-2 shell-label">Section Type</label>
               <div className="flex flex-wrap gap-2">
                 {SECTION_TYPES.map((t) => (
                   <button
                     key={t} type="button"
                     onClick={() => setForm({ ...form, type: t })}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors shell-press ${
                       form.type === t ? "bg-gray-900 text-white border-gray-900" : "border-gray-200 text-gray-600 hover:border-gray-400"
                     }`}
                   >
@@ -103,25 +103,25 @@ const EditSection = () => {
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">Title</label>
+              <label className="block mb-1.5 shell-label">Title</label>
               <input name="title" value={form.title} onChange={handleChange}
                 className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" required />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">Subtitle</label>
+              <label className="block mb-1.5 shell-label">Subtitle</label>
               <input name="subtitle" value={form.subtitle} onChange={handleChange}
                 className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" required />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">Position</label>
+                <label className="block mb-1.5 shell-label">Position</label>
                 <input type="number" name="position" value={form.position} onChange={handleChange} min="1"
                   className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" required />
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">Gender</label>
+                <label className="block mb-1.5 shell-label">Gender</label>
                 <div className="flex gap-2">
                   {GENDERS.map(({ value, label }) => (
                     <button key={value} type="button" onClick={() => setForm({ ...form, gender: value })}
@@ -143,7 +143,7 @@ const EditSection = () => {
                 {saving ? "Saving..." : "Update Section"}
               </button>
               <button type="button" onClick={() => navigate("/home-cms")}
-                className="px-6 py-2.5 border border-gray-200 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors"
+                className="px-6 py-2.5 border border-gray-200 rounded-full text-sm font-semibold hover:bg-gray-50 transition-colors shell-press"
               >
                 Cancel
               </button>

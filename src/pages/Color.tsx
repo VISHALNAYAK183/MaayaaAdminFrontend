@@ -220,11 +220,11 @@ const ColorManagement: React.FC = () => {
         <table className="w-full text-sm">
           <thead className="bg-slate-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Color</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Hex</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">Actions</th>
+              <th className="px-6 py-3 text-left shell-label">ID</th>
+              <th className="px-6 py-3 text-left shell-label">Color</th>
+              <th className="px-6 py-3 text-left shell-label">Name</th>
+              <th className="px-6 py-3 text-left shell-label">Hex</th>
+              <th className="px-6 py-3 text-left shell-label">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -249,7 +249,7 @@ const ColorManagement: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 font-semibold text-slate-800">{color.name}</td>
                   <td className="px-6 py-4">
-                    <span className="font-mono text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-md uppercase">
+                    <span className="font-mono bg-slate-100 px-2 py-1 rounded-md shell-label">
                       {color.hex}
                     </span>
                   </td>
