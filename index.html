@@ -5,8 +5,25 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Maayaa Admin</title>
+    <script>
+      // Look and mode before first paint, so a night-mode admin never sees a
+      // flash of day. ThemeContext takes over from these attributes.
+      (function () {
+        var root = document.documentElement;
+        var look = "atelier";
+        var mode = "light";
+        try {
+          if (localStorage.getItem("maayaa.look") === "zari") look = "zari";
+          var saved = localStorage.getItem("theme");
+          if (saved === "dark" || saved === "light") mode = saved;
+          else if (window.matchMedia("(prefers-color-scheme: dark)").matches) mode = "dark";
+        } catch (e) {}
+        root.setAttribute("data-look", look);
+        root.setAttribute("data-mode", mode);
+      })();
+    </script>
   </head>
-  <body class="dark:bg-gray-900">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

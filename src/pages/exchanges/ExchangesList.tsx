@@ -1,5 +1,6 @@
 import { useReadOnly } from "../../hooks/useReadOnly";
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
 import {
   getAdminExchanges,
   approveOnlineQc,
@@ -75,7 +76,16 @@ const QC_LABEL: Record<QcAction, string> = {
 export default function ExchangesList() {
   const readOnly = useReadOnly();
   const [exchanges, setExchanges] = useState<AdminExchange[]>([]);
-  const [tab, setTab] = useState<string>("ALL");
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<string>(() => {
+    const wanted = searchParams.get("tab");
+    return wanted && TABS.some((t) => t.key === wanted) ? wanted : "ALL";
+  });
+  // The bell and the landing page link here with a filter already chosen.
+  useEffect(() => {
+    const wanted = searchParams.get("tab");
+    if (wanted && TABS.some((t) => t.key === wanted)) setTab(wanted);
+  }, [searchParams]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
@@ -596,8 +606,8 @@ export default function ExchangesList() {
       )}
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Exchanges</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Home / Exchanges</p>
+        <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Exchanges</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Size and colour swaps</p>
       </div>
 
       <div className="flex gap-1 mb-5 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit flex-wrap">

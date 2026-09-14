@@ -279,7 +279,7 @@ export default function CustomerDetailPage() {
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold text-gray-800 dark:text-white/90">
+            <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900">
               {customer.name}
             </h1>
             {customer.disabled && (

@@ -165,7 +165,7 @@ const HomeCmsStudio = () => {
     <>
       <StudioHeader>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Home CMS</h1>
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Home CMS</h1>
           <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
             Arrange the home page and see it before customers do.
           </p>

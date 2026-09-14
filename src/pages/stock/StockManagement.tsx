@@ -1,5 +1,6 @@
 import { useReadOnly } from "../../hooks/useReadOnly";
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
 import {
   getStockManagement,
   getStockSummary,
@@ -28,7 +29,16 @@ export default function StockManagement() {
   // no longer turns it into a zero the moment the last digit goes.
   const [drafts, setDrafts] = useState<Record<number, number | "">>({});
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<StockFilter>("ALL");
+  const [searchParams] = useSearchParams();
+  const [filter, setFilter] = useState<StockFilter>(() => {
+    const wanted = searchParams.get("filter");
+    return wanted === "LOW" || wanted === "OUT" ? wanted : "ALL";
+  });
+  // The bell and the landing page link here with a filter already chosen.
+  useEffect(() => {
+    const wanted = searchParams.get("filter");
+    if (wanted === "LOW" || wanted === "OUT") setFilter(wanted);
+  }, [searchParams]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
@@ -150,9 +160,9 @@ export default function StockManagement() {
     <div>
       <div className="mb-6 flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Stock Management</h1>
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Stock Management</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Home / Stock Management · {summary.total} variant{summary.total === 1 ? "" : "s"} ·
+            {summary.total} variant{summary.total === 1 ? "" : "s"} ·
             <span className="text-amber-600 dark:text-amber-400 ml-1">{summary.low} low</span> ·
             <span className="text-red-600 dark:text-red-400 ml-1">{summary.out} out</span>
           </p>

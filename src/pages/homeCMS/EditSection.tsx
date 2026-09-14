@@ -67,7 +67,7 @@ const EditSection = () => {
   if (loading) return <div className="p-8 text-gray-400 text-sm">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-[#F7F7F5]">
+    <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-3">
         <button
           onClick={() => navigate("/home-cms")}

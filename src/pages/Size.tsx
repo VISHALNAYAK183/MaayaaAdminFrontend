@@ -121,7 +121,6 @@ const SizeManagement: React.FC = () => {
   return (
     <PageShell>
       <PageHeader
-        breadcrumbs={["Dashboard", "Catalog", "Size Management"]}
         title="Size Management"
         subtitle="Manage product size labels (e.g. XS, S, M, L, XL)"
         actionLabel="New Size"

@@ -242,8 +242,7 @@ export default function OrderDetails() {
           </svg>
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Order #{order.orderId}</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Home / Order Management / #{order.orderId}</p>
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Order #{order.orderId}</h1>
         </div>
         <span className={`ml-auto text-xs font-semibold px-3 py-1 rounded-full border ${STATUS_STYLE[status] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
           {status.replace(/_/g, " ")}

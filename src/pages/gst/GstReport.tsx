@@ -87,9 +87,9 @@ export default function GstReportPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">GST Report</h1>
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">GST Report</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Home / Finance / GST — monthly GSTR-3B numbers + GSTR-1 export
+            Monthly GSTR-3B numbers and the GSTR-1 export
           </p>
         </div>
         <div className="flex items-center gap-2">

@@ -131,7 +131,6 @@ const CategoryManagement: React.FC = () => {
   return (
     <PageShell>
       <PageHeader
-        breadcrumbs={["Dashboard", "Catalog", "Category Management"]}
         title="Category Management"
         subtitle="Organise your product catalog with categories"
         actionLabel="New Category"

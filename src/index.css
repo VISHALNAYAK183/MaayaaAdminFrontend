@@ -1,13 +1,21 @@
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap")
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Tenor+Sans&display=swap")
 layer(base);
 
 @import "tailwindcss";
 
-@custom-variant dark (&:is(.dark *));
+/*
+ * Retired. Night mode is no longer a second set of classes: src/theme/looks.css
+ * restates the colour ramps for night, so the day classes read correctly as
+ * they are. Leftover dark: classes match nothing and change nothing.
+ */
+@custom-variant dark (&:where([data-retired-dark-variant] *));
 
 @theme {
   --font-*: initial;
-  --font-outfit: Outfit, sans-serif;
+  --font-outfit: Figtree, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Tenor Sans", Figtree, ui-sans-serif, system-ui, sans-serif;
+  --font-num: Figtree, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --breakpoint-*: initial;
   --breakpoint-2xsm: 375px;

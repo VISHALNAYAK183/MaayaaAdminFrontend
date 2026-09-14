@@ -1,7 +1,7 @@
 import { useReadOnly } from "../../hooks/useReadOnly";
 import { useEffect, useState } from "react";
 import { getOrders, approveOrder, rejectOrder } from "../../api/adminApi";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ShipOrderModal from "../../components/ShipOrderModal";
 import UpdateStatusModal from "../../components/UpdateStatusModal";
 import CancelOrderModal from "../../components/CancelOrderModal";
@@ -47,7 +47,16 @@ type ModalState = {
 export default function OrdersList() {
   const readOnly = useReadOnly();
   const [orders, setOrders] = useState<AdminOrderRow[]>([]);
-  const [tab, setTab] = useState("PENDING");
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState(() => {
+    const wanted = searchParams.get("status");
+    return wanted && TABS.includes(wanted) ? wanted : "PENDING";
+  });
+  // The bell and the landing page link here with a filter already chosen.
+  useEffect(() => {
+    const wanted = searchParams.get("status");
+    if (wanted && TABS.includes(wanted)) setTab(wanted);
+  }, [searchParams]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [sortKey, setSortKey] = useState<"default" | "newest" | "price_desc" | "price_asc">("default");
@@ -339,8 +348,8 @@ export default function OrdersList() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Order Management</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Home / Order Management</p>
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Order Management</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Confirm, ship and track</p>
         </div>
       </div>
 

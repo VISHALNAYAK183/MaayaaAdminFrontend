@@ -12,18 +12,14 @@ export default function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6 dark:bg-gray-900">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-md">
-        {/* Text wordmark, matching AppHeader. The bundled /images/logo/*.svg
-            are still the TailAdmin template's artwork. */}
-        <div className="mb-8 flex justify-center">
-          <span className="text-2xl font-bold tracking-tight text-brand-500 dark:text-white">
-            Maayaa{" "}
-            <span className="font-medium text-gray-800 dark:text-gray-300">Admin</span>
-          </span>
+        <div className="mb-8 flex items-baseline justify-center gap-2.5">
+          <span className="maayaa-mark text-xl text-gray-900">MAAYAA</span>
+          <span className="text-xs tracking-wide text-gray-500">Admin</span>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-800 sm:p-8">
+        <div className="shell-panel p-6 sm:p-8">
           <h1 className="text-xl font-semibold text-gray-800 dark:text-white/90">
             {title}
           </h1>

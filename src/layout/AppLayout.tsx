@@ -1,46 +1,63 @@
-import { SidebarProvider, useSidebar } from "../context/SidebarContext";
+import { Link, Outlet, useLocation } from "react-router";
+import { InboxProvider } from "../context/InboxContext";
 import { useReadOnly } from "../hooks/useReadOnly";
-import { Outlet } from "react-router";
-import AppHeader from "./AppHeader";
-import Backdrop from "./Backdrop";
-import AppSidebar from "./AppSidebar";
-
-const LayoutContent: React.FC = () => {
-  const { isExpanded, isHovered, isMobileOpen } = useSidebar();
-  const readOnly = useReadOnly();
-
-  return (
-    <div className="min-h-screen xl:flex">
-      <div>
-        <AppSidebar />
-        <Backdrop />
-      </div>
-      <div
-        className={`flex-1 min-w-0 transition-all duration-300 ease-in-out ${
-          isExpanded || isHovered ? "lg:ml-[290px]" : "lg:ml-[90px]"
-        } ${isMobileOpen ? "ml-0" : ""}`}
-      >
-        <AppHeader />
-        {readOnly && (
-          <div className="border-b border-warning-500/30 bg-warning-50 px-4 py-2.5 text-sm text-warning-700 dark:bg-warning-500/10 dark:text-warning-400 md:px-6">
-            You have read-only access. You can view everything here, but not make
-            changes.
-          </div>
-        )}
-        <div className="w-full p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-          <Outlet />
-        </div>
-      </div>
-    </div>
-  );
-};
+import { pageForPath } from "../config/sections";
+import TopBar from "./TopBar";
+import { ChevronLeftIcon } from "./shellIcons";
 
 const AppLayout: React.FC = () => {
+  const readOnly = useReadOnly();
+  const { pathname } = useLocation();
+
   return (
-    <SidebarProvider>
-      <LayoutContent />
-    </SidebarProvider>
+    <InboxProvider>
+      <div className="min-h-screen bg-gray-50">
+        <TopBar />
+        {readOnly && (
+          <div className="border-b border-warning-200 bg-warning-50 px-4 py-2.5 text-center text-sm text-warning-700 md:px-6">
+            You have read-only access. You can view everything here, but not make changes.
+          </div>
+        )}
+        <main className="mx-auto w-full max-w-[1440px] px-4 pb-16 pt-4 md:px-6 md:pt-5">
+          {pathname !== "/" && <Wayfinding pathname={pathname} />}
+          <Outlet />
+        </main>
+      </div>
+    </InboxProvider>
   );
 };
+
+/**
+ * Where am I, and the way back. With no sidebar this line is the page's place
+ * in the panel: the dashboard, the section, and the page when you are deeper
+ * than it (an order, a customer, a section of the home page).
+ */
+function Wayfinding({ pathname }: { pathname: string }) {
+  const page = pageForPath(pathname);
+  const deeper = !!page && pathname !== page.path && pathname !== page.path.replace(/\/add$/, "");
+
+  return (
+    <nav aria-label="Breadcrumb" className="mb-4 flex min-h-6 items-center gap-1.5 text-xs text-gray-500">
+      <Link to="/" className="inline-flex items-center gap-1 rounded px-1 py-0.5 font-medium text-gray-600 hover:bg-brand-50 hover:text-gray-900">
+        <ChevronLeftIcon className="size-3.5" />
+        Dashboard
+      </Link>
+      {page && (
+        <>
+          <span aria-hidden="true" className="text-gray-300">/</span>
+          <span>{page.group}</span>
+          <span aria-hidden="true" className="text-gray-300">/</span>
+          {deeper ? (
+            <Link to={page.path} className="rounded px-1 py-0.5 font-medium text-gray-600 hover:bg-brand-50 hover:text-gray-900">
+              {page.name}
+            </Link>
+          ) : (
+            <span aria-current="page" className="font-semibold text-gray-800">{page.name}</span>
+          )}
+        </>
+      )}
+    </nav>
+  );
+}
 
 export default AppLayout;

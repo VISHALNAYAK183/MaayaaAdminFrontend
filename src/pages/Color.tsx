@@ -130,7 +130,6 @@ const ColorManagement: React.FC = () => {
   return (
     <PageShell>
       <PageHeader
-        breadcrumbs={["Dashboard", "Catalog", "Color Management"]}
         title="Color Management"
         subtitle="Manage product colors and their hex values"
         actionLabel="New Color"

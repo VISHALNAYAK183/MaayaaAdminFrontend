@@ -1,6 +1,7 @@
 import { CLIENT_API_BASE } from "../../api/client";
 import { useReadOnly } from "../../hooks/useReadOnly";
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
 import {
   getAdminReturns,
   approveReturn,
@@ -70,7 +71,16 @@ const formatDate = (iso: string | null) => {
 export default function ReturnsList() {
   const readOnly = useReadOnly();
   const [returns, setReturns] = useState<AdminReturn[]>([]);
-  const [tab, setTab] = useState<typeof TABS[number]>("ALL");
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<typeof TABS[number]>(() => {
+    const wanted = searchParams.get("status") as typeof TABS[number] | null;
+    return wanted && TABS.includes(wanted) ? wanted : "ALL";
+  });
+  // The bell and the landing page link here with a filter already chosen.
+  useEffect(() => {
+    const wanted = searchParams.get("status") as typeof TABS[number] | null;
+    if (wanted && TABS.includes(wanted)) setTab(wanted);
+  }, [searchParams]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
@@ -466,9 +476,9 @@ export default function ReturnsList() {
       )}
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Returns & Refunds</h1>
+        <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Returns & Refunds</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Home / Returns · {totalElements} total
+          {totalElements} total
         </p>
       </div>
 

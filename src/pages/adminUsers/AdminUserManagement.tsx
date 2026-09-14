@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import PageMeta from "../../components/common/PageMeta";
-import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import { Modal } from "../../components/ui/modal";
 import Input from "../../components/form/input/InputField";
 import Label from "../../components/form/Label";
@@ -199,7 +198,10 @@ export default function AdminUserManagement() {
   return (
     <>
       <PageMeta title="Admin users | Maayaa Admin" description="Manage admin accounts" />
-      <PageBreadcrumb pageTitle="Admin Users" />
+      <div className="mb-6">
+        <h1 className="text-[27px] font-extrabold leading-tight tracking-tight text-gray-900">Admin users</h1>
+        <p className="mt-1 text-sm text-gray-500">Who can sign in, and as what.</p>
+      </div>
 
       {flash && (
         <div className="mb-4 rounded-lg border border-success-500/30 bg-success-50 px-4 py-3 text-sm text-success-700 dark:bg-success-500/10 dark:text-success-400">

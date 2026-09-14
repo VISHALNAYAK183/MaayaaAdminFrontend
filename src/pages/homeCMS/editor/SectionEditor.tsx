@@ -299,7 +299,7 @@ const InlineEdit = ({
       <span className={`text-xs truncate ${value ? "text-gray-700" : "text-gray-300 italic"}`}>
         {value || placeholder || "—"}
       </span>
-      <svg className="opacity-0 group-hover:opacity-100 shrink-0 transition-opacity" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <svg className="opacity-0 group-hover:opacity-100 shrink-0 transition-opacity" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-400)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
         <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
       </svg>
@@ -507,7 +507,7 @@ const HeroItemCard = ({
 
               {newImageName && (
                 <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 mb-4 border border-gray-100">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-500)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                   <span className="text-xs font-mono text-gray-600 truncate flex-1" title={newImageName}>
                     {newImageName.split("/").pop()}
                   </span>
@@ -626,7 +626,7 @@ const AddHeroItemCard = ({ onAdd, allItems }: { onAdd: (p: any) => void; allItem
               {previewDataUrl ? (
                 <img src={previewDataUrl} alt="" className="w-full h-full object-cover" />
               ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-300)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
               )}
@@ -1186,7 +1186,7 @@ const CameraIcon = () => (
 );
 
 const ImagePlaceholderIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-600)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="2" />
     <circle cx="8.5" cy="8.5" r="1.5" />
     <polyline points="21 15 16 10 5 21" />

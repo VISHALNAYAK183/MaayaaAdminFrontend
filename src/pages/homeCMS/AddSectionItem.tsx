@@ -111,7 +111,7 @@ export const ItemForm = ({
   const heroPreviewSrc = isHero && form.image ? `${HERO_IMAGE_BASE}${form.image}` : null;
 
   return (
-    <div className="min-h-screen bg-[#F7F7F5]">
+    <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center gap-3">
         <button onClick={onCancel}
           className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600"

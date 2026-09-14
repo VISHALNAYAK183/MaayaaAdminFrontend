@@ -517,7 +517,7 @@ const CouponManagement = () => {
             ))}
             <span className="text-xs text-slate-600 font-semibold">Coupon Management</span>
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Coupon Management</h1>
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-slate-900">Coupon Management</h1>
           <p className="text-sm text-slate-400 mt-0.5">Manage your discount coupons</p>
         </div>
         {!readOnly && (

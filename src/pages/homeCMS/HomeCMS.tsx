@@ -68,8 +68,8 @@ const HomeCMS = () => {
       {/* Page Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Home CMS</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Home / Home CMS</p>
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Home CMS</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">The list view, from before the studio</p>
         </div>
         {!readOnly && (
         <button

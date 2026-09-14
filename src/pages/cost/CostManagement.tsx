@@ -87,9 +87,9 @@ export default function CostManagement() {
     <div>
       <div className="mb-6 flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Product Costs</h1>
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Product Costs</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Home / Product Costs · {costs.length} tracked · {productsWithoutCost.length} untracked
+            {costs.length} tracked · {productsWithoutCost.length} untracked
           </p>
         </div>
         <input

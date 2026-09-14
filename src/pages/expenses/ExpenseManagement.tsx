@@ -274,9 +274,9 @@ export default function ExpenseManagement() {
     <div className="space-y-5">
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Expenses</h1>
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900 dark:text-white">Expenses</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Home / Finance / Operating Expenses
+            Operating costs: ads, salaries, gateway fees
           </p>
         </div>
         {!readOnly && (

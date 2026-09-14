@@ -131,7 +131,6 @@ const CollectionManagement: React.FC = () => {
   return (
     <PageShell>
       <PageHeader
-        breadcrumbs={["Dashboard", "Catalog", "Collection Management"]}
         title="Collection Management"
         subtitle="Group products into seasonal or themed collections"
         actionLabel="New Collection"

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useSearchParams } from "react-router";
 import { ADMIN_BASE, API_BASE, CLIENT_API_BASE, http } from "../api/client";
 import JsBarcode from "jsbarcode";
 import {
@@ -180,7 +181,9 @@ const BarcodePreview: React.FC<{ value: string; id: string }> = ({ value, id }) 
         height: 40,
         displayValue: false,
         margin: 4,
-        background: "#f8fafc",
+        // Drawn on a canvas, which cannot read CSS variables; white also scans
+        // best, whatever the panel look is.
+        background: "#ffffff",
       });
     } catch {}
   }, [value, id]);
@@ -904,7 +907,13 @@ const ProductManagement: React.FC = () => {
   const [sizes, setSizes] = useState<Size[]>([]);
   const [colors, setColors] = useState<Color[]>([]);
 
-  const [search, setSearch] = useState("");
+  const [searchParams] = useSearchParams();
+  // Search in the top bar opens a product here by name.
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  useEffect(() => {
+    const wanted = searchParams.get("q");
+    if (wanted != null) setSearch(wanted);
+  }, [searchParams]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);

@@ -78,7 +78,7 @@ export default function CustomerList() {
     <div className="p-4 md:p-6">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-gray-800 dark:text-white/90">
+          <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900">
             Customers
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">

@@ -25,7 +25,7 @@ const SectionItems = () => {
   useEffect(() => { fetchItems(); }, []);
 
   return (
-    <div className="min-h-screen bg-[#F7F7F5]">
+    <div className="min-h-screen bg-gray-50">
       {/* TOP BAR */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
