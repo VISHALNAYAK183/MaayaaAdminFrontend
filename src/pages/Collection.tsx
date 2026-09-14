@@ -102,8 +102,10 @@ const CollectionManagement: React.FC = () => {
       await deleteCollection(id);
       setStatus({ type: "success", msg: `Collection "${name}" deleted.` });
       loadCollections();
-    } catch {
-      setStatus({ type: "error", msg: "Failed to delete collection." });
+    } catch (err: unknown) {
+      // The server says why - most often that products still use it - and
+      // "Failed to delete" alone left nobody knowing what to change.
+      setStatus({ type: "error", msg: (err as Error)?.message || "Failed to delete collection." });
     }
   };
 

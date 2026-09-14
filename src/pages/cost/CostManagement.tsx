@@ -10,15 +10,27 @@ import {
   ProductCostSummary,
   CostBreakdown,
 } from "../../api/costApi";
-import { getProducts } from "../../api/Adminproduct";
+import { getAllProducts } from "../../api/Adminproduct";
 
 type ProductLite = { productId: number; name: string; discountedPrice?: number };
+
+/**
+ * These calls go through axios, where a failure's body is the server's JSON
+ * object. Alerting that object directly showed "[object Object]".
+ */
+const messageFrom = (e: unknown, fallback: string): string => {
+  const data = (e as { response?: { data?: unknown } })?.response?.data;
+  if (typeof data === "string" && data.trim()) return data;
+  const message = (data as { message?: unknown })?.message;
+  return typeof message === "string" && message.trim() ? message : fallback;
+};
 
 export default function CostManagement() {
   const readOnly = useReadOnly();
   const [costs, setCosts] = useState<ProductCostSummary[]>([]);
   const [products, setProducts] = useState<ProductLite[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<ProductCostSummary | null>(null);
   const [adding, setAdding] = useState<ProductLite | null>(null);
@@ -26,19 +38,25 @@ export default function CostManagement() {
   const load = async () => {
     setLoading(true);
     try {
-      const [costRes, prodRes] = await Promise.all([
+      const [costRes, allProducts] = await Promise.all([
         getAllProductCosts(),
-        getProducts(),
+        getAllProducts(),
       ]);
       const costList = Array.isArray(costRes.data) ? costRes.data : [];
       setCosts(costList);
-      const prodList: ProductLite[] = (prodRes.data ?? []).map((p: any) => ({
-        productId: p.productId,
-        name: p.name,
-        discountedPrice: p.discountedPrice,
-      }));
+      const prodList: ProductLite[] = allProducts
+        .filter((p) => p.productId != null)
+        .map((p) => ({
+          productId: p.productId as number,
+          name: p.name,
+          discountedPrice: p.discountedPrice,
+        }));
       setProducts(prodList);
+      setLoadFailed(false);
     } catch {
+      // Empty lists read as "nothing tracked" and "all products have cost
+      // tracking" - both false when the truth is that nothing loaded.
+      setLoadFailed(true);
       setCosts([]);
       setProducts([]);
     } finally {
@@ -82,6 +100,15 @@ export default function CostManagement() {
           className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
         />
       </div>
+
+      {loadFailed && !loading && (
+        <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+          <span>Product costs could not be loaded.</span>
+          <button onClick={() => load()} className="font-medium underline">
+            Try again
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
@@ -160,6 +187,8 @@ export default function CostManagement() {
           <div className="divide-y divide-gray-100 dark:divide-gray-700 max-h-[600px] overflow-y-auto">
             {loading ? (
               <p className="p-5 text-sm text-gray-400">Loading…</p>
+            ) : loadFailed ? (
+              <p className="p-5 text-sm text-gray-400">Not loaded.</p>
             ) : productsWithoutCost.length === 0 ? (
               <p className="p-5 text-sm text-gray-400">All products have cost tracking</p>
             ) : (
@@ -230,7 +259,7 @@ function ManageCostModal({
       await updateCostItem(item.id, next);
       onSaved();
     } catch (e: any) {
-      alert(e?.response?.data || "Failed to update");
+      alert(messageFrom(e, "Failed to update"));
     } finally {
       setBusy(null);
     }
@@ -243,7 +272,7 @@ function ManageCostModal({
       await deleteCostItem(item.id);
       onSaved();
     } catch (e: any) {
-      alert(e?.response?.data || "Failed to delete");
+      alert(messageFrom(e, "Failed to delete"));
     } finally {
       setBusy(null);
     }
@@ -387,7 +416,7 @@ function AddCostModal({
       await addProductCost(product.productId, payload);
       onSaved();
     } catch (e: any) {
-      alert(e?.response?.data || "Failed to add costs");
+      alert(messageFrom(e, "Failed to add costs"));
     } finally {
       setSaving(false);
     }

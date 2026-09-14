@@ -24,7 +24,9 @@ export default function StockManagement() {
   const [colors, setColors] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState<number | null>(null);
-  const [drafts, setDrafts] = useState<Record<number, number>>({});
+  // "" is a box being retyped. Keeping it apart from 0 means clearing the field
+  // no longer turns it into a zero the moment the last digit goes.
+  const [drafts, setDrafts] = useState<Record<number, number | "">>({});
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<StockFilter>("ALL");
   const [page, setPage] = useState(0);
@@ -105,6 +107,10 @@ export default function StockManagement() {
   }, [page, filter, debouncedSearch]);
 
   const handleDraftChange = (variantId: number, value: string) => {
+    if (value.trim() === "") {
+      setDrafts((d) => ({ ...d, [variantId]: "" }));
+      return;
+    }
     const n = Number(value);
     if (Number.isFinite(n) && n >= 0) {
       setDrafts((d) => ({ ...d, [variantId]: Math.floor(n) }));
@@ -113,7 +119,7 @@ export default function StockManagement() {
 
   const handleSave = async (row: StockRow) => {
     const next = drafts[row.variantId];
-    if (next == null || next === row.quantity) return;
+    if (next == null || next === "" || next === row.quantity) return;
     setSaving(row.variantId);
     try {
       await updateStock(row.variantId, next);
@@ -226,7 +232,7 @@ export default function StockManagement() {
             ) : (
               rows.map((row) => {
                 const draft = drafts[row.variantId];
-                const dirty = draft != null && draft !== row.quantity;
+                const dirty = draft != null && draft !== "" && draft !== row.quantity;
                 const isBusy = saving === row.variantId;
 
                 return (

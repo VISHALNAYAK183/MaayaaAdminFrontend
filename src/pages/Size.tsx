@@ -100,8 +100,10 @@ const SizeManagement: React.FC = () => {
       await deleteSize(id);
       setStatus({ type: "success", msg: `Size "${label}" deleted.` });
       loadSizes();
-    } catch {
-      setStatus({ type: "error", msg: "Failed to delete size." });
+    } catch (err: unknown) {
+      // The server says why - most often that products still use it - and
+      // "Failed to delete" alone left nobody knowing what to change.
+      setStatus({ type: "error", msg: (err as Error)?.message || "Failed to delete size." });
     }
   };
 

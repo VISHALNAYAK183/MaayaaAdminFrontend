@@ -81,10 +81,6 @@ export interface Product {
   images: ProductImage[];
 }
 
-export const getProducts = async (): Promise<{ data: ProductResponse[] }> => {
-  const raw = await http.get<ProductResponse[] | ProductResponse>(URL, "fetch products");
-  return { data: Array.isArray(raw) ? raw : [raw] };
-};
 
 export type ProductSortBy = "id" | "name" | "price" | "stock";
 export type ProductStockFilter = "all" | "in" | "low" | "out";
@@ -143,6 +139,23 @@ export const updateProduct = async (
 ) => ({
   data: await http.put<ProductResponse>(`${URL}/${id}`, body, "update product"),
 });
+
+/**
+ * Every product, however many there are.
+ *
+ * Replaces a getProducts() that called the legacy list with no limit - and that
+ * endpoint defaults its limit to 20, so the one screen using it (costs) could
+ * never see product 21. Pages through the admin list until it has the total.
+ */
+export const getAllProducts = async (): Promise<ProductResponse[]> => {
+  const PAGE = 100;
+  const all: ProductResponse[] = [];
+  for (let page = 0; ; page++) {
+    const { items, total } = await getAdminProducts({ page, size: PAGE });
+    all.push(...items);
+    if (items.length < PAGE || all.length >= total) return all;
+  }
+};
 
 export const deleteProduct = (id: number) =>
   http.del(`${URL}/${id}`, "delete product");

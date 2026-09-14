@@ -107,8 +107,10 @@ const ColorManagement: React.FC = () => {
       await deleteColor(id);
       setStatus({ type: "success", msg: `Color "${name}" deleted.` });
       loadColors();
-    } catch {
-      setStatus({ type: "error", msg: "Failed to delete color." });
+    } catch (err: unknown) {
+      // The server says why - most often that products still use it - and
+      // "Failed to delete" alone left nobody knowing what to change.
+      setStatus({ type: "error", msg: (err as Error)?.message || "Failed to delete color." });
     }
   };
 

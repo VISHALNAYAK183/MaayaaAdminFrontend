@@ -45,9 +45,6 @@ export interface CostItemInput {
 export const getAllProductCosts = () =>
   apiClient.get<ProductCostSummary[]>(`${ADMIN_BASE}/product-cost/all`);
 
-export const getProductCost = (productId: number) =>
-  apiClient.get<ProductCostSummary>(`${ADMIN_BASE}/product-cost/${productId}`);
-
 export const addProductCost = (productId: number, items: CostItemInput[]) =>
   apiClient.post(`${ADMIN_BASE}/product-cost/add`, { productId, items });
 

@@ -1400,8 +1400,8 @@ const ProductManagement: React.FC = () => {
       setStatus({ type: "success", msg: `Product "${name}" deleted.` });
       if (detailProduct?.productId === id) setDetailProduct(null);
       loadAll();
-    } catch {
-      setStatus({ type: "error", msg: "Failed to delete product." });
+    } catch (err: unknown) {
+      setStatus({ type: "error", msg: (err as Error)?.message || "Failed to delete product." });
     }
   };
 

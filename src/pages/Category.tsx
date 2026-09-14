@@ -102,8 +102,10 @@ const CategoryManagement: React.FC = () => {
       await deleteCategory(id);
       setStatus({ type: "success", msg: `Category "${name}" deleted.` });
       loadCategories();
-    } catch {
-      setStatus({ type: "error", msg: "Failed to delete category." });
+    } catch (err: unknown) {
+      // The server says why - most often that products still use it - and
+      // "Failed to delete" alone left nobody knowing what to change.
+      setStatus({ type: "error", msg: (err as Error)?.message || "Failed to delete category." });
     }
   };
 
