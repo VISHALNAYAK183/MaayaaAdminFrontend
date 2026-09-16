@@ -120,6 +120,8 @@ export const cancelOrder = (orderId: number, reason: string) =>
      * still live, and somebody has to go and stop it.
      */
     courierWarning?: string;
+    /** True when the refund is waiting on Refunds to review rather than sent. */
+    refundPending?: boolean;
   }>(`${ADMIN_BASE}/orders/${orderId}/cancel`, { reason });
 
 /** Ask the gateway again for a refund it refused. */

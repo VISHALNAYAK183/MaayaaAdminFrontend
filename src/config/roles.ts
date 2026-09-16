@@ -57,6 +57,7 @@ const PATH_ROLES: { prefix: string; roles: Role[] }[] = [
   // being open to every signed-in role. Mirrors SecurityConfig's SALES group.
   { prefix: "/customers", roles: ["ADMIN", "SALES", "VIEWER"] },
   { prefix: "/returns", roles: ["ADMIN", "SALES", "VIEWER"] },
+  { prefix: "/refunds", roles: ["ADMIN", "SALES", "VIEWER"] },
   { prefix: "/exchanges", roles: ["ADMIN", "SALES", "VIEWER"] },
   { prefix: "/coupons", roles: ["ADMIN", "SALES", "VIEWER"] },
 

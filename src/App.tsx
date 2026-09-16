@@ -14,6 +14,7 @@ import CustomerList from "./pages/customers/CustomerList";
 import CustomerDetailPage from "./pages/customers/CustomerDetail";
 import OrderDetails from "./pages/orders/OrderDetails";
 import ReturnsList from "./pages/returns/ReturnsList";
+import RefundsToReview from "./pages/refunds/RefundsToReview";
 import ExchangesList from "./pages/exchanges/ExchangesList";
 import StockManagement from "./pages/stock/StockManagement";
 import CostManagement from "./pages/cost/CostManagement";
@@ -96,6 +97,7 @@ export default function App() {
               <Route path="/customers" element={<CustomerList />} />
               <Route path="/customers/:userId" element={<CustomerDetailPage />} />
               <Route path="/returns" element={<ReturnsList />} />
+              <Route path="/refunds" element={<RefundsToReview />} />
               <Route path="/exchanges" element={<ExchangesList />} />
               <Route path="/coupons/add" element={<AddCoupon />} />
               <Route path="/coupons/usage" element={<CouponUsage />} />

@@ -76,11 +76,18 @@ const COPY: Record<string, Copy> = {
     href: () => "/returns?status=PICKED_UP",
     detail: oldest("asked"),
   },
-  "returns.refund-approve": {
-    title: (n) => plural(n, "Refund to approve", "Refunds to approve"),
+  "refunds.review": {
+    title: (n) => plural(n, "Cancelled order refund to review", "Cancelled order refunds to review"),
     icon: <RupeeIcon />,
-    action: "Approve",
-    href: () => "/returns?status=INSPECTED",
+    action: "Review",
+    href: () => "/refunds",
+    detail: total,
+  },
+  "returns.refund-approve": {
+    title: (n) => plural(n, "Return refund to review", "Return refunds to review"),
+    icon: <RupeeIcon />,
+    action: "Review",
+    href: () => "/refunds",
     detail: total,
   },
   "returns.refund-pay": {

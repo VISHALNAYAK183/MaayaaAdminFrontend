@@ -24,6 +24,7 @@ export default function CancelOrderModal({ orderId, currentStatus, onSuccess }: 
   // stays open on it: a rider is still coming, and a toast that scrolls away
   // is the same as not saying so at all.
   const [courierWarning, setCourierWarning] = useState<string | null>(null);
+  const [refundPending, setRefundPending] = useState(false);
 
   const dispatched = ["SHIPPED", "OUT_FOR_DELIVERY"].includes(currentStatus);
 
@@ -39,6 +40,7 @@ export default function CancelOrderModal({ orderId, currentStatus, onSuccess }: 
       const res = await cancelOrder(orderId, text);
 
       if (res.data?.courierWarning) {
+        setRefundPending(Boolean(res.data?.refundPending));
         setCourierWarning(res.data.courierWarning);
         return;
       }
@@ -62,8 +64,10 @@ export default function CancelOrderModal({ orderId, currentStatus, onSuccess }: 
           <p className="text-xs text-amber-800">{courierWarning}</p>
         </div>
         <p className="text-xs text-gray-600">
-          The customer has been refunded and the stock is back. This is the only
-          part left, and nothing else will do it for you.
+          {refundPending
+            ? "The stock is back, and the refund is waiting on Refunds to review. "
+            : "The stock is back, and any refund has been sent. "}
+          The courier booking is the part nothing else will do for you.
         </p>
         <button
           onClick={onSuccess}
@@ -78,7 +82,8 @@ export default function CancelOrderModal({ orderId, currentStatus, onSuccess }: 
   return (
     <div className="space-y-3">
       <p className="text-xs text-gray-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-        The stock goes back, the coupon is released, and a prepaid order is refunded in full.
+        The stock goes back, the coupon is released, and a prepaid order&rsquo;s refund is set up
+        on Refunds to review, where someone checks the figures before it is sent.
         {dispatched && " This parcel has already left — the courier booking is cancelled too where we can, and you are told if we could not."}
       </p>
 

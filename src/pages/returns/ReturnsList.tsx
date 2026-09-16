@@ -8,13 +8,13 @@ import {
   rejectReturn,
   markPickedUp,
   markInspected,
-  approveRefund,
   rejectRefund,
   completeRefund,
   AdminReturn,
   AdminReturnStatus,
 } from "../../api/returnsApi";
 import Pagination from "../../components/ui/Pagination";
+import RefundReviewPanel from "../../components/RefundReviewPanel";
 
 
 /**
@@ -57,7 +57,6 @@ type Action =
   | "pickedUp"
   | "qcPass"
   | "qcFail"
-  | "refundApprove"
   | "refundReject"
   | "refundComplete";
 
@@ -88,6 +87,8 @@ export default function ReturnsList() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [selected, setSelected] = useState<AdminReturn | null>(null);
+  // A refund is approved from the review, never from a bare confirm.
+  const [reviewing, setReviewing] = useState<number | null>(null);
 
   // Out-of-order response guard — same pattern as expenses/stock.
   const fetchSeq = useRef(0);
@@ -151,7 +152,6 @@ export default function ReturnsList() {
         if (why === null) { setActionLoading(null); return; }
         await markInspected(returnId, false, why.trim() || undefined);
       }
-      else if (action === "refundApprove") await approveRefund(returnId);
       else if (action === "refundReject")  await rejectRefund(returnId);
       else if (action === "refundComplete") await completeRefund(returnId);
       await fetchReturns();
@@ -233,11 +233,11 @@ export default function ReturnsList() {
       return (
         <div className="flex gap-1.5 flex-wrap">
           <button
-            onClick={() => runAction(r.returnId, "refundApprove", "Approve refund? This initiates payment.")}
+            onClick={() => setReviewing(r.returnId)}
             disabled={busy}
             className={`${btn} bg-emerald-600 hover:bg-emerald-700 text-white`}
           >
-            {busy ? "…" : "Approve Refund"}
+            {busy ? "…" : "Review refund"}
           </button>
           <button
             onClick={() => runAction(r.returnId, "refundReject", "Reject refund? Used when the returned item fails inspection.")}
@@ -614,6 +614,17 @@ export default function ReturnsList() {
         </div>
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
+
+      {reviewing != null && (
+        <RefundReviewPanel
+          target={{ kind: "RETURN", returnId: reviewing }}
+          onClose={() => setReviewing(null)}
+          onDone={() => {
+            fetchReturns();
+            setSelected(null);
+          }}
+        />
+      )}
     </div>
   );
 }

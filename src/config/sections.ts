@@ -31,6 +31,7 @@ export const SECTION_PAGES: SectionPage[] = [
   { name: "Orders", path: "/orders", group: "Sales", description: "Confirm, ship and track", keywords: "shipping awb courier" },
   { name: "Customers", path: "/customers", group: "Sales", description: "Profiles, addresses and order history" },
   { name: "Returns & refunds", path: "/returns", group: "Sales", description: "Online check, warehouse inspection, payout", keywords: "refund" },
+  { name: "Refunds to review", path: "/refunds", group: "Sales", description: "Compare the money, then approve", keywords: "refund approve cancel payout money" },
   { name: "Exchanges", path: "/exchanges", group: "Sales", description: "Size and colour swaps" },
   { name: "Coupons", path: "/coupons/add", group: "Sales", description: "Discount codes and who can use them", keywords: "discount offer" },
   { name: "Coupon usage", path: "/coupons/usage", group: "Sales", description: "Who used each coupon, and uses left", keywords: "discount redeemed used remaining limit" },
