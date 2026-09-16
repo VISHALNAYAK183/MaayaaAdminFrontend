@@ -318,10 +318,18 @@ function ManageCostModal({
               const draft = drafts[item.id];
               const dirty = draft != null && draft !== item.amount;
               const isBusy = busy === item.id;
+              // Shipping is taken from each order now. The line is shown so it
+              // can be deleted, but no total counts it.
+              const uncounted = item.costType === "SHIPPING";
               return (
-                <tr key={item.id}>
+                <tr key={item.id} className={uncounted ? "opacity-60" : undefined}>
                   <td className="py-2 px-3 text-sm text-gray-700">
                     {item.costType.replace(/_/g, " ")}
+                    {uncounted && (
+                      <span className="mt-0.5 block text-[11px] text-gray-500">
+                        Not counted: shipping is per order now
+                      </span>
+                    )}
                   </td>
                   <td className="py-2 px-3 text-sm text-gray-500">{item.description || "—"}</td>
                   <td className="py-2 px-3">

@@ -15,6 +15,7 @@ import ShipOrderModal from "../../components/ShipOrderModal";
 import UpdateStatusModal from "../../components/UpdateStatusModal";
 import CancelOrderModal from "../../components/CancelOrderModal";
 import TrackingUpdateModal from "../../components/TrackingUpdateModal";
+import ShippingCostCard from "../../components/ShippingCostCard";
 import type { OrderDetail, OrderProduct, RefundRow, ShipmentEventRow } from "../../types/order";
 
 const resolveImg = (url: string | undefined | null) => {
@@ -190,7 +191,10 @@ export default function OrderDetails() {
     }
   };
 
-  if (loading) {
+  // Only before the first answer. The page re-reads the order whenever the tab
+  // regains focus, and swapping everything for a skeleton then threw away
+  // whatever was being typed into it.
+  if (loading && !data) {
     return (
       <div className="space-y-4">
         <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
@@ -544,6 +548,8 @@ export default function OrderDetails() {
               </button>
             )}
           </div>
+
+          <ShippingCostCard orderId={order.orderId} readOnly={readOnly} refreshKey={status} />
         </div>
       </div>
     </div>

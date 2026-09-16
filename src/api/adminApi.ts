@@ -20,11 +20,6 @@ export const getOrders = (
     },
   });
 
-export const getMostOrderedProducts = () =>
-  apiClient.get<Array<{ product_id: number; product_name: string; total_ordered: number }>>(
-    `${ADMIN_BASE}/orders/most-ordered-products`
-  );
-
 /**
  * Look up the invoice for an order (created at approval time).
  * Returns at minimum { invoiceId, invoiceNumber, total }.

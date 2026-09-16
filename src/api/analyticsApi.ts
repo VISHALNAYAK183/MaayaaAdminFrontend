@@ -5,21 +5,6 @@ export interface CategoryExpense {
   amount: number;
 }
 
-export interface AnalyticsDashboard {
-  totalRevenue: number;
-  totalCost: number;
-  grossProfit: number;
-  totalExpenses: number;
-  netProfit: number;
-  netMargin: number;
-  averageSellingPrice: number;
-  expenseBreakdown: CategoryExpense[] | null;
-  totalOrders: number;
-  deliveredOrders: number;
-  totalProductsSold: number;
-  averageOrderValue: number;
-}
-
 export interface ProductAnalytics {
   productId: number;
   productName: string;
@@ -36,46 +21,61 @@ export interface ProductAnalytics {
 
 export type AnalyticsRange = "DAY" | "WEEK" | "MONTH" | "ALL";
 
-export interface AnalyticsProfit {
-  /**
-   * What the couriers charged over the period. Reported, NOT subtracted from
-   * netProfit - see the note in AnalyticsProfitResponseDTO. Whether this
-   * belongs in COGS depends on what ProductCost already assumes.
-   */
-  freightCharged?: number;
-  freightOnReturnedParcels?: number;
-  returnedToOriginCount?: number;
-  range: AnalyticsRange;
-  totalRevenue: number;
-  totalCost: number;
-  grossProfit: number;
-  totalExpenses: number;
-  netProfit: number;
-  netMargin: number;
-  averageSellingPrice: number;
-  expenseBreakdown: CategoryExpense[] | null;
-  totalOrders: number;
-  totalProductsSold: number;
-  averageOrderValue: number;
+/**
+ * Shipping inside a panel. forwardMissing: shipped with no cost recorded.
+ * rtoEstimated: RTOs priced at the forward charge until the real figure is
+ * entered. reverseMissing: collections with no cost recorded.
+ */
+export interface ShippingTotals {
+  forward: number;
+  rto: number;
+  reverse: number;
+  total: number;
+  forwardMissing: number;
+  rtoEstimated: number;
+  reverseMissing: number;
 }
 
-export interface TopSellingProduct {
-  productId: number;
-  productName: string;
-  unitsSold: number;
+export interface ProfitPanel {
+  sales: number;
+  refunds: number;
   revenue: number;
-  stockLeft: number;
-  averageSellingPrice: number;
+  cogs: number;
+  grossProfit: number;
+  shipping: ShippingTotals;
+  operatingExpenses: number;
+  netProfit: number;
+  /** null when there is no revenue to divide by. */
+  netMargin: number | null;
+  orders: number;
+  units: number;
+  averageOrderValue: number;
+  returnsRefunded: number;
+  shipped: number;
+  rtoCount: number;
+  rtoRate: number | null;
+  reversePickups: number;
+  /** Settled panel: delivered in the period, not final yet. */
+  awaitingOrders: number;
+  awaitingSales: number;
 }
 
-export const getAnalyticsDashboard = () =>
-  apiClient.get<AnalyticsDashboard>(`${ADMIN_BASE}/analytics/dashboard`);
+export interface ProfitReport {
+  range: AnalyticsRange;
+  from: string;
+  to: string;
+  returnWindowDays: number;
+  asOfToday: ProfitPanel;
+  settled: ProfitPanel;
+  expenseBreakdown: CategoryExpense[];
+  /** As of today: sold less returned, revenue after coupons. */
+  sold: { productId: number; name: string; units: number; revenue: number; stockLeft: number | null }[];
+  /** Every order placed in the period that was not cancelled, delivered or not. */
+  ordered: { productId: number; name: string; units: number; orders: number }[];
+}
 
 export const getProductAnalytics = (productId: number) =>
   apiClient.get<ProductAnalytics>(`${ADMIN_BASE}/analytics/product/${productId}`);
 
-export const getAnalyticsProfit = (range: AnalyticsRange) =>
-  apiClient.get<AnalyticsProfit>(`${ADMIN_BASE}/analytics/profit`, { params: { range } });
-
-export const getTopSellingProducts = () =>
-  apiClient.get<TopSellingProduct[]>(`${ADMIN_BASE}/analytics/top-products`);
+export const getProfitReport = (range: AnalyticsRange) =>
+  apiClient.get<ProfitReport>(`${ADMIN_BASE}/analytics/report`, { params: { range } });

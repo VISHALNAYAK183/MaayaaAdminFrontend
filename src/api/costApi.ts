@@ -10,12 +10,16 @@ export type CostType =
   | "SHIPPING"
   | "OTHER";
 
+/**
+ * What a new cost line can be. Not SHIPPING: it differs by pin code and
+ * courier, so it is taken from each order's shipment. Lines saved as SHIPPING
+ * before that stay on file and are shown, but no total counts them.
+ */
 export const COST_TYPES: CostType[] = [
   "RAW_MATERIAL",
   "PRINTING",
   "PACKAGING",
   "TAG",
-  "SHIPPING",
   "OTHER",
 ];
 
@@ -31,6 +35,7 @@ export interface CostBreakdown {
 export interface ProductCostSummary {
   productId: number;
   productName: string | null;
+  /** What a piece costs to make: every live line except shipping. */
   totalCost: number;
   profit: number;
   breakdown: CostBreakdown[];
