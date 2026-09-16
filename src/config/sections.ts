@@ -33,6 +33,7 @@ export const SECTION_PAGES: SectionPage[] = [
   { name: "Returns & refunds", path: "/returns", group: "Sales", description: "Online check, warehouse inspection, payout", keywords: "refund" },
   { name: "Exchanges", path: "/exchanges", group: "Sales", description: "Size and colour swaps" },
   { name: "Coupons", path: "/coupons/add", group: "Sales", description: "Discount codes and who can use them", keywords: "discount offer" },
+  { name: "Coupon usage", path: "/coupons/usage", group: "Sales", description: "Who used each coupon, and uses left", keywords: "discount redeemed used remaining limit" },
 
   { name: "Reviews", path: "/reviews", group: "Engagement", description: "Text is live at once; photos wait for you", keywords: "ratings moderate" },
   { name: "Analytics", path: "/analytics", group: "Engagement", description: "Revenue, profit and best sellers", keywords: "profit revenue" },

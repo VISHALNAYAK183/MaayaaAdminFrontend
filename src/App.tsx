@@ -18,6 +18,7 @@ import ExchangesList from "./pages/exchanges/ExchangesList";
 import StockManagement from "./pages/stock/StockManagement";
 import CostManagement from "./pages/cost/CostManagement";
 import AddCoupon from "./pages/coupons/AddCoupon";
+import CouponUsage from "./pages/coupons/CouponUsage";
 import HomeCmsStudio from "./pages/homeCMS/HomeCmsStudio";
 import HomeCMS from "./pages/homeCMS/HomeCMS";
 import AddSection from "./pages/homeCMS/AddSection";
@@ -97,6 +98,7 @@ export default function App() {
               <Route path="/returns" element={<ReturnsList />} />
               <Route path="/exchanges" element={<ExchangesList />} />
               <Route path="/coupons/add" element={<AddCoupon />} />
+              <Route path="/coupons/usage" element={<CouponUsage />} />
 
               {/* Engagement */}
               <Route path="/reviews" element={<ReviewDashboard />} />

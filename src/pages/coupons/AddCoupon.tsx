@@ -1,6 +1,7 @@
 import { useReadOnly } from "../../hooks/useReadOnly";
 import { serverMessage } from "../../api/client";
 import React, { useState, useRef, useEffect } from "react";
+import { Link } from "react-router";
 import {
   addCoupon,
   updateCoupon,
@@ -526,6 +527,13 @@ const CouponManagement = () => {
           <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-slate-900">Coupon Management</h1>
           <p className="mt-1 text-sm text-slate-500">Discount codes, and who can use them</p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+        <Link
+          to="/coupons/usage"
+          className="px-4 py-2 rounded-full border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors shell-press"
+        >
+          See usage
+        </Link>
         {!readOnly && (
         <button
           onClick={() => { setLockedUserIds([]); setShowForm(true); }}
@@ -535,6 +543,7 @@ const CouponManagement = () => {
           <span className="text-sm font-semibold">New Coupon</span>
         </button>
         )}
+        </div>
       </div>
 
       {/* ── Status Banner ── */}
@@ -864,6 +873,13 @@ const CouponManagement = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
+                          <Link
+                            to={`/coupons/usage?view=customers&coupon=${coupon.couponId}`}
+                            className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-600 transition-colors shell-press"
+                            title={`Who used ${coupon.code}`}
+                          >
+                            Usage
+                          </Link>
                           {!readOnly && (<>
                           <button onClick={() => handleEdit(coupon)}
                             className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors shell-press" title="Edit">
