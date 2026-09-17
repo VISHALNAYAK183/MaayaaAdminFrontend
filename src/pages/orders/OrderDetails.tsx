@@ -9,6 +9,7 @@ import {
   getInvoiceByOrder,
   downloadInvoicePdf,
   retryRefund,
+  rtoReceived,
 } from "../../api/adminApi";
 import { CLIENT_API_BASE } from "../../api/client";
 import ShipOrderModal from "../../components/ShipOrderModal";
@@ -147,6 +148,27 @@ export default function OrderDetails() {
       await load();
     } catch (e) {
       alert(serverMessage(e, "Failed to approve order. Please try again."));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRtoReceived = async () => {
+    if (!data) return;
+    if (!window.confirm(
+      "Has this parcel physically come back to you?\n\n"
+      + "The stock goes back on the shelf, the order closes as returned undelivered, "
+      + "and any refund waits on Refunds to review."
+    )) return;
+    setActionLoading(true);
+    try {
+      const res = await rtoReceived(data.order.orderId);
+      if (res.data.refundPending) {
+        alert("Received. The refund is waiting on Refunds to review.");
+      }
+      await load();
+    } catch (e) {
+      alert(serverMessage(e, "Could not mark the parcel received. Please try again."));
     } finally {
       setActionLoading(false);
     }
@@ -508,6 +530,25 @@ export default function OrderDetails() {
                   deliveryRoute={shipment?.delivery_route}
                   onSuccess={load}
                 />
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="mb-2 shell-label">
+                    Returned undelivered
+                  </p>
+                  {shipment?.rto_initiated_at && (
+                    <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                      The courier is bringing this parcel back (since{" "}
+                      {new Date(shipment.rto_initiated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}).
+                      Mark it received when it arrives.
+                    </p>
+                  )}
+                  <button
+                    onClick={handleRtoReceived}
+                    disabled={actionLoading}
+                    className="w-full py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
+                  >
+                    {actionLoading ? "Processing…" : "Parcel came back — mark received"}
+                  </button>
+                </div>
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <p className="mb-2 shell-label">
                     Tracking Update

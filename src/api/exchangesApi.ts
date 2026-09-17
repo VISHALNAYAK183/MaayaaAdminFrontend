@@ -89,6 +89,12 @@ export type ShipReplacementPayload = {
   trackingNumber?: string;
   trackingUrl?: string;
   estimatedDeliveryDate?: string;
+  /** Book with Shiprocket instead of typing the details in. Needs the parcel's measurements. */
+  bookWithCourier?: boolean;
+  weightKg?: number;
+  lengthCm?: number;
+  breadthCm?: number;
+  heightCm?: number;
 };
 
 /**

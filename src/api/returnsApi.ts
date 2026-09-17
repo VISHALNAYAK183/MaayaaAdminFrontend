@@ -61,6 +61,10 @@ export type AdminReturn = {
   reversePickupAwb: string | null;
   reversePickupCarrier: string | null;
   reversePickupStatus: string | null;
+  /** AWAITING_CUSTOMER while a failed item is held; DISPOSED once the hold lapses. */
+  dispositionStatus?: string | null;
+  dispositionDeadline?: string | null;
+  dispositionNote?: string | null;
 };
 
 export type AdminReturnStatus = AdminReturn["returnStatus"];

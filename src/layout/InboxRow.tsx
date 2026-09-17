@@ -76,6 +76,20 @@ const COPY: Record<string, Copy> = {
     href: () => "/returns?status=PICKED_UP",
     detail: oldest("asked"),
   },
+  "orders.rto": {
+    title: (n) => plural(n, "Parcel coming back undelivered", "Parcels coming back undelivered"),
+    icon: <AlertIcon />,
+    action: "Open",
+    href: (item) => (item.count === 1 && item.samples.length === 1 ? `/orders/${item.samples[0].replace("#", "")}` : "/orders?status=SHIPPED"),
+    detail: oldest("since"),
+  },
+  "payments.unmatched": {
+    title: (n) => plural(n, "Payment with no order", "Payments with no order"),
+    icon: <RupeeIcon />,
+    action: "Settle",
+    href: () => "/refunds",
+    detail: total,
+  },
   "refunds.review": {
     title: (n) => plural(n, "Cancelled order refund to review", "Cancelled order refunds to review"),
     icon: <RupeeIcon />,

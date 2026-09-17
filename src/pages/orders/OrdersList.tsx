@@ -202,8 +202,18 @@ export default function OrdersList() {
     }
 
     if (o.status === "REQUESTED") {
+      // Cancelled automatically 48 hours after it was placed; flag it from 24.
+      const waitedHours = o.order_date ? (Date.now() - new Date(o.order_date).getTime()) / 3_600_000 : 0;
       return (
         <div className="flex items-center gap-1.5 flex-wrap">
+          {waitedHours >= 24 && (
+            <span
+              title="Not confirmed orders are cancelled automatically 48 hours after they were placed"
+              className="text-[11px] px-2 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-medium"
+            >
+              Call today · auto-cancels in {Math.max(0, Math.ceil(48 - waitedHours))}h
+            </span>
+          )}
           <button
             onClick={() => handleApprove(o.order_id)}
             disabled={busy}

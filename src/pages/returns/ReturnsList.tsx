@@ -428,6 +428,21 @@ export default function ReturnsList() {
               <dd className="text-gray-900">{formatDate(selected.rejectedAt)}</dd>
               <dt className="text-gray-500">Refunded</dt>
               <dd className="text-gray-900">{formatDate(selected.refundedAt)}</dd>
+              {/* A failed item is held for a week, then disposed automatically. */}
+              {selected.dispositionStatus && (
+                <>
+                  <dt className="text-gray-500">Held item</dt>
+                  <dd className="text-gray-900">
+                    {selected.dispositionStatus === "DISPOSED" ? "Disposed" : "Held for the customer"}
+                    {selected.dispositionDeadline
+                      ? `${selected.dispositionStatus === "DISPOSED" ? " · on" : " · until"} ${formatDate(selected.dispositionDeadline)}`
+                      : ""}
+                    {selected.dispositionNote && (
+                      <span className="block text-xs text-gray-500">{selected.dispositionNote}</span>
+                    )}
+                  </dd>
+                </>
+              )}
               {selected.refundStatus && (
                 <>
                   <dt className="text-gray-500">Refund Status</dt>

@@ -106,6 +106,11 @@ export default function ExchangesList() {
     trackingNumber: "",
     trackingUrl: "",
     estimatedDeliveryDate: "",
+    bookWithCourier: true,
+    weightKg: "",
+    lengthCm: "",
+    breadthCm: "",
+    heightCm: "",
   });
 
   // Out-of-order response guard.
@@ -181,12 +186,24 @@ export default function ExchangesList() {
     if (shipDialog == null) return;
     setActionLoading(shipDialog);
     try {
-      await shipReplacement(shipDialog, {
-        carrier: shipForm.carrier.trim() || undefined,
-        trackingNumber: shipForm.trackingNumber.trim() || undefined,
-        trackingUrl: shipForm.trackingUrl.trim() || undefined,
-        estimatedDeliveryDate: shipForm.estimatedDeliveryDate || undefined,
-      });
+      const num = (v: string) => (v.trim() === "" ? undefined : Number(v));
+      await shipReplacement(
+        shipDialog,
+        shipForm.bookWithCourier
+          ? {
+              bookWithCourier: true,
+              weightKg: num(shipForm.weightKg),
+              lengthCm: num(shipForm.lengthCm),
+              breadthCm: num(shipForm.breadthCm),
+              heightCm: num(shipForm.heightCm),
+            }
+          : {
+              carrier: shipForm.carrier.trim() || undefined,
+              trackingNumber: shipForm.trackingNumber.trim() || undefined,
+              trackingUrl: shipForm.trackingUrl.trim() || undefined,
+              estimatedDeliveryDate: shipForm.estimatedDeliveryDate || undefined,
+            }
+      );
       setShipDialog(null);
       await fetchExchanges();
       setSelected(null);
@@ -293,7 +310,17 @@ export default function ExchangesList() {
       return (
         <button
           onClick={() => {
-            setShipForm({ carrier: "", trackingNumber: "", trackingUrl: "", estimatedDeliveryDate: "" });
+            setShipForm({
+              carrier: "",
+              trackingNumber: "",
+              trackingUrl: "",
+              estimatedDeliveryDate: "",
+              bookWithCourier: true,
+              weightKg: "",
+              lengthCm: "",
+              breadthCm: "",
+              heightCm: "",
+            });
             setShipDialog(e.exchangeId);
           }}
           disabled={busy}
@@ -395,8 +422,54 @@ export default function ExchangesList() {
               Ship replacement
             </h3>
             <p className="text-xs text-gray-500 mb-4">
-              The customer sees these on their order page, and gets them by email.
+              The customer sees the tracking on their order page, and gets it by email.
             </p>
+            <div className="mb-3 flex gap-1 rounded-lg bg-gray-100 p-1 text-sm">
+              {[
+                { value: true, label: "Book with Shiprocket" },
+                { value: false, label: "Enter details by hand" },
+              ].map((o) => (
+                <button
+                  key={o.label}
+                  type="button"
+                  onClick={() => setShipForm({ ...shipForm, bookWithCourier: o.value })}
+                  className={`flex-1 rounded-md px-2 py-1.5 font-medium ${shipForm.bookWithCourier === o.value ? "bg-white text-gray-900 shadow-sm" : "text-gray-600"}`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+            {shipForm.bookWithCourier ? (
+              <div className="space-y-2.5">
+                <p className="text-xs text-gray-500">
+                  Weigh and measure the packed parcel. The cheapest courier to this pin code is booked, and the
+                  exchange completes by itself when the courier marks it delivered.
+                </p>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={shipForm.weightKg}
+                  onChange={(ev) => setShipForm({ ...shipForm, weightKg: ev.target.value })}
+                  placeholder="Weight (kg)"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900"
+                />
+                <div className="grid grid-cols-3 gap-2">
+                  {(["lengthCm", "breadthCm", "heightCm"] as const).map((k) => (
+                    <input
+                      key={k}
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={shipForm[k]}
+                      onChange={(ev) => setShipForm({ ...shipForm, [k]: ev.target.value })}
+                      placeholder={k === "lengthCm" ? "Length cm" : k === "breadthCm" ? "Breadth cm" : "Height cm"}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900"
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
             <div className="space-y-2.5">
               <input
                 value={shipForm.carrier}
@@ -426,6 +499,7 @@ export default function ExchangesList() {
                 />
               </label>
             </div>
+            )}
             <div className="flex justify-end gap-2 mt-5">
               <button
                 onClick={() => setShipDialog(null)}
@@ -544,8 +618,10 @@ export default function ExchangesList() {
                   <dt className="text-gray-500">Held item</dt>
                   <dd className="text-gray-900">
                     {selected.dispositionStatus.replace(/_/g, " ").toLowerCase()}
+                    {/* Disposed automatically once the hold lapses, so the
+                        deadline is when it went. */}
                     {selected.dispositionDeadline
-                      ? ` · until ${formatDate(selected.dispositionDeadline)}`
+                      ? `${selected.dispositionStatus === "DISPOSED" ? " · on" : " · until"} ${formatDate(selected.dispositionDeadline)}`
                       : ""}
                   </dd>
                 </>

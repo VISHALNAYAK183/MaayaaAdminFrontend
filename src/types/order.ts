@@ -99,6 +99,8 @@ export interface OrderShipment {
   delivered_at: string | null;
   /** Null on anything shipped before routing existed. */
   delivery_route?: DeliveryRoute | null;
+  /** When the courier said the parcel is coming back to us; null otherwise. */
+  rto_initiated_at?: string | null;
 }
 
 /**

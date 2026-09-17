@@ -294,10 +294,11 @@ export default function RefundReviewPanel({
                     <input
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
-                      placeholder="Why is this refund not being paid? e.g. refunded by hand in Razorpay"
+                      placeholder="Why is this refund not being paid? e.g. Already refunded to your UPI on 12 Sept"
                       className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
                       autoFocus
                     />
+                    <p className="text-xs text-gray-500">The customer is emailed this reason, word for word.</p>
                     <div className="flex flex-wrap gap-2">
                       <button type="button" onClick={decline} disabled={busy || !reason.trim()} className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 shell-press">
                         {busy ? "Declining…" : "Decline refund"}

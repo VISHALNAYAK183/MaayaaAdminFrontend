@@ -124,6 +124,15 @@ export const cancelOrder = (orderId: number, reason: string) =>
     refundPending?: boolean;
   }>(`${ADMIN_BASE}/orders/${orderId}/cancel`, { reason });
 
+/**
+ * The parcel came back undelivered and is in hand: stock goes back, the order
+ * closes as an RTO, and any refund waits on Refunds to review.
+ */
+export const rtoReceived = (orderId: number) =>
+  apiClient.put<{ orderId: number; refundAmount: number; refundPending?: boolean; rto: boolean }>(
+    `${ADMIN_BASE}/orders/${orderId}/rto-received`
+  );
+
 /** Ask the gateway again for a refund it refused. */
 export const retryRefund = (orderId: number, refundId: number) =>
   apiClient.post<{
