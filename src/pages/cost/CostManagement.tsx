@@ -221,6 +221,10 @@ export default function CostManagement() {
           summary={selected}
           onClose={() => setSelected(null)}
           onSaved={() => { setSelected(null); load(); }}
+          onAddLines={() => {
+            setAdding({ productId: selected.productId, name: selected.productName ?? `#${selected.productId}` });
+            setSelected(null);
+          }}
         />
       )}
 
@@ -241,10 +245,13 @@ function ManageCostModal({
   summary,
   onClose,
   onSaved,
+  onAddLines,
 }: {
   summary: ProductCostSummary;
   onClose: () => void;
   onSaved: () => void;
+  /** A tracked product can gain lines too, e.g. printing added later. */
+  onAddLines: () => void;
 }) {
   const readOnly = useReadOnly();
   const [busy, setBusy] = useState<number | null>(null);
@@ -374,7 +381,15 @@ function ManageCostModal({
       </table>
       </div>
 
-      <div className="mt-5 flex justify-end">
+      <div className="mt-5 flex flex-wrap justify-end gap-2">
+        {!readOnly && (
+          <button
+            onClick={onAddLines}
+            className="text-sm px-4 py-2 rounded-full bg-gray-900 hover:bg-gray-700 text-white font-medium shell-press"
+          >
+            Add cost line
+          </button>
+        )}
         <button
           onClick={onClose}
           className="text-sm px-4 py-2 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 shell-press"

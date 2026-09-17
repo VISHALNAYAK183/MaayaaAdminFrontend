@@ -315,15 +315,21 @@ export default function RefundReviewPanel({
                       disabled={busy || !review.approvable || !confirmed}
                       className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-40 shell-press"
                     >
-                      {busy ? "Approving…" : review.kind === "CANCELLATION" ? `Approve and send ${inr(review.thisRefund.total)}` : "Approve refund"}
+                      {busy
+                        ? "Approving…"
+                        : review.thisRefund.toBank > 0
+                          ? "Approve refund"
+                          : `Approve and send ${inr(review.thisRefund.total)}`}
                     </button>
                     {review.kind === "CANCELLATION" && (
                       <button type="button" onClick={() => setDeclining(true)} className="rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 shell-press">
                         Decline
                       </button>
                     )}
-                    {review.kind === "RETURN" && (
-                      <span className="text-xs text-gray-500">Then mark it paid from Returns & refunds.</span>
+                    {review.kind === "RETURN" && review.thisRefund.toBank > 0 && (
+                      <span className="text-xs text-gray-500">
+                        Paid by hand: send it, then mark it paid from Returns &amp; refunds. If the customer picks store credit instead, it is sent within a few minutes.
+                      </span>
                     )}
                   </div>
                 )}
