@@ -70,16 +70,21 @@ const formatDate = (iso: string | null) => {
 export default function ReturnsList() {
   const readOnly = useReadOnly();
   const [returns, setReturns] = useState<AdminReturn[]>([]);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<typeof TABS[number]>(() => {
     const wanted = searchParams.get("status") as typeof TABS[number] | null;
     return wanted && TABS.includes(wanted) ? wanted : "ALL";
   });
-  // The bell and the landing page link here with a filter already chosen.
+  // The tab lives in the address, so the bell can link to one and each tab
+  // clicked is a history step: Back returns to the tab you were on.
   useEffect(() => {
     const wanted = searchParams.get("status") as typeof TABS[number] | null;
-    if (wanted && TABS.includes(wanted)) setTab(wanted);
+    setTab(wanted && TABS.includes(wanted) ? wanted : "ALL");
   }, [searchParams]);
+  const chooseTab = (t: typeof TABS[number]) => {
+    setTab(t);
+    setSearchParams(t === "ALL" ? {} : { status: t });
+  };
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
@@ -504,7 +509,7 @@ export default function ReturnsList() {
         {TABS.map((t) => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => chooseTab(t)}
             className={`px-4 py-2 rounded-full text-xs font-semibold transition-all shell-press ${
               tab === t
                 ? "bg-white text-gray-900 shadow-sm"

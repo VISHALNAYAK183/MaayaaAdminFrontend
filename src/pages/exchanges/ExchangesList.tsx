@@ -76,16 +76,21 @@ const QC_LABEL: Record<QcAction, string> = {
 export default function ExchangesList() {
   const readOnly = useReadOnly();
   const [exchanges, setExchanges] = useState<AdminExchange[]>([]);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<string>(() => {
     const wanted = searchParams.get("tab");
     return wanted && TABS.some((t) => t.key === wanted) ? wanted : "ALL";
   });
-  // The bell and the landing page link here with a filter already chosen.
+  // The tab lives in the address, so the bell can link to one and each tab
+  // clicked is a history step: Back returns to the tab you were on.
   useEffect(() => {
     const wanted = searchParams.get("tab");
-    if (wanted && TABS.some((t) => t.key === wanted)) setTab(wanted);
+    setTab(wanted && TABS.some((t) => t.key === wanted) ? wanted : "ALL");
   }, [searchParams]);
+  const chooseTab = (key: string) => {
+    setTab(key);
+    setSearchParams(key === "ALL" ? {} : { tab: key });
+  };
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
@@ -699,7 +704,7 @@ export default function ExchangesList() {
         {TABS.map((t) => (
           <button
             key={t.key}
-            onClick={() => setTab(t.key)}
+            onClick={() => chooseTab(t.key)}
             className={`px-4 py-2 rounded-full text-xs font-semibold transition-all shell-press ${
               tab === t.key
                 ? "bg-white text-gray-900 shadow-sm"

@@ -121,7 +121,11 @@ export default function CouponUsage() {
   const filterParam = searchParams.get("filter") as UsageFilter | null;
   const filter: UsageFilter = FILTERS.some((f) => f.value === filterParam) ? (filterParam as UsageFilter) : "ALL";
 
-  /** Changes the address rather than local state, so a view can be shared or bookmarked. */
+  /**
+   * Changes the address rather than local state, so a view can be shared or
+   * bookmarked - and each change is its own history step, so Back walks back
+   * through the tabs and coupons you opened instead of leaving the page.
+   */
   const setParams = useCallback(
     (next: Record<string, string | undefined>) => {
       const params = new URLSearchParams(searchParams);
@@ -129,7 +133,7 @@ export default function CouponUsage() {
         if (value) params.set(key, value);
         else params.delete(key);
       }
-      setSearchParams(params, { replace: true });
+      setSearchParams(params);
     },
     [searchParams, setSearchParams]
   );

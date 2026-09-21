@@ -67,7 +67,7 @@ export default function AnalyticsDashboardPage() {
               key={r.value}
               type="button"
               aria-pressed={range === r.value}
-              onClick={() => setSearchParams(r.value === "MONTH" ? {} : { range: r.value }, { replace: true })}
+              onClick={() => setSearchParams(r.value === "MONTH" ? {} : { range: r.value })}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all shell-press ${
                 range === r.value ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
               }`}

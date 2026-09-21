@@ -55,16 +55,21 @@ export default function OrdersList() {
   // Kept apart from an empty tab: "No orders" is a claim about the shop.
   const [loadFailed, setLoadFailed] = useState(false);
   const fetchSeq = useRef(0);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState(() => {
     const wanted = searchParams.get("status");
     return wanted && TABS.includes(wanted) ? wanted : "PENDING";
   });
-  // The bell and the landing page link here with a filter already chosen.
+  // The tab lives in the address, so the bell can link to one and each tab
+  // clicked is a history step: Back returns to the tab you were on.
   useEffect(() => {
     const wanted = searchParams.get("status");
-    if (wanted && TABS.includes(wanted)) setTab(wanted);
+    setTab(wanted && TABS.includes(wanted) ? wanted : "PENDING");
   }, [searchParams]);
+  const chooseTab = (t: string) => {
+    setTab(t);
+    setSearchParams(t === "PENDING" ? {} : { status: t });
+  };
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [sortKey, setSortKey] = useState<"default" | "newest" | "price_desc" | "price_asc">("default");
@@ -383,7 +388,7 @@ export default function OrdersList() {
           {TABS.map((t) => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => chooseTab(t)}
             className={`px-4 py-2 rounded-full text-xs font-semibold transition-all shell-press ${
               tab === t
                 ? "bg-white text-gray-900 shadow-sm"
