@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation } from "react-router";
 import { InboxProvider } from "../context/InboxContext";
 import { useReadOnly } from "../hooks/useReadOnly";
+import useGoBack from "../hooks/useGoBack";
 import { pageForPath } from "../config/sections";
 import TopBar from "./TopBar";
 import PageErrorBoundary from "./PageErrorBoundary";
@@ -34,15 +35,29 @@ const AppLayout: React.FC = () => {
  * Where am I, and the way back. With no sidebar this line is the page's place
  * in the panel: the dashboard, the section, and the page when you are deeper
  * than it (an order, a customer, a section of the home page).
+ *
+ * The arrow is its own Back button and goes to the page you came from, as the
+ * browser's back does. It used to be part of the Dashboard link, so from
+ * Coupons > Coupon usage it skipped straight to the dashboard.
  */
 function Wayfinding({ pathname }: { pathname: string }) {
   const page = pageForPath(pathname);
   const deeper = !!page && pathname !== page.path && pathname !== page.path.replace(/\/add$/, "");
+  // Opened directly, with nothing behind it: up one level instead.
+  const goBack = useGoBack(deeper && page ? page.path : "/");
 
   return (
     <nav aria-label="Breadcrumb" className="mb-4 flex min-h-6 items-center gap-1.5 text-xs text-gray-500">
-      <Link to="/" className="inline-flex items-center gap-1 rounded px-1 py-0.5 font-medium text-gray-600 hover:bg-brand-50 hover:text-gray-900">
+      <button
+        type="button"
+        onClick={goBack}
+        aria-label="Back"
+        title="Back"
+        className="inline-flex size-6 items-center justify-center rounded text-gray-600 hover:bg-brand-50 hover:text-gray-900"
+      >
         <ChevronLeftIcon className="size-3.5" />
+      </button>
+      <Link to="/" className="rounded px-1 py-0.5 font-medium text-gray-600 hover:bg-brand-50 hover:text-gray-900">
         Dashboard
       </Link>
       {page && (

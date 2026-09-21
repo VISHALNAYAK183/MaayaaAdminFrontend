@@ -1,13 +1,18 @@
 import { useNavigate } from "react-router";
 
-const useGoBack = () => {
+/**
+ * Back one step, like the browser's own back button. When there is nothing to
+ * go back to inside the panel - the page was opened from a link or a new tab -
+ * it goes to `fallback` instead of leaving the panel.
+ */
+const useGoBack = (fallback: string = "/") => {
   const navigate = useNavigate();
 
   const goBack = () => {
     if (window.history.state && window.history.state.idx > 0) {
       navigate(-1); // Go back to the previous page
     } else {
-      navigate("/"); // Redirect to home if no history exists
+      navigate(fallback); // Nothing to go back to: the parent page instead
     }
   };
 
