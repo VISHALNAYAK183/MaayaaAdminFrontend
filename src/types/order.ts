@@ -18,6 +18,9 @@ export interface AdminOrderRow {
   pin_code?: string | null;
   /** What the ship button would do. Not a promise — it can be overridden. */
   suggested_route?: DeliveryRoute | null;
+  /** Booked through Shiprocket: their webhook moves it, so no hand status change. */
+  shiprocket_booked?: boolean;
+  tracking_url?: string | null;
 }
 
 /** How a parcel leaves the building. */

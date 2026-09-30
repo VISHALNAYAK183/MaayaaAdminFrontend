@@ -1,7 +1,7 @@
 import { useReadOnly } from "../../hooks/useReadOnly";
 import { serverMessage } from "../../api/client";
 import { useEffect, useRef, useState } from "react";
-import { getOrders, approveOrder, rejectOrder } from "../../api/adminApi";
+import { getOrders, approveOrder, rejectOrder, getShippingLabel } from "../../api/adminApi";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ShipOrderModal from "../../components/ShipOrderModal";
 import UpdateStatusModal from "../../components/UpdateStatusModal";
@@ -76,7 +76,29 @@ export default function OrdersList() {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [modal, setModal] = useState<ModalState | null>(null);
+  const [labelLoading, setLabelLoading] = useState<number | null>(null);
   const navigate = useNavigate();
+
+  // Opened on the click, pointed at the label once it arrives - a tab opened
+  // after the wait would be blocked as a pop-up.
+  const printLabel = async (orderId: number) => {
+    setLabelLoading(orderId);
+    const tab = window.open("", "_blank");
+    try {
+      const res = await getShippingLabel(orderId);
+      if (tab) {
+        tab.opener = null;
+        tab.location.href = res.data.labelUrl;
+      } else {
+        window.location.assign(res.data.labelUrl);
+      }
+    } catch (e) {
+      tab?.close();
+      alert(serverMessage(e, "Could not get the label. Try again in a minute."));
+    } finally {
+      setLabelLoading(null);
+    }
+  };
 
   useEffect(() => { setPage(0); }, [tab, sortKey]);
   useEffect(() => { fetchOrders(); }, [tab, page, sortKey]);
@@ -264,6 +286,40 @@ export default function OrdersList() {
           >
             {o.suggested_route === "LOCAL" ? "Ship — self" : "Ship"}
           </button>
+          {cancelButton(o)}
+          <button
+            onClick={() => navigate(`/orders/${o.order_id}`)}
+            className="text-xs font-medium text-blue-600 hover:text-blue-800 px-1 transition-colors"
+          >
+            View →
+          </button>
+        </div>
+      );
+    }
+
+    // The courier reports on these: their webhook moves the order on, and a
+    // hand status change here would tell the customer something the courier
+    // has not said. The override lives on the order page, out of the way.
+    if ((o.status === "SHIPPED" || o.status === "OUT_FOR_DELIVERY") && o.shiprocket_booked) {
+      return (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            onClick={() => printLabel(o.order_id)}
+            disabled={labelLoading === o.order_id}
+            className="text-xs px-2.5 py-1.5 bg-gray-900 hover:bg-gray-700 text-white rounded-full font-medium transition-colors shell-press disabled:opacity-50"
+          >
+            {labelLoading === o.order_id ? "Getting label…" : "Print label"}
+          </button>
+          {o.tracking_url && (
+            <a
+              href={o.tracking_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs px-2.5 py-1.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-full font-medium transition-colors shell-press"
+            >
+              Track ↗
+            </a>
+          )}
           {cancelButton(o)}
           <button
             onClick={() => navigate(`/orders/${o.order_id}`)}

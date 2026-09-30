@@ -591,13 +591,22 @@ export default function OrderDetails() {
                 where the parcel has got to */}
             {!readOnly && ["SHIPPED", "OUT_FOR_DELIVERY"].includes(status) && (
               <>
-                <UpdateStatusModal
-                  key={status}
-                  orderId={order.orderId}
-                  currentStatus={status}
-                  deliveryRoute={shipment?.delivery_route}
-                  onSuccess={load}
-                />
+                {shipment?.shiprocket_booked ? (
+                  // The courier's scans move this order on by themselves. A hand
+                  // change is kept, below, for when those updates stop coming.
+                  <p className="text-xs text-gray-500">
+                    Shiprocket moves this order on as the courier scans the parcel — out for
+                    delivery, then delivered. Nothing to update here.
+                  </p>
+                ) : (
+                  <UpdateStatusModal
+                    key={status}
+                    orderId={order.orderId}
+                    currentStatus={status}
+                    deliveryRoute={shipment?.delivery_route}
+                    onSuccess={load}
+                  />
+                )}
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <p className="mb-2 shell-label">
                     Returned undelivered
@@ -617,12 +626,40 @@ export default function OrderDetails() {
                     {actionLoading ? "Processing…" : "Parcel came back — mark received"}
                   </button>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p className="mb-2 shell-label">
-                    Tracking Update
-                  </p>
-                  <TrackingUpdateModal orderId={order.orderId} onSuccess={load} />
-                </div>
+                {shipment?.shiprocket_booked ? (
+                  <details className="mt-4 pt-4 border-t border-gray-100">
+                    <summary className="text-xs text-gray-500 hover:text-gray-800 cursor-pointer select-none">
+                      Courier not updating? Change the status by hand
+                    </summary>
+                    <p className="mt-2 text-[11px] text-amber-800">
+                      Only if Shiprocket has stopped updating this order. Marking it delivered
+                      tells the customer it has arrived, and on a cash order records the cash as
+                      collected.
+                    </p>
+                    <div className="mt-3">
+                      <UpdateStatusModal
+                        key={status}
+                        orderId={order.orderId}
+                        currentStatus={status}
+                        deliveryRoute={shipment?.delivery_route}
+                        onSuccess={load}
+                      />
+                    </div>
+                    <div className="mt-4">
+                      <p className="mb-2 shell-label">
+                        Tracking Update
+                      </p>
+                      <TrackingUpdateModal orderId={order.orderId} onSuccess={load} />
+                    </div>
+                  </details>
+                ) : (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <p className="mb-2 shell-label">
+                      Tracking Update
+                    </p>
+                    <TrackingUpdateModal orderId={order.orderId} onSuccess={load} />
+                  </div>
+                )}
               </>
             )}
 
