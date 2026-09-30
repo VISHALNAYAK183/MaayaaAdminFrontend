@@ -49,8 +49,11 @@ export interface OrderStateResponse {
   message: string;
 }
 
-export const getShipOptions = (orderId: number) =>
-  apiClient.get<ShipOptions>(`${ADMIN_BASE}/orders/${orderId}/ship-options`);
+/** `weightKg` re-asks the couriers for the parcel as weighed, not as guessed. */
+export const getShipOptions = (orderId: number, weightKg?: number) =>
+  apiClient.get<ShipOptions>(`${ADMIN_BASE}/orders/${orderId}/ship-options`, {
+    params: weightKg ? { weightKg } : undefined,
+  });
 
 /**
  * Carrier and tracking number are required only on the MANUAL route — a parcel

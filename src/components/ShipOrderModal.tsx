@@ -62,6 +62,9 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // Re-asking the couriers for the weight just typed in. Ship waits for it, so
+  // a courier picked for the old weight is never the one booked.
+  const [quoting, setQuoting] = useState(false);
 
   // Which way this one would go, asked before anything is drawn. Until it
   // answers there is no honest form to show: demanding a tracking number for a
@@ -97,6 +100,49 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
       cancelled = true;
     };
   }, [orderId]);
+
+  // The list above was quoted before anyone had weighed the parcel. Once a
+  // weight is typed in, ask again for that weight - a heavier bag can land in
+  // a slab some couriers will not take, and the rates change with it.
+  const quotedWeightKg = options?.quotedWeightKg;
+  const onCourierRoute = route === "SHIPROCKET" && options?.suggestedRoute === "SHIPROCKET";
+
+  useEffect(() => {
+    const weight = Number(parcel.weightKg);
+    if (!onCourierRoute || !(weight > 0) || weight === Number(quotedWeightKg)) return;
+
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      setQuoting(true);
+      getShipOptions(orderId, weight)
+        .then((res) => {
+          if (cancelled) return;
+          // Only the courier half. The boxes are whoever is packing's to fill,
+          // and must not be reset to the catalogue's guess under their hands.
+          setOptions((prev) => prev && {
+            ...prev,
+            couriers: res.data.couriers,
+            suggestedCourierId: res.data.suggestedCourierId,
+            courierLookupFailed: res.data.courierLookupFailed,
+            quotedWeightKg: res.data.quotedWeightKg,
+          });
+          setCourierId(res.data.suggestedCourierId ?? null);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          setError(messageFrom(err, "Could not check couriers for that weight."));
+        })
+        .finally(() => {
+          if (!cancelled) setQuoting(false);
+        });
+    }, 600);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      setQuoting(false);
+    };
+  }, [parcel.weightKg, quotedWeightKg, onCourierRoute, orderId]);
 
   const set = (field: string, value: string) =>
     setForm((f) => ({ ...f, [field]: value }));
@@ -306,6 +352,11 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
               <p className="text-[11px] text-gray-500 mt-1">
                 Cheapest that will carry this parcel is picked for you.
                 {options.cod ? " Only couriers that collect cash are listed." : ""}
+                {options.quotedWeightKg != null && (
+                  Number(parcel.weightKg) > 0
+                    ? ` Quoted for ${options.quotedWeightKg} kg.`
+                    : ` Quoted for ${options.quotedWeightKg} kg until the parcel is weighed.`
+                )}
               </p>
             </div>
           )}
@@ -314,10 +365,10 @@ export default function ShipOrderModal({ orderId, onSuccess }: Props) {
 
           <button
             onClick={submit}
-            disabled={loading || courierBlocked}
+            disabled={loading || courierBlocked || quoting}
             className="w-full py-2.5 bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
           >
-            {loading ? "Booking…" : "Ship — book courier"}
+            {loading ? "Booking…" : quoting ? "Checking couriers…" : "Ship — book courier"}
           </button>
 
           <button

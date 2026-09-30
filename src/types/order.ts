@@ -50,6 +50,8 @@ export interface ShipOptions {
   /** Set instead of `couriers` when the aggregator could not be reached. */
   courierLookupFailed?: string;
   cod?: boolean;
+  /** The weight the couriers above were quoted for: scale, catalogue, or 0.5 kg. */
+  quotedWeightKg?: number;
   /** What the catalogue thinks it weighs. A pre-fill, not a decision. */
   estimatedParcel?: EstimatedParcel;
 }
