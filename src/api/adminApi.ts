@@ -55,6 +55,10 @@ export const getShipOptions = (orderId: number, weightKg?: number) =>
     params: weightKg ? { weightKg } : undefined,
   });
 
+/** The courier label for a Shiprocket parcel; fetched from them if none was saved. */
+export const getShippingLabel = (orderId: number) =>
+  apiClient.post<{ labelUrl: string }>(`${ADMIN_BASE}/orders/${orderId}/label`);
+
 /**
  * Carrier and tracking number are required only on the MANUAL route — a parcel
  * we are driving ourselves has neither, and asking for them was why local

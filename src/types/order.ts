@@ -103,6 +103,14 @@ export interface OrderShipment {
   delivery_route?: DeliveryRoute | null;
   /** When the courier said the parcel is coming back to us; null otherwise. */
   rto_initiated_at?: string | null;
+  /** Courier bookings only. May be null even then - the label can be fetched again. */
+  label_url?: string | null;
+  /** The day Shiprocket booked the rider for; null if that step failed. */
+  pickup_scheduled_at?: string | null;
+  /** The weight the courier billed, the larger of dead and box weight. */
+  applied_weight_kg?: number | null;
+  /** Booked through Shiprocket, so there is a label to print. */
+  shiprocket_booked?: boolean;
 }
 
 /**

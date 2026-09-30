@@ -10,6 +10,7 @@ import {
   downloadInvoicePdf,
   retryRefund,
   rtoReceived,
+  getShippingLabel,
 } from "../../api/adminApi";
 import { CLIENT_API_BASE } from "../../api/client";
 import ShipOrderModal from "../../components/ShipOrderModal";
@@ -52,6 +53,31 @@ export default function OrderDetails() {
   const [actionLoading, setActionLoading] = useState(false);
   const [invoiceLoading, setInvoiceLoading] = useState(false);
   const [error, setError] = useState("");
+  const [labelLoading, setLabelLoading] = useState(false);
+  const [labelError, setLabelError] = useState("");
+
+  // The tab is opened on the click itself and pointed at the label once the
+  // server answers: a window opened after a wait is a pop-up, and browsers
+  // block those.
+  const handlePrintLabel = async () => {
+    setLabelError("");
+    setLabelLoading(true);
+    const tab = window.open("", "_blank");
+    try {
+      const res = await getShippingLabel(Number(orderId));
+      if (tab) {
+        tab.opener = null;
+        tab.location.href = res.data.labelUrl;
+      } else {
+        window.location.assign(res.data.labelUrl);
+      }
+    } catch (err) {
+      tab?.close();
+      setLabelError(serverMessage(err, "Could not get the label. Try again in a minute."));
+    } finally {
+      setLabelLoading(false);
+    }
+  };
 
   const handleDownloadInvoice = async () => {
     setInvoiceLoading(true);
@@ -388,17 +414,59 @@ export default function OrderDetails() {
           <div className="shell-panel overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <h2 className="text-[17.5px] font-semibold tracking-tight text-gray-900">Shipment timeline</h2>
-              {shipment?.tracking_url && (
-                <a
-                  href={shipment.tracking_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-medium text-blue-600 hover:text-blue-800"
-                >
-                  Track ↗
-                </a>
-              )}
+              <div className="flex items-center gap-3">
+                {!readOnly && shipment?.shiprocket_booked && (
+                  <button
+                    type="button"
+                    onClick={handlePrintLabel}
+                    disabled={labelLoading}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                  >
+                    {labelLoading ? "Getting label…" : "Print label"}
+                  </button>
+                )}
+                {shipment?.tracking_url && (
+                  <a
+                    href={shipment.tracking_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    Track ↗
+                  </a>
+                )}
+              </div>
             </div>
+
+            {labelError && (
+              <p className="mx-6 mt-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {labelError}
+              </p>
+            )}
+
+            {shipment?.shiprocket_booked && (
+              <div className="px-6 pt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-600">
+                <span>
+                  Pickup:{" "}
+                  {shipment.pickup_scheduled_at ? (
+                    <span className="font-medium text-gray-900">
+                      {new Date(`${shipment.pickup_scheduled_at.slice(0, 10)}T00:00:00`)
+                        .toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}
+                    </span>
+                  ) : (
+                    <span className="font-medium text-amber-700">
+                      not scheduled — request it in Shiprocket
+                    </span>
+                  )}
+                </span>
+                {shipment.applied_weight_kg != null && (
+                  <span>
+                    Billed weight:{" "}
+                    <span className="font-medium text-gray-900">{shipment.applied_weight_kg} kg</span>
+                  </span>
+                )}
+              </div>
+            )}
 
             {shipment && (
               <div className="px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm border-b border-gray-100">
