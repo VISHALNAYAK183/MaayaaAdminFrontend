@@ -11,6 +11,22 @@ const BASE = `${ADMIN_BASE}/customers`;
  * different endpoint again — it feeds the coupon picker and stays as it is.
  */
 
+/**
+ * A customer who deleted her own account from the shop. Null when she has not.
+ * requestedAt and finalOn are null for a row deleted some other way.
+ */
+export interface CustomerDeletion {
+  requestedAt: string | null;
+  /** The day it is, or becomes, final (yyyy-mm-dd). */
+  finalOn: string | null;
+  /** Email and phone overwritten; nothing left to restore. */
+  finalized: boolean;
+  /** Inside the 14-day grace period, so an admin may restore it. */
+  restorable: boolean;
+}
+
+export type CustomerStatusTab = "active" | "deleted";
+
 export interface CustomerListItem {
   userId: number;
   name: string;
@@ -28,6 +44,7 @@ export interface CustomerListItem {
   cartCount: number;
   wishlistCount: number;
   activeCouponCount: number;
+  deletion: CustomerDeletion | null;
 }
 
 export interface CustomerAddress {
@@ -102,6 +119,7 @@ export interface CustomerDetail {
   redeemedCoupons: CustomerRedemption[];
   cart: BasketLine[];
   wishlist: BasketLine[];
+  deletion: CustomerDeletion | null;
 }
 
 export interface AssignableCoupon {
@@ -113,10 +131,22 @@ export interface AssignableCoupon {
   validTill: string | null;
 }
 
-export const listCustomers = (page = 0, size = 25, q?: string) =>
+export const listCustomers = (
+  page = 0,
+  size = 25,
+  q?: string,
+  status: CustomerStatusTab = "active",
+) =>
   apiClient.get<PageResp<CustomerListItem>>(BASE, {
-    params: { page, size, ...(q ? { q } : {}) },
+    params: { page, size, ...(q ? { q } : {}), ...(status === "deleted" ? { status } : {}) },
   });
+
+/**
+ * Undo a customer's own deletion inside its 14 days. ADMIN only. She is
+ * emailed, and signs in with her own password.
+ */
+export const restoreCustomer = (userId: number) =>
+  apiClient.post<{ status: string; message: string }>(`${BASE}/${userId}/restore`, {});
 
 export const getCustomer = (userId: number) =>
   apiClient.get<CustomerDetail>(`${BASE}/${userId}`);

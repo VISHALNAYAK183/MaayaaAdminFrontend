@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   listCustomers,
+  type CustomerDeletion,
   type CustomerListItem,
+  type CustomerStatusTab,
 } from "../../api/customersApi";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import Pagination from "../../components/ui/Pagination";
@@ -26,6 +28,45 @@ const fmtDate = (iso: string | null) => {
 /** "never" reads better than a dash for an account that has not signed in. */
 const fmtLastLogin = (iso: string | null) => (iso ? fmtDate(iso) : "never");
 
+const TABS: { value: CustomerStatusTab; label: string }[] = [
+  { value: "active", label: "Active" },
+  { value: "deleted", label: "Deleted" },
+];
+
+/** "2026-10-16" as "16 Oct" (or with the year), read as a local date so it never slips a day. */
+const fmtDay = (ymd: string | null, withYear = false) => {
+  if (!ymd) return null;
+  const d = new Date(`${ymd}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", ...(withYear ? { year: "numeric" } : {}) });
+};
+
+/** The badge for a customer who deleted her account. */
+function DeletionBadge({ deletion }: { deletion: CustomerDeletion }) {
+  if (deletion.finalized) {
+    return (
+      <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700 whitespace-nowrap">
+        Deleted{deletion.finalOn ? ` ${fmtDay(deletion.finalOn)}` : ""}
+      </span>
+    );
+  }
+  if (deletion.restorable) {
+    return (
+      <span
+        title={`Can still be restored. Deleted for good on ${fmtDay(deletion.finalOn, true)}.`}
+        className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 whitespace-nowrap"
+      >
+        Pending · {fmtDay(deletion.finalOn)}
+      </span>
+    );
+  }
+  return (
+    <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700">
+      Deleted
+    </span>
+  );
+}
+
 export default function CustomerList() {
   const navigate = useNavigate();
 
@@ -34,6 +75,7 @@ export default function CustomerList() {
   const [totalPages, setTotalPages] = useState(0);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
+  const [tab, setTab] = useState<CustomerStatusTab>("active");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,7 +85,7 @@ export default function CustomerList() {
   // result set shows an empty table and looks like a failure.
   useEffect(() => {
     setPage(0);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, tab]);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,7 +93,7 @@ export default function CustomerList() {
     setLoading(true);
     setError(null);
 
-    listCustomers(page, PAGE_SIZE, debouncedSearch || undefined)
+    listCustomers(page, PAGE_SIZE, debouncedSearch || undefined, tab)
       .then((res) => {
         if (cancelled) return;
         setRows(res.data.content);
@@ -72,7 +114,7 @@ export default function CustomerList() {
     return () => {
       cancelled = true;
     };
-  }, [page, debouncedSearch]);
+  }, [page, debouncedSearch, tab]);
 
   return (
     <div>
@@ -84,10 +126,31 @@ export default function CustomerList() {
           <p className="mt-1 text-sm text-gray-500">
             {loading && rows.length === 0
               ? "Loading…"
-              : `${total.toLocaleString("en-IN")} ${
-                  total === 1 ? "customer" : "customers"
-                } registered`}
+              : tab === "deleted"
+                ? `${total.toLocaleString("en-IN")} deleted ${
+                    total === 1 ? "account" : "accounts"
+                  }`
+                : `${total.toLocaleString("en-IN")} ${
+                    total === 1 ? "customer" : "customers"
+                  } registered`}
           </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {TABS.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                aria-pressed={tab === t.value}
+                onClick={() => setTab(t.value)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold shell-press ${
+                  tab === t.value
+                    ? "border-gray-900 bg-gray-900 text-white"
+                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <input
@@ -171,7 +234,9 @@ export default function CustomerList() {
                     {fmtLastLogin(c.lastLogin)}
                   </td>
                   <td className="px-4 py-3">
-                    {c.disabled ? (
+                    {c.deletion ? (
+                      <DeletionBadge deletion={c.deletion} />
+                    ) : c.disabled ? (
                       <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
                         Disabled
                       </span>
@@ -192,7 +257,9 @@ export default function CustomerList() {
                   >
                     {debouncedSearch
                       ? `No customer matches "${debouncedSearch}".`
-                      : "No customers yet."}
+                      : tab === "deleted"
+                        ? "No customer has deleted their account."
+                        : "No customers yet."}
                   </td>
                 </tr>
               )}

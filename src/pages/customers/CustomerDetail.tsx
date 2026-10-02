@@ -5,6 +5,7 @@ import {
   createCouponForCustomer,
   getAssignableCoupons,
   getCustomer,
+  restoreCustomer,
   sendPasswordReset,
   setCustomerDisabled,
   type AssignableCoupon,
@@ -31,6 +32,9 @@ const fmtDate = (iso: string | null) => {
   if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" });
 };
+
+/** "2026-10-16" as a local date, so it never slips a day. */
+const fmtDay = (ymd: string | null) => (ymd ? fmtDate(`${ymd}T00:00:00`) : "—");
 
 const STATUS_TONE: Record<string, string> = {
   DELIVERED: "bg-green-100 text-green-700",
@@ -108,7 +112,8 @@ export default function CustomerDetailPage() {
   const readOnly = useReadOnly();
   // Moving money in or out of a balance is ADMIN only on the server. The button
   // was shown to every role that can write, and the refusal signed Sales out.
-  const canAdjustCredit = useAuth().role === "ADMIN";
+  const isAdmin = useAuth().role === "ADMIN";
+  const canAdjustCredit = isAdmin;
 
   const id = Number(userId);
 
@@ -270,6 +275,11 @@ export default function CustomerDetailPage() {
     );
   }
 
+  // A customer who deleted her account is shown, read-only: her orders are
+  // still ours to look after, but the server refuses every action on her.
+  const deletion = customer.deletion;
+  const actionsHidden = readOnly || !!deletion;
+
   return (
     <div>
       <button
@@ -278,6 +288,39 @@ export default function CustomerDetailPage() {
       >
         ← Customers
       </button>
+
+      {deletion && (
+        <div role="status" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+          <div className="text-sm text-red-800">
+            <p className="font-semibold">
+              {deletion.finalized
+                ? `This customer deleted their account. It was deleted for good on ${fmtDay(deletion.finalOn)}.`
+                : deletion.restorable
+                  ? `This customer deleted their account on ${fmtDate(deletion.requestedAt)}. It will be deleted for good on ${fmtDay(deletion.finalOn)}.`
+                  : "This account has been deleted."}
+            </p>
+            <p className="mt-0.5 text-xs text-red-700">
+              {deletion.restorable
+                ? "Until then they can restore it themselves by signing in. Orders and invoices are kept either way."
+                : "Orders and invoices are kept. Nothing on this page can be changed."}
+            </p>
+          </div>
+          {deletion.restorable && isAdmin && (
+            <button
+              disabled={busy}
+              onClick={() => {
+                const ok = window.confirm(
+                  `Restore ${customer.name}'s account? It will not be deleted, and they will be emailed to say so. They sign in with their own password.`
+                );
+                if (ok) run(() => restoreCustomer(customer.userId));
+              }}
+              className="rounded-full bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50 shell-press"
+            >
+              Restore account
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Identity + actions */}
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
@@ -303,7 +346,7 @@ export default function CustomerDetailPage() {
           </p>
         </div>
 
-        {!readOnly && (
+        {!actionsHidden && (
           <div className="flex flex-wrap gap-2">
             <button
               disabled={busy}
@@ -436,7 +479,7 @@ export default function CustomerDetailPage() {
             <p className="text-2xl font-bold text-gray-900">
               ₹{Number(credit.balance).toLocaleString("en-IN")}
             </p>
-            {canAdjustCredit && (
+            {canAdjustCredit && !deletion && (
               <button
                 onClick={handleAdjustCredit}
                 disabled={busy}
@@ -520,7 +563,7 @@ export default function CustomerDetailPage() {
             </ul>
           )}
 
-          {!readOnly && (
+          {!actionsHidden && (
             <div className="mt-4 border-t border-gray-100 pt-3">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <p className="shell-label">
