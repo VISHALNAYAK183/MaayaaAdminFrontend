@@ -61,6 +61,10 @@ export type AdminReturn = {
   reversePickupAwb: string | null;
   reversePickupCarrier: string | null;
   reversePickupStatus: string | null;
+  /** Across this return's order: returns and exchanges still to be decided. */
+  orderAwaitingApproval: number;
+  /** Across this return's order: approved ones with no collection booked yet. */
+  orderAwaitingCollection: number;
   /** AWAITING_CUSTOMER while a failed item is held; DISPOSED once the hold lapses. */
   dispositionStatus?: string | null;
   dispositionDeadline?: string | null;
@@ -98,6 +102,23 @@ export const bookReturnPickup = (returnId: number) =>
   apiClient.post<{ message: string; carrier: string | null; awbCode: string | null; scheduledFor: string | null }>(
     `${ADMIN_BASE}/returns/${returnId}/book-pickup`
   );
+
+/** What "Approve all from this order" did, and whether one collection was booked. */
+export interface ApproveAllOutcome {
+  returnsApproved: number;
+  exchangesApproved: number;
+  pickupBooked: boolean;
+  carrier: string | null;
+  awbCode: string | null;
+  pickupFailure: string | null;
+}
+
+/**
+ * Approve every return and exchange waiting on this return's order, each by its
+ * own rules, and book one collection for all of them.
+ */
+export const approveAllFromOrder = (returnId: number) =>
+  apiClient.post<ApproveAllOutcome>(`${ADMIN_BASE}/returns/${returnId}/approve-all-from-order`, {});
 
 /** The comment is what the customer is told, so a rejection should carry one. */
 export const rejectReturn = (returnId: number, comment?: string) =>

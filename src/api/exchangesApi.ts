@@ -82,6 +82,10 @@ export type AdminExchange = {
   reversePickupAwb: string | null;
   reversePickupCarrier: string | null;
   reversePickupStatus: string | null;
+  /** Across this exchange's order: returns and exchanges still to be decided. */
+  orderAwaitingApproval: number;
+  /** Across this exchange's order: approved ones with no collection booked yet. */
+  orderAwaitingCollection: number;
 };
 
 export type ShipReplacementPayload = {
@@ -130,6 +134,27 @@ export const warehouseQcFail = (id: number, comment: string) =>
   apiClient.put(`${ADMIN_BASE}/exchanges/${id}/warehouse-qc/fail`, { comment });
 
 /** The courier has collected the original item from the customer. */
+/**
+ * Book the courier collection for an approved exchange that has none - in one
+ * parcel with anything else on its order still waiting. Answers with the
+ * booking, or a 400 whose message is Shiprocket's own reason.
+ */
+export const bookExchangePickup = (id: number) =>
+  apiClient.post<{ message: string; carrier: string | null; awbCode: string | null; scheduledFor: string | null }>(
+    `${ADMIN_BASE}/exchanges/${id}/book-pickup`
+  );
+
+/** Approve every return and exchange waiting on this exchange's order, with one collection. */
+export const approveAllExchangesFromOrder = (id: number, comment: string) =>
+  apiClient.post<{
+    returnsApproved: number;
+    exchangesApproved: number;
+    pickupBooked: boolean;
+    carrier: string | null;
+    awbCode: string | null;
+    pickupFailure: string | null;
+  }>(`${ADMIN_BASE}/exchanges/${id}/approve-all-from-order`, { comment });
+
 export const markExchangePickedUp = (id: number) =>
   apiClient.put(`${ADMIN_BASE}/exchanges/${id}/picked-up`);
 

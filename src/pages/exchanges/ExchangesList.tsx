@@ -1,4 +1,5 @@
 import { useReadOnly } from "../../hooks/useReadOnly";
+import { serverMessage } from "../../api/client";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import {
@@ -10,6 +11,8 @@ import {
   shipReplacement,
   markExchangePickedUp,
   completeExchange,
+  bookExchangePickup,
+  approveAllExchangesFromOrder,
   AdminExchange,
   ExchangeStatus,
 } from "../../api/exchangesApi";
@@ -98,6 +101,15 @@ export default function ExchangesList() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [selected, setSelected] = useState<AdminExchange | null>(null);
+
+  // Booking a collection that failed at approval: in flight, and why not.
+  const [bookingPickup, setBookingPickup] = useState(false);
+  const [pickupError, setPickupError] = useState<string | null>(null);
+
+  const openExchange = (e: AdminExchange | null) => {
+    setPickupError(null);
+    setSelected(e);
+  };
 
   // QC comment dialog state
   const [qcDialog, setQcDialog] = useState<{ id: number; action: QcAction } | null>(null);
@@ -234,6 +246,59 @@ export default function ExchangesList() {
     }
   };
 
+  const bookPickup = async (e: AdminExchange) => {
+    if (bookingPickup) return;
+    setBookingPickup(true);
+    setPickupError(null);
+    try {
+      const { data } = await bookExchangePickup(e.exchangeId);
+      setSelected((cur) =>
+        cur && cur.exchangeId === e.exchangeId
+          ? { ...cur, reversePickupBooked: true, reversePickupCarrier: data.carrier, reversePickupAwb: data.awbCode }
+          : cur
+      );
+      fetchExchanges();
+    } catch (err) {
+      setPickupError(serverMessage(err, "The pickup could not be booked. Try again shortly."));
+    } finally {
+      setBookingPickup(false);
+    }
+  };
+
+  /**
+   * Everything waiting on the order, approved together with one courier. Three
+   * items from one order used to be three approvals and three riders.
+   */
+  const runApproveAll = async (e: AdminExchange) => {
+    const n = e.orderAwaitingApproval;
+    const comment = window.prompt(
+      `Approve all ${n} returns and exchanges waiting on order #${e.orderId}, with one courier for all of them.\n\n` +
+      "Online QC comment for the exchanges:"
+    );
+    if (comment === null) return;
+    if (!comment.trim()) {
+      alert("Please enter a comment");
+      return;
+    }
+    setActionLoading(e.exchangeId);
+    try {
+      const { data } = await approveAllExchangesFromOrder(e.exchangeId, comment.trim());
+      if (!data.pickupBooked) {
+        alert(
+          `Approved ${data.returnsApproved + data.exchangesApproved}. No courier was booked` +
+          (data.pickupFailure ? `: ${data.pickupFailure}` : ".") +
+          " Open any of them and use Book pickup to try again."
+        );
+      }
+      await fetchExchanges();
+      setSelected(null);
+    } catch (err) {
+      alert(serverMessage(err, "Could not approve them. Try again."));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // Status-gated action buttons. Mirrors AdminExchangeService transition checks.
   const renderActions = (e: AdminExchange) => {
     const busy = actionLoading === e.exchangeId;
@@ -251,6 +316,16 @@ export default function ExchangesList() {
           >
             {busy ? "…" : "Online QC Approve"}
           </button>
+          {e.orderAwaitingApproval > 1 && (
+            <button
+              onClick={() => runApproveAll(e)}
+              disabled={busy}
+              className={`${btn} bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200`}
+              title="Approve every return and exchange waiting on this order, with one courier for all of them"
+            >
+              Approve all {e.orderAwaitingApproval} from order
+            </button>
+          )}
           <button
             onClick={() => openQcDialog(e.exchangeId, "onlineReject")}
             disabled={busy}
@@ -661,7 +736,9 @@ export default function ExchangesList() {
             {/* The garment coming back, not the replacement going out.
                 Shown once stock is reserved, which is when the collection is
                 booked - before that there is nothing to collect. */}
-            {["STOCK_RESERVED", "PICKUP_PENDING", "PICKED_UP", "WAREHOUSE_QC_PENDING"]
+            {/* NO_STOCK too: the item comes back for a refund instead, and
+                its collection is booked just the same. */}
+            {["STOCK_RESERVED", "NO_STOCK", "PICKUP_PENDING", "PICKED_UP", "WAREHOUSE_QC_PENDING"]
               .includes(selected.exchangeStatus) && (
               selected.reversePickupBooked ? (
                 <div className="mt-4 rounded-lg border border-gray-200 px-3 py-2.5">
@@ -682,10 +759,42 @@ export default function ExchangesList() {
                   <p className="text-sm font-semibold text-amber-900">
                     No collection booked
                   </p>
-                  <p className="text-xs text-amber-800 mt-0.5">
-                    No rider is coming for the item being swapped. Arrange the
-                    pickup yourself.
-                  </p>
+                  {(() => {
+                    const canBook =
+                      ["STOCK_RESERVED", "NO_STOCK", "PICKUP_PENDING"].includes(selected.exchangeStatus) &&
+                      !selected.pickedUpAt;
+                    return (
+                      <>
+                        <p className="text-xs text-amber-800 mt-0.5">
+                          {canBook
+                            ? "No rider is coming for the item being swapped yet. Book the pickup with Shiprocket, or arrange it yourself."
+                            : "This one was collected without a Shiprocket booking."}
+                        </p>
+                        {pickupError && (
+                          <p className="mt-2 text-xs font-medium text-red-700 break-words">{pickupError}</p>
+                        )}
+                        {canBook && !readOnly && (
+                          <button
+                            type="button"
+                            onClick={() => bookPickup(selected)}
+                            disabled={bookingPickup}
+                            className="mt-2.5 inline-flex items-center gap-2 rounded-full bg-gray-900 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-gray-700 disabled:opacity-60 disabled:cursor-wait"
+                          >
+                            {bookingPickup && (
+                              <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                            )}
+                            {bookingPickup
+                              ? "Booking pickup…"
+                              : pickupError
+                              ? "Try again"
+                              : selected.orderAwaitingCollection > 1
+                              ? `Book one pickup for ${selected.orderAwaitingCollection} items`
+                              : "Book pickup"}
+                          </button>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               )
             )}
@@ -761,11 +870,20 @@ export default function ExchangesList() {
               </tr>
             ) : (
               visible.map((e) => (
-                <tr key={e.exchangeId} className="hover:bg-gray-50 transition-colors">
+                // The whole row opens the exchange: only the id did, and nothing
+                // said so. The action buttons keep their own clicks.
+                <tr
+                  key={e.exchangeId}
+                  onClick={() => openExchange(e)}
+                  onKeyDown={(ev) => {
+                    if (ev.key === "Enter" && ev.target === ev.currentTarget) openExchange(e);
+                  }}
+                  tabIndex={0}
+                  aria-label={`Open exchange #${e.exchangeId}`}
+                  className="cursor-pointer hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-colors"
+                >
                   <td className="py-4 px-5 text-sm font-mono text-gray-700">
-                    <button onClick={() => setSelected(e)} className="hover:underline">
-                      #{e.exchangeId}
-                    </button>
+                    <span className="underline-offset-2 hover:underline">#{e.exchangeId}</span>
                     {e.orderId != null && (
                       <span className="block text-[11px] text-gray-400">order #{e.orderId}</span>
                     )}
@@ -809,7 +927,7 @@ export default function ExchangesList() {
                   <td className="py-4 px-5 text-xs text-gray-500">
                     {formatDate(e.requestedAt)}
                   </td>
-                  <td className="py-4 px-5">{renderActions(e)}</td>
+                  <td className="py-4 px-5" onClick={(ev) => ev.stopPropagation()}>{renderActions(e)}</td>
                 </tr>
               ))
             )}

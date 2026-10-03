@@ -5,6 +5,7 @@ import { useSearchParams } from "react-router";
 import {
   getAdminReturns,
   approveReturn,
+  approveAllFromOrder,
   bookReturnPickup,
   rejectReturn,
   markPickedUp,
@@ -207,6 +208,35 @@ export default function ReturnsList() {
     }
   };
 
+  /**
+   * Everything waiting on the order, approved together with one courier. Three
+   * items from one order used to be three approvals and three riders.
+   */
+  const runApproveAll = async (r: AdminReturn) => {
+    const n = r.orderAwaitingApproval;
+    if (!window.confirm(
+      `Approve all ${n} returns and exchanges waiting on order #${r.orderId}?\n\n` +
+      "Each is approved as it would be on its own, and one courier is booked to collect them together."
+    )) return;
+    setActionLoading(r.returnId);
+    try {
+      const { data } = await approveAllFromOrder(r.returnId);
+      if (!data.pickupBooked) {
+        alert(
+          `Approved ${data.returnsApproved + data.exchangesApproved}. No courier was booked` +
+          (data.pickupFailure ? `: ${data.pickupFailure}` : ".") +
+          " Open any of them and use Book pickup to try again."
+        );
+      }
+      await fetchReturns();
+      setSelected(null);
+    } catch (e) {
+      alert(serverMessage(e, "Could not approve them. Try again."));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const renderActions = (r: AdminReturn) => {
     const busy = actionLoading === r.returnId;
     const btn = "text-xs px-2.5 py-1.5 rounded-full font-medium disabled:opacity-50 transition-colors shell-press";
@@ -224,6 +254,16 @@ export default function ReturnsList() {
           >
             {busy ? "…" : "Approve"}
           </button>
+          {r.orderAwaitingApproval > 1 && (
+            <button
+              onClick={() => runApproveAll(r)}
+              disabled={busy}
+              className={`${btn} bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200`}
+              title="Approve every return and exchange waiting on this order, with one courier for all of them"
+            >
+              Approve all {r.orderAwaitingApproval} from order
+            </button>
+          )}
           <button
             onClick={() => runAction(r.returnId, "reject", "Reject return request?")}
             disabled={busy}
@@ -562,7 +602,13 @@ export default function ReturnsList() {
                       {bookingPickup && (
                         <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                       )}
-                      {bookingPickup ? "Booking pickup…" : pickupError ? "Try again" : "Book pickup"}
+                      {bookingPickup
+                        ? "Booking pickup…"
+                        : pickupError
+                        ? "Try again"
+                        : selected.orderAwaitingCollection > 1
+                        ? `Book one pickup for ${selected.orderAwaitingCollection} items`
+                        : "Book pickup"}
                     </button>
                   )}
                 </div>
