@@ -95,6 +95,8 @@ export default function ReturnsList() {
   const [selected, setSelected] = useState<AdminReturn | null>(null);
   // Which of the selected return's photos is open full size, if any.
   const [viewingPhoto, setViewingPhoto] = useState<number | null>(null);
+  // Photos opened straight from a row, without opening the return.
+  const [rowPhotos, setRowPhotos] = useState<{ photos: string[]; index: number } | null>(null);
   const openReturn = (r: AdminReturn | null) => {
     setViewingPhoto(null);
     setSelected(r);
@@ -543,7 +545,7 @@ export default function ReturnsList() {
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              {["Return ID", "Product", "Customer", "Reason", "Refund", "Status", "Requested", "Actions"].map((h) => (
+              {["Return ID", "Product", "Customer", "Reason", "Photos", "Refund", "Status", "Requested", "Actions"].map((h) => (
                 <th
                   key={h}
                   className="text-left py-3 px-5 shell-label"
@@ -557,7 +559,7 @@ export default function ReturnsList() {
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
-                  {Array.from({ length: 8 }).map((__, j) => (
+                  {Array.from({ length: 9 }).map((__, j) => (
                     <td key={j} className="py-4 px-5">
                       <div className="h-4 bg-gray-200 rounded animate-pulse" />
                     </td>
@@ -566,7 +568,7 @@ export default function ReturnsList() {
               ))
             ) : loadFailed ? (
               <tr>
-                <td colSpan={8} className="py-16 text-center text-sm text-gray-500">
+                <td colSpan={9} className="py-16 text-center text-sm text-gray-500">
                   Returns could not be loaded.{" "}
                   <button type="button" onClick={fetchReturns} className="font-semibold text-brand-600 hover:underline">
                     Try again
@@ -575,37 +577,27 @@ export default function ReturnsList() {
               </tr>
             ) : visible.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-16 text-center text-gray-400 text-sm">
+                <td colSpan={9} className="py-16 text-center text-gray-400 text-sm">
                   No returns in {tab === "ALL" ? "any state" : tab.replace(/_/g, " ").toLowerCase()}
                 </td>
               </tr>
             ) : (
               visible.map((r) => (
+                // The whole row opens the return: only the id did, and nothing
+                // said so. The photo thumbnails and the action buttons keep
+                // their own clicks.
                 <tr
                   key={r.returnId}
-                  className="hover:bg-gray-50 transition-colors"
+                  onClick={() => openReturn(r)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.target === e.currentTarget) openReturn(r);
+                  }}
+                  tabIndex={0}
+                  aria-label={`Open return #${r.returnId}`}
+                  className="cursor-pointer hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition-colors"
                 >
                   <td className="py-4 px-5 text-sm font-mono text-gray-700">
-                    <button onClick={() => openReturn(r)} className="hover:underline">
-                      #{r.returnId}
-                    </button>
-                    {/* Which returns came with photos, without opening each.
-                        Opens the details, where the photos are. */}
-                    {(r.photos?.length ?? 0) > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => openReturn(r)}
-                        className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gray-100 text-[11px] font-sans font-semibold text-gray-600 hover:bg-gray-200"
-                        title={`${r.photos!.length} customer photo${r.photos!.length === 1 ? "" : "s"}`}
-                        aria-label={`View ${r.photos!.length} customer photos`}
-                      >
-                        <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-                          <circle cx="12" cy="13" r="3" />
-                        </svg>
-                        {r.photos!.length}
-                      </button>
-                    )}
+                    <span className="underline-offset-2 hover:underline">#{r.returnId}</span>
                     {r.orderId != null && (
                       <span className="block text-[11px] text-gray-400">order #{r.orderId}</span>
                     )}
@@ -642,6 +634,36 @@ export default function ReturnsList() {
                   <td className="py-4 px-5 text-sm text-gray-700 max-w-[200px] truncate">
                     {r.reason ?? "—"}
                   </td>
+                  {/* The evidence, beside the Approve and Reject it decides. */}
+                  <td className="py-4 px-5" onClick={(e) => e.stopPropagation()}>
+                    {r.photos && r.photos.length > 0 ? (
+                      <div className="flex items-center gap-1">
+                        {r.photos.slice(0, 2).map((url, i) => (
+                          <button
+                            key={url}
+                            type="button"
+                            onClick={() => setRowPhotos({ photos: r.photos!.map(photoSrc), index: i })}
+                            className="block w-9 h-9 rounded-md overflow-hidden border border-gray-200 cursor-zoom-in shrink-0"
+                            aria-label={`Customer photo ${i + 1} of ${r.photos!.length}`}
+                          >
+                            <img src={photoSrc(url)} alt="" loading="lazy" className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                        {r.photos.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => setRowPhotos({ photos: r.photos!.map(photoSrc), index: 2 })}
+                            className="h-9 px-1.5 rounded-md bg-gray-100 text-[11px] font-semibold text-gray-600 hover:bg-gray-200"
+                            aria-label={`${r.photos.length - 2} more photos`}
+                          >
+                            +{r.photos.length - 2}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-300">—</span>
+                    )}
+                  </td>
                   <td className="py-4 px-5 text-sm font-semibold text-gray-900">
                     ₹{Number(r.refundAmount ?? 0).toLocaleString()}
                   </td>
@@ -657,7 +679,7 @@ export default function ReturnsList() {
                   <td className="py-4 px-5 text-xs text-gray-500">
                     {formatDate(r.requestedAt)}
                   </td>
-                  <td className="py-4 px-5">{renderActions(r)}</td>
+                  <td className="py-4 px-5" onClick={(e) => e.stopPropagation()}>{renderActions(r)}</td>
                 </tr>
               ))
             )}
@@ -666,6 +688,15 @@ export default function ReturnsList() {
         </div>
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
+
+      {rowPhotos && (
+        <PhotoViewer
+          photos={rowPhotos.photos}
+          index={rowPhotos.index}
+          onIndex={(index) => setRowPhotos((v) => (v ? { ...v, index } : v))}
+          onClose={() => setRowPhotos(null)}
+        />
+      )}
 
       {reviewing != null && (
         <RefundReviewPanel

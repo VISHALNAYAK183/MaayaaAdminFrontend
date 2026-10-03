@@ -7,6 +7,8 @@ import {
   getReturnReview,
   type RefundReview,
 } from "../api/refundReviewApi";
+import { CLIENT_API_BASE } from "../api/client";
+import PhotoViewer from "./ui/PhotoViewer";
 import { approveRefund } from "../api/returnsApi";
 import { serverMessage } from "../api/client";
 import { useReadOnly } from "../hooks/useReadOnly";
@@ -43,6 +45,10 @@ type Target = { kind: "CANCELLATION"; orderId: number } | { kind: "RETURN"; retu
  * and the checks. Approve stays disabled while any check that blocks fails; the
  * server runs the same checks again.
  */
+// Return photos are stored and served by the storefront, not this panel; a bare
+// /uploads path would resolve against the admin origin. Same as ReturnsList.
+const photoSrc = (url: string) => (url.startsWith("http") ? url : `${CLIENT_API_BASE}${url}`);
+
 export default function RefundReviewPanel({
   target,
   onClose,
@@ -57,6 +63,7 @@ export default function RefundReviewPanel({
   const [review, setReview] = useState<RefundReview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [viewingPhoto, setViewingPhoto] = useState<number | null>(null);
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState("");
   const [confirmed, setConfirmed] = useState(false);
@@ -182,7 +189,35 @@ export default function RefundReviewPanel({
                   </tbody>
                 </table>
               </div>
+              {/* What the customer said was wrong, beside what came back. */}
+              {review.photos && review.photos.length > 0 && (
+                <div className="mt-3">
+                  <p className="mb-1.5 text-xs text-gray-500">Customer's photos</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {review.photos.map((url, i) => (
+                      <button
+                        key={url}
+                        type="button"
+                        onClick={() => setViewingPhoto(i)}
+                        className="block h-16 w-16 cursor-zoom-in overflow-hidden rounded-lg border border-gray-200"
+                        title="Open full size"
+                      >
+                        <img src={photoSrc(url)} alt="" loading="lazy" className="h-full w-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </Section>
+
+            {viewingPhoto !== null && review.photos && (
+              <PhotoViewer
+                photos={review.photos.map(photoSrc)}
+                index={viewingPhoto}
+                onIndex={setViewingPhoto}
+                onClose={() => setViewingPhoto(null)}
+              />
+            )}
 
             <Section title="2. How the order was priced">
               <Rows

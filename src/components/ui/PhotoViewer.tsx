@@ -7,7 +7,8 @@ import { createPortal } from "react-dom";
  * Opened from inside another modal (a return's details), so it sits above it
  * and swallows its own clicks and keys: closing the photo must not also close
  * the return underneath. Portalled to <body> so no transformed ancestor can
- * shrink a fixed overlay down to the size of the modal it came from.
+ * shrink a fixed overlay down to the size of the modal it came from, and
+ * layered above the refund review panel (z-99999), the highest thing here.
  */
 export default function PhotoViewer({
   photos,
@@ -40,7 +41,7 @@ export default function PhotoViewer({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90"
+      className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/90"
       onClick={(e) => {
         e.stopPropagation();
         onClose();

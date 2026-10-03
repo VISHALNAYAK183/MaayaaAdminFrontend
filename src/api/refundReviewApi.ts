@@ -71,6 +71,8 @@ export interface RefundReview {
   leftAfter: number;
   checks: RefundCheck[];
   approvable: boolean;
+  /** A return's photos from when it was raised; empty for a cancellation. */
+  photos?: string[];
 }
 
 const base = `${ADMIN_BASE}/refunds/review`;
