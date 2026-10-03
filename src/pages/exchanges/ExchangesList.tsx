@@ -1,5 +1,10 @@
 import { useReadOnly } from "../../hooks/useReadOnly";
-import { serverMessage } from "../../api/client";
+import { CLIENT_API_BASE, serverMessage } from "../../api/client";
+import PhotoViewer from "../../components/ui/PhotoViewer";
+
+// Exchange photos are stored and served by the storefront, not this panel; a
+// bare /uploads path would resolve against the admin origin. Same as returns.
+const photoSrc = (url: string) => (url.startsWith("http") ? url : `${CLIENT_API_BASE}${url}`);
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import {
@@ -106,7 +111,12 @@ export default function ExchangesList() {
   const [bookingPickup, setBookingPickup] = useState(false);
   const [pickupError, setPickupError] = useState<string | null>(null);
 
+  // A photo open full size: from the details, or straight from a row.
+  const [viewing, setViewing] = useState<{ photos: string[]; index: number } | null>(null);
+  const viewPhotos = (urls: string[], index: number) => setViewing({ photos: urls.map(photoSrc), index });
+
   const openExchange = (e: AdminExchange | null) => {
+    setViewing(null);
     setPickupError(null);
     setSelected(e);
   };
@@ -659,6 +669,24 @@ export default function ExchangesList() {
               <dd className="text-gray-900">{selected.reason ?? "—"}</dd>
               <dt className="text-gray-500">Comments</dt>
               <dd className="text-gray-900">{selected.comments ?? "—"}</dd>
+              {selected.photos && selected.photos.length > 0 && (
+                <>
+                  <dt className="text-gray-500">Customer photos</dt>
+                  <dd className="flex flex-wrap gap-1.5">
+                    {selected.photos.map((url, i) => (
+                      <button
+                        key={url}
+                        type="button"
+                        onClick={() => viewPhotos(selected.photos!, i)}
+                        className="block w-16 h-16 rounded-lg overflow-hidden border border-gray-200 cursor-zoom-in"
+                        title="Open full size"
+                      >
+                        <img src={photoSrc(url)} alt="" loading="lazy" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </dd>
+                </>
+              )}
               <dt className="text-gray-500">Status</dt>
               <dd>
                 <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${STATUS_STYLE[selected.exchangeStatus] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
@@ -804,6 +832,15 @@ export default function ExchangesList() {
         </div>
       )}
 
+      {viewing && (
+        <PhotoViewer
+          photos={viewing.photos}
+          index={viewing.index}
+          onIndex={(index) => setViewing((v) => (v ? { ...v, index } : v))}
+          onClose={() => setViewing(null)}
+        />
+      )}
+
       <div className="mb-6">
         <h1 className="text-[27px] leading-tight tracking-tight font-extrabold text-gray-900">Exchanges</h1>
         <p className="text-sm text-gray-500 mt-1">Size and colour swaps</p>
@@ -832,7 +869,7 @@ export default function ExchangesList() {
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              {["Exchange", "Product", "Customer", "Old → New", "Reason", "Status", "Requested", "Actions"].map((h) => (
+              {["Exchange", "Product", "Customer", "Old → New", "Reason", "Photos", "Status", "Requested", "Actions"].map((h) => (
                 <th
                   key={h}
                   className="text-left py-3 px-5 shell-label"
@@ -846,7 +883,7 @@ export default function ExchangesList() {
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
-                  {Array.from({ length: 8 }).map((__, j) => (
+                  {Array.from({ length: 9 }).map((__, j) => (
                     <td key={j} className="py-4 px-5">
                       <div className="h-4 bg-gray-200 rounded animate-pulse" />
                     </td>
@@ -855,7 +892,7 @@ export default function ExchangesList() {
               ))
             ) : loadFailed ? (
               <tr>
-                <td colSpan={8} className="py-16 text-center text-sm text-gray-500">
+                <td colSpan={9} className="py-16 text-center text-sm text-gray-500">
                   Exchanges could not be loaded.{" "}
                   <button type="button" onClick={fetchExchanges} className="font-semibold text-brand-600 hover:underline">
                     Try again
@@ -864,7 +901,7 @@ export default function ExchangesList() {
               </tr>
             ) : visible.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-16 text-center text-gray-400 text-sm">
+                <td colSpan={9} className="py-16 text-center text-gray-400 text-sm">
                   No exchanges in this view
                 </td>
               </tr>
@@ -918,6 +955,36 @@ export default function ExchangesList() {
                   </td>
                   <td className="py-4 px-5 text-sm text-gray-700 max-w-[200px] truncate">
                     {e.reason ?? "—"}
+                  </td>
+                  {/* The evidence, beside the approval it decides. */}
+                  <td className="py-4 px-5" onClick={(ev) => ev.stopPropagation()}>
+                    {e.photos && e.photos.length > 0 ? (
+                      <div className="flex items-center gap-1">
+                        {e.photos.slice(0, 2).map((url, i) => (
+                          <button
+                            key={url}
+                            type="button"
+                            onClick={() => viewPhotos(e.photos!, i)}
+                            className="block w-9 h-9 rounded-md overflow-hidden border border-gray-200 cursor-zoom-in shrink-0"
+                            aria-label={`Customer photo ${i + 1} of ${e.photos!.length}`}
+                          >
+                            <img src={photoSrc(url)} alt="" loading="lazy" className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                        {e.photos.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => viewPhotos(e.photos!, 2)}
+                            className="h-9 px-1.5 rounded-md bg-gray-100 text-[11px] font-semibold text-gray-600 hover:bg-gray-200"
+                            aria-label={`${e.photos.length - 2} more photos`}
+                          >
+                            +{e.photos.length - 2}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-300">—</span>
+                    )}
                   </td>
                   <td className="py-4 px-5">
                     <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${STATUS_STYLE[e.exchangeStatus] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>

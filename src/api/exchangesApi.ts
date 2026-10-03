@@ -78,6 +78,8 @@ export type AdminExchange = {
    *
    * booked=false means no rider is coming and somebody has to arrange it.
    */
+  /** What the customer photographed when asking for the swap. */
+  photos: string[] | null;
   reversePickupBooked: boolean | null;
   reversePickupAwb: string | null;
   reversePickupCarrier: string | null;
