@@ -1,10 +1,11 @@
-import { CLIENT_API_BASE } from "../../api/client";
+import { CLIENT_API_BASE, serverMessage } from "../../api/client";
 import { useReadOnly } from "../../hooks/useReadOnly";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import {
   getAdminReturns,
   approveReturn,
+  bookReturnPickup,
   rejectReturn,
   markPickedUp,
   markInspected,
@@ -97,8 +98,37 @@ export default function ReturnsList() {
   const [viewingPhoto, setViewingPhoto] = useState<number | null>(null);
   // Photos opened straight from a row, without opening the return.
   const [rowPhotos, setRowPhotos] = useState<{ photos: string[]; index: number } | null>(null);
+  // Booking a collection that failed at approval: in flight, and why not.
+  const [bookingPickup, setBookingPickup] = useState(false);
+  const [pickupError, setPickupError] = useState<string | null>(null);
+
+  const bookPickup = async (r: AdminReturn) => {
+    if (bookingPickup) return;
+    setBookingPickup(true);
+    setPickupError(null);
+    try {
+      const { data } = await bookReturnPickup(r.returnId);
+      setSelected((cur) =>
+        cur && cur.returnId === r.returnId
+          ? {
+              ...cur,
+              reversePickupBooked: true,
+              reversePickupCarrier: data.carrier,
+              reversePickupAwb: data.awbCode,
+            }
+          : cur
+      );
+      fetchReturns();
+    } catch (e) {
+      setPickupError(serverMessage(e, "The pickup could not be booked. Try again shortly."));
+    } finally {
+      setBookingPickup(false);
+    }
+  };
+
   const openReturn = (r: AdminReturn | null) => {
     setViewingPhoto(null);
+    setPickupError(null);
     setSelected(r);
   };
   // A refund is approved from the review, never from a bare confirm.
@@ -502,10 +532,29 @@ export default function ReturnsList() {
                   <p className="text-sm font-semibold text-amber-900">
                     No collection booked
                   </p>
+                  {/* "Approve it again" was the advice here, and an approved
+                      return cannot be approved again. Book pickup is the retry. */}
                   <p className="text-xs text-amber-800 mt-0.5">
-                    No rider is coming for this one. Arrange the pickup yourself,
-                    or approve it again once the courier is reachable.
+                    {selected.returnStatus === "APPROVED"
+                      ? "No rider is coming for this one yet. Book the pickup with Shiprocket, or arrange it yourself."
+                      : "This one was collected without a Shiprocket booking."}
                   </p>
+                  {pickupError && (
+                    <p className="mt-2 text-xs font-medium text-red-700 break-words">{pickupError}</p>
+                  )}
+                  {selected.returnStatus === "APPROVED" && !readOnly && (
+                    <button
+                      type="button"
+                      onClick={() => bookPickup(selected)}
+                      disabled={bookingPickup}
+                      className="mt-2.5 inline-flex items-center gap-2 rounded-full bg-gray-900 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-gray-700 disabled:opacity-60 disabled:cursor-wait"
+                    >
+                      {bookingPickup && (
+                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                      )}
+                      {bookingPickup ? "Booking pickup…" : pickupError ? "Try again" : "Book pickup"}
+                    </button>
+                  )}
                 </div>
               )
             )}

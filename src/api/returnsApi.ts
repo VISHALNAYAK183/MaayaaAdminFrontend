@@ -89,6 +89,16 @@ export const getAdminReturns = (
 export const approveReturn = (returnId: number, comment?: string) =>
   apiClient.put(`${ADMIN_BASE}/returns/${returnId}/approve`, { comment });
 
+/**
+ * Book the courier collection for an approved return that has none - the
+ * retry when booking at approval failed. Answers with the booking, or a 400
+ * whose message is Shiprocket's own reason.
+ */
+export const bookReturnPickup = (returnId: number) =>
+  apiClient.post<{ message: string; carrier: string | null; awbCode: string | null; scheduledFor: string | null }>(
+    `${ADMIN_BASE}/returns/${returnId}/book-pickup`
+  );
+
 /** The comment is what the customer is told, so a rejection should carry one. */
 export const rejectReturn = (returnId: number, comment?: string) =>
   apiClient.put(`${ADMIN_BASE}/returns/${returnId}/reject`, { comment });
