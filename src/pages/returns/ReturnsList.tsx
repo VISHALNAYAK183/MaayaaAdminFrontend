@@ -417,12 +417,22 @@ export default function ReturnsList() {
                   </p>
                 )}
 
+                {/* The customer is only asked where a cash refund goes once
+                    the refund is approved. Before that, "waiting on the
+                    customer" read as if something were stuck on their side
+                    while the item had not even been collected. */}
                 {selected.refundMode === null && (
-                  <p className="mt-1 inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-                    {selected.awaitingRefundChoice
-                      ? "Waiting on the customer to choose where the money goes"
-                      : "Not chosen — will go back to the original payment"}
-                  </p>
+                  selected.awaitingRefundChoice && selected.returnStatus !== "REFUND_APPROVED" ? (
+                    <p className="mt-1 inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                      Cash order: the customer picks store credit or UPI/bank once the refund is approved
+                    </p>
+                  ) : (
+                    <p className="mt-1 inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                      {selected.awaitingRefundChoice
+                        ? "Waiting on the customer to choose where the money goes"
+                        : "Not chosen — will go back to the original payment"}
+                    </p>
+                  )
                 )}
                 {selected.refundMode === "STORE_CREDIT" && (
                   <p className="mt-1 inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
