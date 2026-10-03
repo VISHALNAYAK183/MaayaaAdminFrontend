@@ -14,6 +14,7 @@ import {
   AdminReturnStatus,
 } from "../../api/returnsApi";
 import Pagination from "../../components/ui/Pagination";
+import PhotoViewer from "../../components/ui/PhotoViewer";
 import RefundReviewPanel from "../../components/RefundReviewPanel";
 
 
@@ -92,6 +93,12 @@ export default function ReturnsList() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [selected, setSelected] = useState<AdminReturn | null>(null);
+  // Which of the selected return's photos is open full size, if any.
+  const [viewingPhoto, setViewingPhoto] = useState<number | null>(null);
+  const openReturn = (r: AdminReturn | null) => {
+    setViewingPhoto(null);
+    setSelected(r);
+  };
   // A refund is approved from the review, never from a bare confirm.
   const [reviewing, setReviewing] = useState<number | null>(null);
 
@@ -344,13 +351,12 @@ export default function ReturnsList() {
                       Customer photos
                     </p>
                     <div className="flex gap-1.5 flex-wrap">
-                      {selected.photos.map((url) => (
-                        <a
+                      {selected.photos.map((url, i) => (
+                        <button
                           key={url}
-                          href={photoSrc(url)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block w-16 h-16 rounded-lg overflow-hidden border border-gray-200"
+                          type="button"
+                          onClick={() => setViewingPhoto(i)}
+                          className="block w-16 h-16 rounded-lg overflow-hidden border border-gray-200 cursor-zoom-in"
                           title="Open full size"
                         >
                           <img
@@ -359,10 +365,19 @@ export default function ReturnsList() {
                             className="w-full h-full object-cover"
                             loading="lazy"
                           />
-                        </a>
+                        </button>
                       ))}
                     </div>
                   </div>
+                )}
+                {/* Full size over the page, not a new tab per photo. */}
+                {viewingPhoto !== null && selected.photos && (
+                  <PhotoViewer
+                    photos={selected.photos.map(photoSrc)}
+                    index={viewingPhoto}
+                    onIndex={setViewingPhoto}
+                    onClose={() => setViewingPhoto(null)}
+                  />
                 )}
                 {selected.onlineQcComment && (
                   <p className="mt-2 text-[12px] text-gray-600">
@@ -571,9 +586,26 @@ export default function ReturnsList() {
                   className="hover:bg-gray-50 transition-colors"
                 >
                   <td className="py-4 px-5 text-sm font-mono text-gray-700">
-                    <button onClick={() => setSelected(r)} className="hover:underline">
+                    <button onClick={() => openReturn(r)} className="hover:underline">
                       #{r.returnId}
                     </button>
+                    {/* Which returns came with photos, without opening each.
+                        Opens the details, where the photos are. */}
+                    {(r.photos?.length ?? 0) > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => openReturn(r)}
+                        className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gray-100 text-[11px] font-sans font-semibold text-gray-600 hover:bg-gray-200"
+                        title={`${r.photos!.length} customer photo${r.photos!.length === 1 ? "" : "s"}`}
+                        aria-label={`View ${r.photos!.length} customer photos`}
+                      >
+                        <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                          <circle cx="12" cy="13" r="3" />
+                        </svg>
+                        {r.photos!.length}
+                      </button>
+                    )}
                     {r.orderId != null && (
                       <span className="block text-[11px] text-gray-400">order #{r.orderId}</span>
                     )}
