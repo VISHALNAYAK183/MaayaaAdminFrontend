@@ -35,6 +35,7 @@ export type AdminReturn = {
   // a manual payout.
   refundMode: "ORIGINAL" | "STORE_CREDIT" | "BANK" | null;
   refundUpi: string | null;
+  refundBankName: string | null;
   refundAccountName: string | null;
   refundAccountNumber: string | null;
   refundIfsc: string | null;

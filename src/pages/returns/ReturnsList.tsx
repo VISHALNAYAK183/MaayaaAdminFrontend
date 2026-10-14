@@ -491,9 +491,10 @@ export default function ReturnsList() {
                       <p>UPI: <span className="font-mono">{selected.refundUpi}</span></p>
                     ) : (
                       <>
-                        <p>{selected.refundAccountName ?? "—"}</p>
-                        <p className="font-mono">{selected.refundAccountNumber ?? "—"}</p>
-                        <p className="font-mono">{selected.refundIfsc ?? "—"}</p>
+                        <p>Bank: {selected.refundBankName ?? "—"}</p>
+                        <p>Name in passbook: {selected.refundAccountName ?? "—"}</p>
+                        <p>A/c no: <span className="font-mono">{selected.refundAccountNumber ?? "—"}</span></p>
+                        <p>IFSC: <span className="font-mono">{selected.refundIfsc ?? "—"}</span></p>
                       </>
                     )}
                   </div>
