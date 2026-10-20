@@ -188,6 +188,7 @@ const HomeCMS = () => {
             <SectionBlock
               key={s.sectionId}
               section={s}
+              allSections={sections}
               onDelete={() => deleteSection(s.sectionId)}
               onUpdate={(p) => updateSection(s.sectionId, p)}
               onAddItem={(p) => addItem(s.sectionId, p)}
@@ -201,6 +202,7 @@ const HomeCMS = () => {
       {addOpen && (
         <SectionModal
           initial={{ gender: activeGender }}
+          allSections={sections}
           onClose={() => setAddOpen(false)}
           onSave={addSection}
         />

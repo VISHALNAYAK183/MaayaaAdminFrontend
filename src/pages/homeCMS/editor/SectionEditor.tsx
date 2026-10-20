@@ -71,6 +71,8 @@ interface BlockProps {
    * its own and falls back to the id.
    */
   products?: Map<number, PreviewProduct>;
+  /** Every section on the page, so editing settings can refuse a second hero. */
+  allSections?: SectionWithItems[];
   onDelete: () => void;
   onUpdate: (p: Partial<DraftSection>) => void;
   onAddItem: (p: any) => void;
@@ -78,13 +80,15 @@ interface BlockProps {
   onDeleteItem: (id: DraftId) => void;
 }
 
-export const SectionBlock = ({ section, products, onDelete, onUpdate, onAddItem, onUpdateItem, onDeleteItem }: BlockProps) => {
+export const SectionBlock = ({ section, products, allSections, onDelete, onUpdate, onAddItem, onUpdateItem, onDeleteItem }: BlockProps) => {
   const readOnly = useReadOnly();
   const hasMeta = HAS_META.has(section.type);
   const isTall = TALL_TYPES.has(section.type);
   const isTableSection = TABLE_SECTION_TYPES.has(section.type);
   const isProductSection = PRODUCT_SECTION_TYPES.has(section.type);
   const isCategorySection = section.type === "CATEGORIES";
+  // Only a hero slide carries text over its image on the storefront.
+  const isHero = section.type === "HERO";
   const categoryNames = useCategoryNames(isCategorySection);
   const [editModal, setEditModal] = useState(false);
 
@@ -146,6 +150,7 @@ export const SectionBlock = ({ section, products, onDelete, onUpdate, onAddItem,
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="text-left py-3 pl-4 pr-3 w-14 shell-label">#</th>
                 <th className="text-left py-3 pr-4 shell-label">Image</th>
+                {isHero && <th className="text-left py-3 pr-4 shell-label">Text</th>}
                 <th className="text-left py-3 pr-4 shell-label">Link</th>
                 <th className="w-10"></th>
               </tr>
@@ -156,13 +161,14 @@ export const SectionBlock = ({ section, products, onDelete, onUpdate, onAddItem,
                   key={item.itemId}
                   item={item}
                   allItems={section.items}
+                  withText={isHero}
                   linkToCategory={isCategorySection}
                   categoryNames={categoryNames}
                   onUpdate={(p) => onUpdateItem(item.itemId, p)}
                   onDelete={() => onDeleteItem(item.itemId)}
                 />
               ))}
-              <AddHeroItemCard onAdd={onAddItem} allItems={section.items} />
+              <AddHeroItemCard onAdd={onAddItem} allItems={section.items} withText={isHero} />
             </tbody>
           </table>
         </div>
@@ -194,6 +200,7 @@ export const SectionBlock = ({ section, products, onDelete, onUpdate, onAddItem,
       {editModal && (
         <SectionModal
           initial={section}
+          allSections={allSections}
           onClose={() => setEditModal(false)}
           onSave={async (data) => { await onUpdate(data); setEditModal(false); }}
         />
@@ -232,6 +239,8 @@ const validatePosition = (
 interface HeroItemCardProps {
   item: SectionItem;
   allItems: SectionItem[];
+  /** Hero slides: show the heading / subheading / button text column. */
+  withText?: boolean;
   /** Category tiles link to a category rather than to a typed-in path. */
   linkToCategory?: boolean;
   categoryNames?: Map<number, string>;
@@ -308,7 +317,7 @@ const InlineEdit = ({
 };
 
 const HeroItemCard = ({
-  item, allItems, linkToCategory, categoryNames, onUpdate, onDelete,
+  item, allItems, withText, linkToCategory, categoryNames, onUpdate, onDelete,
 }: HeroItemCardProps) => {
   const editFileRef = useRef<HTMLInputElement>(null);
   const [editImageModal, setEditImageModal] = useState(false);
@@ -401,6 +410,27 @@ const HeroItemCard = ({
           </div>
         </div>
       </td>
+
+      {/* Text drawn over a hero slide. The button only shows when the slide has a link. */}
+      {withText && (
+        <td className="py-3 pr-4 min-w-[160px] space-y-1">
+          <InlineEdit
+            value={item.heading ?? ""}
+            placeholder="Heading"
+            onSave={(v) => onUpdate({ heading: v || null })}
+          />
+          <InlineEdit
+            value={item.subheading ?? ""}
+            placeholder="Subheading"
+            onSave={(v) => onUpdate({ subheading: v || null })}
+          />
+          <InlineEdit
+            value={item.ctaText ?? ""}
+            placeholder="Button text (SHOP NOW)"
+            onSave={(v) => onUpdate({ ctaText: v || null })}
+          />
+        </td>
+      )}
 
       {/* Link — a free path for most sections, a category for category tiles */}
       <td className="py-3 pr-4 min-w-[120px]">
@@ -541,11 +571,15 @@ const HeroItemCard = ({
 
 // ─── ADD HERO ITEM CARD ──────────────────────────────────────────────────────
 // Upload image for preview, but only the filename string is sent to the API.
-const AddHeroItemCard = ({ onAdd, allItems }: { onAdd: (p: any) => void; allItems: SectionItem[] }) => {
+const BLANK_HERO_FORM = { imageName: "", link: "", position: "", heading: "", subheading: "", ctaText: "" };
+
+const AddHeroItemCard = ({
+  onAdd, allItems, withText,
+}: { onAdd: (p: any) => void; allItems: SectionItem[]; withText?: boolean }) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [expanded, setExpanded] = useState(false);
   const [previewDataUrl, setPreviewDataUrl] = useState("");
-  const [form, setForm] = useState({ imageName: "", link: "", position: "" });
+  const [form, setForm] = useState(BLANK_HERO_FORM);
   const [posError, setPosError] = useState("");
   const [uploading, setUploading] = useState(false);
 
@@ -576,7 +610,7 @@ const AddHeroItemCard = ({ onAdd, allItems }: { onAdd: (p: any) => void; allItem
   };
 
   const reset = () => {
-    setForm({ imageName: "", link: "", position: "" });
+    setForm(BLANK_HERO_FORM);
     setPreviewDataUrl("");
     setPosError("");
     setExpanded(false);
@@ -592,7 +626,9 @@ const AddHeroItemCard = ({ onAdd, allItems }: { onAdd: (p: any) => void; allItem
     onAdd({
       image: form.imageName.trim(),
       link: form.link || null,
-      heading: null,
+      heading: form.heading.trim() || null,
+      subheading: form.subheading.trim() || null,
+      ctaText: form.ctaText.trim() || null,
       position: pos,
     });
     reset();
@@ -647,6 +683,27 @@ const AddHeroItemCard = ({ onAdd, allItems }: { onAdd: (p: any) => void; allItem
           </div>
         </td>
 
+        {/* Text over the slide */}
+        {withText && (
+          <td className="py-3 pr-4 align-top">
+            <div className="flex flex-col gap-1">
+              {([
+                ["heading", "Heading"],
+                ["subheading", "Subheading"],
+                ["ctaText", "Button text (SHOP NOW)"],
+              ] as const).map(([key, placeholder]) => (
+                <input
+                  key={key}
+                  placeholder={placeholder}
+                  value={form[key]}
+                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                  className="text-xs px-2 py-1 rounded border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-gray-400 w-full"
+                />
+              ))}
+            </div>
+          </td>
+        )}
+
         {/* Link */}
         <td className="py-3 pr-4 align-top">
           <input
@@ -682,7 +739,7 @@ const AddHeroItemCard = ({ onAdd, allItems }: { onAdd: (p: any) => void; allItem
 
   return (
     <tr>
-      <td colSpan={4} className="py-2 pl-4">
+      <td colSpan={withText ? 5 : 4} className="py-2 pl-4">
         <button
           onClick={() => setExpanded(true)}
           className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors group"
@@ -1014,11 +1071,13 @@ const AddItemCard = ({
 // ─── SECTION MODAL ───────────────────────────────────────────────────────────
 interface ModalProps {
   initial?: Partial<DraftSection>;
+  /** Every section on the page, so a second hero for one audience is refused. */
+  allSections?: DraftSection[];
   onClose: () => void;
   onSave: (data: any) => void | Promise<void>;
 }
 
-export const SectionModal = ({ initial, onClose, onSave }: ModalProps) => {
+export const SectionModal = ({ initial, allSections = [], onClose, onSave }: ModalProps) => {
   const isEdit = !!initial?.sectionId;
   const [form, setForm] = useState({
     type: initial?.type ?? "HERO",
@@ -1032,8 +1091,17 @@ export const SectionModal = ({ initial, onClose, onSave }: ModalProps) => {
   });
   const [saving, setSaving] = useState(false);
 
+  const isHero = form.type === "HERO";
+  // One hero per audience: the storefront draws a single slideshow per page,
+  // so more slides belong as images inside the existing hero, not as a new one.
+  const heroTaken = isHero && allSections.some(
+    (s) => s.type === "HERO" && s.gender === form.gender && s.sectionId !== initial?.sectionId
+  );
+  const genderName = GENDER_TABS.find((g) => g.key === form.gender)?.label ?? form.gender;
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (heroTaken) return;
     setSaving(true);
     try {
       await onSave({
@@ -1090,7 +1158,19 @@ export const SectionModal = ({ initial, onClose, onSave }: ModalProps) => {
             </div>
           </div>
 
-          <ModalField label="Title" value={form.title} onChange={(v) => setForm({ ...form, title: v })} required />
+          <div>
+            <ModalField
+              label={isHero ? "Title (optional)" : "Title"}
+              value={form.title}
+              onChange={(v) => setForm({ ...form, title: v })}
+              required={!isHero}
+            />
+            {isHero && (
+              <p className="mt-1 text-[11px] text-gray-400">
+                For your own reference only — the hero shows each slide's own heading, not this title.
+              </p>
+            )}
+          </div>
           <ModalField label="Subtitle" value={form.subtitle} onChange={(v) => setForm({ ...form, subtitle: v })} />
 
           <div className="grid grid-cols-2 gap-4">
@@ -1128,12 +1208,18 @@ export const SectionModal = ({ initial, onClose, onSave }: ModalProps) => {
             </div>
           </div>
 
+          {heroTaken && (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              {genderName} already has a hero — add slides as images in it.
+            </p>
+          )}
+
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
               className="flex-1 px-4 py-2.5 border border-gray-300 rounded-full hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors shell-press"
             >Cancel</button>
             <button
-              type="submit" disabled={saving}
+              type="submit" disabled={saving || heroTaken}
               className="flex-1 px-4 py-2.5 bg-gray-900 hover:bg-gray-700 text-white rounded-full text-sm font-medium disabled:opacity-50 transition-colors shell-press"
             >
               {saving ? "Saving…" : isEdit ? "Update Section" : "Add Section"}

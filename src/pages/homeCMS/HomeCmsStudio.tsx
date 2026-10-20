@@ -346,6 +346,7 @@ const HomeCmsStudio = () => {
             <SectionBlock
               section={openSection}
               products={products}
+              allSections={sections}
               onDelete={() => onDelete(openSection.sectionId)}
               onUpdate={(p) => updateSection(openSection.sectionId, p)}
               onAddItem={(p) => addItem(openSection.sectionId, p)}
@@ -359,6 +360,7 @@ const HomeCmsStudio = () => {
       {addOpen && (
         <SectionModal
           initial={{ gender }}
+          allSections={sections}
           onClose={() => setAddOpen(false)}
           onSave={onAdd}
         />
